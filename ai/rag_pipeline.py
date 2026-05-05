@@ -26,3 +26,6 @@ async def translate_sentence(sentence: str) -> str:
 
     # Generate embeddings
     embeddings = await generate_embeddings(sentence)
+
+    # FAISS check for similar sentences and returns the translation.
+    

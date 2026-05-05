@@ -14,5 +14,5 @@ def generate_embeddings(sentence: str) -> np.ndarray:
     Reason: FAISS only accepts numpy arrays.
     """
 
-    embeddings = _model.encode(sentence, convert_to_numpy=True)
+    embeddings = _model.encode(sentence, normalize_embeddings=True, convert_to_numpy=True)
     return embeddings

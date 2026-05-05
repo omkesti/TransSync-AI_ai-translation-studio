@@ -15,12 +15,15 @@ async def exact_match_lookup(sentence: str) -> str:
     """
 
     try:
-        response = await supabase.from_("translation_memory").select("*").eq("source_sentence", sentence).execute()
+        response = await supabase.from_("translation_memory")\
+            .select("*")\
+            .eq("source_text", sentence)\
+            .execute()
     except Exception as e:
         print(f"Error fetching data from Supabase: {e}")
         return None
     
     if response.data:
-        return response.data[0]['translated_sentence']
+        return response.data[0]['translated_text']
     else:        
         return None
