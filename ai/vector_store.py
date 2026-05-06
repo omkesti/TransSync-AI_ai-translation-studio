@@ -17,7 +17,7 @@ if os.path.exists(INDEX_PATH):
 else:
     index = faiss.IndexFlatL2(384)  # Dimension of the embeddings
 
-def faiss_search(embedding: np.ndarray) -> list[str, float]:
+def faiss_search(embedding: np.ndarray) -> dict | None:
     """
     This function executes cosine similarity search
     """
@@ -33,7 +33,7 @@ def faiss_search(embedding: np.ndarray) -> list[str, float]:
     f_index = indices[0][0]
     
     if score < 0.8:  # Threshold for similarity
-        return None, score
+        return None
     
     # Fetch the corresponding translation from Supabase using the index
     try:
@@ -43,13 +43,30 @@ def faiss_search(embedding: np.ndarray) -> list[str, float]:
             .execute()
     except Exception as e:
         print(f"Error fetching data from Supabase: {e}")
-        return None, score
+        return None
     
     if not response.data:
         return None, score
     
-    match = response.data[0]['translated_text']
-    return match, score
+    translated_text = response.data[0]['translated_text']
+    source_text = response.data[0]['source_text']
+
+    if score < 0.95:  
+        """ 
+        If the score is between 0.8 and 0.95, 
+        we also return the sentence and translated sentence with the best match with the best match
+        """
+
+        return {
+            "source_text": source_text,
+            "translated_text": translated_text,
+            "score": score
+        }
+    
+    return {
+        "translated_text": translated_text,
+        "score": score
+    }
     
 
 def add(embedding: np.ndarray, faiss_index: int):

@@ -1,6 +1,9 @@
+import numpy as np
+
 from embeddings import generate_embeddings
 from translation_memory import exact_match_lookup
 from vector_store import faiss_search
+from llm_client import llm_guided_search
 
 test_obj: dict = {
     "sentences": [
@@ -45,15 +48,38 @@ async def translate_sentence(sentence: str) -> dict:
     """
 
     # Check for any exact match from the database
-    E_translation = await exact_match_lookup(sentence)
+    E_translation: str | None = await exact_match_lookup(sentence)
     if E_translation:
-        return {"source": sentence, "translation": E_translation, "match_type": "tm_exact"}
+        return {
+            "source": sentence, 
+            "translation": E_translation, 
+            "match_type": "tm_exact"
+        }
 
     # Generate embeddings
-    embeddings = await generate_embeddings(sentence)
+    embeddings: np.ndarray = await generate_embeddings(sentence)
 
     # FAISS check for similar sentences and returns the translation.
-    F_translation, score = await faiss_search(embeddings)
-    if F_translation:
-        if score > 0.95:
-            return {"source": sentence, "translation": F_translation, "match_type": "faiss_direct"}
+    # F_translation, score = await faiss_search(embeddings)
+    
+    F_translation: dict = await faiss_search(embeddings)
+    if not F_translation:
+        if F_translation["score"] >= 0.95:
+            return {
+                "source": sentence, 
+                "translation": F_translation["translated_text"], 
+                "match_type": "faiss_direct"
+            }
+        else:
+            # If the score is (0.8 - 0.95), we use guided llm prompt to translate the sentence
+            llm_translation: dict | None = await llm_guided_search(
+                sentence, 
+                F_translation["source_text"], 
+                F_translation["translated_text"],
+                test_obj["target_lang"]
+            )
+
+
+    # if F_translation:
+    #     if score > 0.95:
+    #         return {"source": sentence, "translation": F_translation, "match_type": "faiss_direct"}
