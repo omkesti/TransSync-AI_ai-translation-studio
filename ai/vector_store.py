@@ -45,4 +45,26 @@ def faiss_search(embedding: np.ndarray) -> list[str, float]:
         print(f"Error fetching data from Supabase: {e}")
         return None, score
     
+    if not response.data:
+        return None, score
     
+    match = response.data[0]['translated_text']
+    return match, score
+    
+
+def add(embedding: np.ndarray, faiss_index: int):
+    """
+    This function adds the embedding to the FAISS index and saves it.
+    """
+
+    vector = embedding.reshape(1, -1).astype('float32')
+    index.add(vector)
+    save_index()
+
+def save_index():
+    """
+    This function saves the FAISS index to disk.
+    """
+
+    os.makedirs(os.path.dirname(INDEX_PATH), exist_ok=True)
+    faiss.write_index(index, INDEX_PATH)
