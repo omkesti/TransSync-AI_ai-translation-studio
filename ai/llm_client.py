@@ -5,7 +5,7 @@ load_dotenv()
 
 client = Groq(api_key=os.environ.get("GROK_API_KEY"))
 
-def llm_guided_search(sentence, matched_source, matched_translation, target_lang) -> dict | None:
+async def llm_guided_search(sentence, matched_source, matched_translation, target_lang) -> dict | None:
     """
     This function uses ollama model to 
     translate the sentence which is mid-high similarity (0.8 - 0.95).
@@ -27,22 +27,29 @@ def llm_guided_search(sentence, matched_source, matched_translation, target_lang
     """
 
     try:
-        response = client.generate(
+        response = await client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages = [
-                {
-                    "role": "system",
-                    "content": prompt
-                }
-            ]
+            messages=[{
+                "role": "user", 
+                "content": prompt
+            }],
+            max_tokens=512,
+            temperature=0.3
         )
     except Exception as e:
         print(f"Error during LLM generation: {e}")
         return None
     
-    # if response.generations and len(response.generations) > 0:
+    answer = response.choices[0].message.content.strip() if response.choices else None
+
+    if not answer:
+        return None
     
-    #test
-    return None
+    return {
+        "source": sentence, 
+        "translation": answer, 
+    }
+    
+
     
     

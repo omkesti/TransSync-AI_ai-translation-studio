@@ -73,11 +73,18 @@ async def translate_sentence(sentence: str, target_lang: str) -> dict:
         else:
             # If the score is (0.8 - 0.95), we use guided llm prompt to translate the sentence
             llm_translation: dict | None = await llm_guided_search(
-                sentence, 
+                sentence,
                 F_translation["source_text"], 
                 F_translation["translated_text"],
                 target_lang
             )
+
+            if llm_translation:
+                return {
+                    "source": sentence, 
+                    "translation": llm_translation["translation"], 
+                    "match_type": "llm_guided"
+                }
 
 
     # if F_translation:
