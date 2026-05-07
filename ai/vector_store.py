@@ -23,7 +23,7 @@ def faiss_search(embedding: np.ndarray) -> dict | None:
     """
 
     if index.ntotal == 0:
-        return None, 0.0
+        return None
     
     vector = embedding.reshape(1, -1).astype('float32')
 
@@ -46,7 +46,7 @@ def faiss_search(embedding: np.ndarray) -> dict | None:
         return None
     
     if not response.data:
-        return None, score
+        return None
     
     translated_text = response.data[0]['translated_text']
     source_text = response.data[0]['source_text']

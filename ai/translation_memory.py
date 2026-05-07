@@ -15,7 +15,7 @@ async def exact_match_lookup(sentence: str) -> str:
     """
 
     try:
-        response = await supabase.from_("translation_memory")\
+        response = supabase.from_("translation_memory")\
             .select("*")\
             .eq("source_text", sentence)\
             .execute()

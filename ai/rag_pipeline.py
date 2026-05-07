@@ -1,4 +1,5 @@
 import numpy as np
+# import asyncio
 
 from embeddings import generate_embeddings
 from translation_memory import exact_match_lookup
@@ -15,7 +16,7 @@ test_obj: dict = {
     "target_lang": 'fr'
 }
 
-sentences: list[str] = ['This is an example sentence', 'Each sentence is converted to a vector', 'This is another example sentence']
+# sentences: list[str] = ['This is an example sentence', 'Each sentence is converted to a vector', 'This is another example sentence']
 
 """
 # E.g. [
@@ -29,19 +30,18 @@ sentences: list[str] = ['This is an example sentence', 'Each sentence is convert
 """
 translated_sentences: list[dict] = []
 
-async def translate_pipeline():
+async def translate_pipeline(obj: dict) -> list[dict]:
     """
     Loop through each sentence in the input and translate it.
     """
 
-    for sentence in test_obj["sentences"]:
-        sentence_translated = await translate_sentence(sentence)
+    for sentence in obj["sentences"]:
+        sentence_translated = await translate_sentence(sentence, obj["target_lang"])
         translated_sentences.append(sentence_translated)
-
 
     return translated_sentences
 
-async def translate_sentence(sentence: str) -> dict:
+async def translate_sentence(sentence: str, target_lang: str) -> dict:
     
     """
     translate_sentence function called
@@ -57,13 +57,13 @@ async def translate_sentence(sentence: str) -> dict:
         }
 
     # Generate embeddings
-    embeddings: np.ndarray = await generate_embeddings(sentence)
+    embeddings: np.ndarray = generate_embeddings(sentence)
 
     # FAISS check for similar sentences and returns the translation.
     # F_translation, score = await faiss_search(embeddings)
     
-    F_translation: dict = await faiss_search(embeddings)
-    if not F_translation:
+    F_translation: dict = faiss_search(embeddings)
+    if F_translation:
         if F_translation["score"] >= 0.95:
             return {
                 "source": sentence, 
@@ -76,10 +76,11 @@ async def translate_sentence(sentence: str) -> dict:
                 sentence, 
                 F_translation["source_text"], 
                 F_translation["translated_text"],
-                test_obj["target_lang"]
+                target_lang
             )
 
 
     # if F_translation:
     #     if score > 0.95:
     #         return {"source": sentence, "translation": F_translation, "match_type": "faiss_direct"}
+
