@@ -4,7 +4,7 @@ import numpy as np
 from embeddings import generate_embeddings
 from translation_memory import exact_match_lookup
 from vector_store import faiss_search
-from llm_client import llm_guided_search
+from llm_client import llm_guided_search, cold_llm_search
 
 test_obj: dict = {
     "sentences": [
@@ -86,8 +86,12 @@ async def translate_sentence(sentence: str, target_lang: str) -> dict:
                     "match_type": "llm_guided"
                 }
 
+    # If no match is found, we use cold llm prompt to translate the sentence
+    llm_translation: dict | None = await cold_llm_search(sentence, target_lang)
 
-    # if F_translation:
-    #     if score > 0.95:
-    #         return {"source": sentence, "translation": F_translation, "match_type": "faiss_direct"}
-
+    if llm_translation:
+        return {
+            "source": sentence, 
+            "translation": llm_translation["translation"], 
+            "match_type": "llm_cold"
+        }
