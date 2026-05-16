@@ -1,10 +1,10 @@
 import numpy as np
 # import asyncio
 
-from embeddings import generate_embeddings
-from translation_memory import exact_match_lookup
-from vector_store import faiss_search
-from llm_client import llm_guided_search, cold_llm_search
+from ai.embeddings import generate_embeddings
+from ai.translation_memory import exact_match_lookup
+from ai.vector_store import faiss_search
+from ai.llm_client import llm_guided_search, cold_llm_search
 
 test_obj: dict = {
     "sentences": [
@@ -94,4 +94,11 @@ async def translate_sentence(sentence: str, target_lang: str) -> dict:
             "source": sentence, 
             "translation": llm_translation["translation"], 
             "match_type": "llm_cold"
+        }
+    else:
+        # Fallback: return error indicator if all translation methods fail
+        return {
+            "source": sentence, 
+            "translation": f"[Translation failed for: {sentence}]", 
+            "match_type": "error"
         }

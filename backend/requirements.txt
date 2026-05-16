@@ -1,0 +1,32 @@
+#run these commands in order to set up the environment
+# ----very important----
+#pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+#pip install -r backend/requirements.txt
+
+# TransSync-AI Backend Requirements
+# Install order matters — follow the README setup steps
+# Created for Python 3.11
+ 
+# --- Web framework ---
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+python-dotenv>=1.0.1
+pydantic>=2.7.0
+ 
+# --- Document parsing ---
+python-docx>=1.1.2
+PyMuPDF>=1.24.0
+ 
+# --- AI / ML ---
+torch==2.5.1
+sentence-transformers==5.4.1
+transformers==5.8.0
+numpy==2.4.3
+faiss-cpu==1.13.2
+ 
+# --- LLM client ---
+groq
+ 
+# --- Database ---
+supabase==2.30.0

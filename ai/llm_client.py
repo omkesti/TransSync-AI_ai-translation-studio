@@ -33,7 +33,7 @@ async def llm_guided_search(sentence, matched_source, matched_translation, targe
     """
 
     try:
-        response = await client.chat.completions.create(
+        response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{
                 "role": "user", 
@@ -75,7 +75,7 @@ async def cold_llm_search(sentence, target_lang) -> dict | None:
     Translation:"""
 
     try:
-        response = await client.chats.completions.create(
+        response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{
                 "role": "user", 

@@ -1,13 +1,12 @@
-from dotenv import load_dotenv
-load_dotenv()
-
 import os
+from dotenv import load_dotenv
 from supabase import create_client
 
-key: str = os.environ.get("SUPABASE_KEY")
-url: str = os.environ.get("SUPABASE_URL")
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-supabase: create_client = create_client(url, key)
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase = create_client(url, key)
 
 async def exact_match_lookup(sentence: str) -> str:
     """
