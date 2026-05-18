@@ -1,0 +1,7 @@
+sentence-transformers==5.4.1
+numpy==2.4.3
+faiss-cpu==1.13.2
+supabase==2.30.0
+python-dotenv==1.2.2
+torch==2.5.1
+transformers==5.8.0
