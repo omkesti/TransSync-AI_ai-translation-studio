@@ -1,10 +1,14 @@
 import numpy as np
-# import asyncio
 
 from ai.embeddings import generate_embeddings
 from ai.translation_memory import exact_match_lookup
 from ai.vector_store import faiss_search
-from ai.llm_client import llm_guided_search, cold_llm_search
+from ai.llm_client import (
+    llm_guided_search,
+    llm_guided_batch,
+    cold_llm_search,
+    cold_llm_batch,
+)
 
 test_obj: dict = {
     "sentences": [
@@ -28,18 +32,124 @@ test_obj: dict = {
     ...
 ]
 """
-translated_sentences: list[dict] = []
+BATCH_SIZE = 15
+
+def _chunk_items(items: list[dict], size: int) -> list[list[dict]]:
+    return [items[i:i + size] for i in range(0, len(items), size)]
+
+
+def _build_result(sentence: str, translation: str, match_type: str) -> dict:
+    return {"source": sentence, "translation": translation, "match_type": match_type}
+
 
 async def translate_pipeline(obj: dict) -> list[dict]:
     """
-    Loop through each sentence in the input and translate it.
+    Run TM/FAISS checks per sentence and batch only LLM translations.
+    Results are merged by index to preserve original order.
     """
 
-    for sentence in obj["sentences"]:
-        sentence_translated = await translate_sentence(sentence, obj["target_lang"])
-        translated_sentences.append(sentence_translated)
+    sentences = obj.get("sentences", [])
+    target_lang = obj.get("target_lang")
 
-    return translated_sentences
+    results: list[dict | None] = [None] * len(sentences)
+    guided_queue: list[dict] = []
+    cold_queue: list[dict] = []
+
+    for index, sentence in enumerate(sentences):
+        # Exact TM lookup
+        exact = await exact_match_lookup(sentence)
+        if exact:
+            results[index] = _build_result(sentence, exact, "tm_exact")
+            continue
+
+        # FAISS similarity search
+        embeddings = generate_embeddings(sentence)
+        faiss_result = faiss_search(embeddings)
+
+        if faiss_result:
+            if faiss_result["score"] >= 0.95:
+                results[index] = _build_result(
+                    sentence,
+                    faiss_result["translated_text"],
+                    "faiss_direct",
+                )
+                continue
+
+            guided_queue.append({
+                "index": index,
+                "sentence": sentence,
+                "reference_source": faiss_result["source_text"],
+                "reference_translation": faiss_result["translated_text"],
+            })
+            continue
+
+        cold_queue.append({
+            "index": index,
+            "sentence": sentence,
+        })
+
+    # Batch guided LLM calls.
+    for batch in _chunk_items(guided_queue, BATCH_SIZE):
+        llm_items = [
+            {
+                "index": item["index"],
+                "sentence": item["sentence"],
+                "reference_source": item["reference_source"],
+                "reference_translation": item["reference_translation"],
+            }
+            for item in batch
+        ]
+        responses = await llm_guided_batch(llm_items, target_lang)
+        response_map = {r["index"]: r["translation"] for r in responses}
+
+        for item in batch:
+            idx = item["index"]
+            if idx in response_map:
+                results[idx] = _build_result(item["sentence"], response_map[idx], "llm_guided")
+                continue
+
+            # Fallback to single-sentence LLM if batch parsing fails.
+            fallback = await llm_guided_search(
+                item["sentence"],
+                item["reference_source"],
+                item["reference_translation"],
+                target_lang,
+            )
+            if fallback:
+                results[idx] = _build_result(item["sentence"], fallback["translation"], "llm_guided")
+            else:
+                results[idx] = _build_result(item["sentence"], f"[Translation failed for: {item['sentence']}]", "error")
+
+    # Batch cold LLM calls.
+    for batch in _chunk_items(cold_queue, BATCH_SIZE):
+        llm_items = [
+            {
+                "index": item["index"],
+                "sentence": item["sentence"],
+            }
+            for item in batch
+        ]
+        responses = await cold_llm_batch(llm_items, target_lang)
+        response_map = {r["index"]: r["translation"] for r in responses}
+
+        for item in batch:
+            idx = item["index"]
+            if idx in response_map:
+                results[idx] = _build_result(item["sentence"], response_map[idx], "llm_cold")
+                continue
+
+            fallback = await cold_llm_search(item["sentence"], target_lang)
+            if fallback:
+                results[idx] = _build_result(item["sentence"], fallback["translation"], "llm_cold")
+            else:
+                results[idx] = _build_result(item["sentence"], f"[Translation failed for: {item['sentence']}]", "error")
+
+    # Ensure every slot is filled.
+    for idx, item in enumerate(results):
+        if item is None:
+            results[idx] = _build_result(sentences[idx], f"[Translation failed for: {sentences[idx]}]", "error")
+
+    return results
 
 async def translate_sentence(sentence: str, target_lang: str) -> dict:
     

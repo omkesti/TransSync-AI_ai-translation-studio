@@ -1,8 +1,10 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  Bell, 
-  Settings, 
+import React, { useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { uploadDocument } from "../services/api";
+import { useAppContext } from "../context/AppContext";
+import {
+  Bell,
+  Settings,
   Plus,
   LayoutDashboard,
   FileUp,
@@ -19,85 +21,164 @@ import {
   CloudUpload,
   FileText,
   File,
-  Code
-} from 'lucide-react';
+  Code,
+} from "lucide-react";
 
 function UploadPage() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  const { setDocId, setRawText, setTargetLang, targetLang, resetFlow } =
+    useAppContext();
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setError("");
+    }
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setError("");
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setError("Please select a file to upload.");
+      return;
+    }
+    if (!targetLang) {
+      setError("Please select a target language.");
+      return;
+    }
+
+    setIsUploading(true);
+    setError("");
+
+    try {
+      const response = await uploadDocument(selectedFile);
+      resetFlow();
+      setDocId(response.doc_id || "");
+      setRawText(response.raw_text || "");
+      navigate("/validation");
+    } catch (uploadError) {
+      setError(uploadError.message || "Upload failed.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
-      
       {/* Left Sidebar */}
       <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 relative">
         <div className="p-6 pb-2 flex-1 flex flex-col">
-          
           {/* Workspace Selector */}
           <div className="flex items-center gap-3 mb-12">
             <div className="w-10 h-10 rounded-full bg-[#c5fe00] text-[#0a0a0a] flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,254,0,0.2)]">
               <CloudUpload strokeWidth={2.5} size={22} />
             </div>
             <div className="flex flex-col">
-              <span className="font-display text-[#c5fe00] font-black text-sm tracking-tight leading-none mb-1">TransSync</span>
-              <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</span>
+              <span className="font-display text-[#c5fe00] font-black text-sm tracking-tight leading-none mb-1">
+                TransSync
+              </span>
+              <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">
+                AI Studio
+              </span>
             </div>
           </div>
 
           {/* Menu Items */}
           <nav className="space-y-1">
-            <Link to="/dashboard" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+            >
               <LayoutDashboard size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Dashboard</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest">
+                Dashboard
+              </span>
             </Link>
-            
+
             <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] cursor-pointer shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
               <FileUp size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Upload</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest">
+                Upload
+              </span>
             </div>
 
-            <Link to="/validation" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+            <Link
+              to="/validation"
+              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+            >
               <CheckCircle2 size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Validation</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest">
+                Validation
+              </span>
             </Link>
 
-            <Link to="/review" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+            <Link
+              to="/review"
+              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+            >
               <MessageSquare size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Review</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest">
+                Review
+              </span>
             </Link>
 
-            <Link to="/glossary" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+            <Link
+              to="/glossary"
+              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+            >
               <Book size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Glossary</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest">
+                Glossary
+              </span>
             </Link>
           </nav>
         </div>
 
         <div className="p-6 space-y-4">
-           {/* Bottom Links */}
-           <div className="space-y-1 mb-8">
-             <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-                <HelpCircle size={18} />
-                <span className="text-[11px] font-bold uppercase tracking-widest">Help</span>
-              </div>
-              <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-                <LogOut size={18} />
-                <span className="text-[11px] font-bold uppercase tracking-widest">Logout</span>
-              </div>
-           </div>
-           
-           {/* Moved CTA Button */}
-           <button className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-[16px] py-4 flex items-center justify-center font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.15)]">
-              New Project
-           </button>
+          {/* Bottom Links */}
+          <div className="space-y-1 mb-8">
+            <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+              <HelpCircle size={18} />
+              <span className="text-[11px] font-bold uppercase tracking-widest">
+                Help
+              </span>
+            </div>
+            <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+              <LogOut size={18} />
+              <span className="text-[11px] font-bold uppercase tracking-widest">
+                Logout
+              </span>
+            </div>
+          </div>
+
+          {/* Moved CTA Button */}
+          <button className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-[16px] py-4 flex items-center justify-center font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.15)]">
+            New Project
+          </button>
         </div>
       </aside>
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col relative w-full h-full overflow-hidden">
-        
         {/* Top Nav Centered */}
         <nav className="h-[80px] w-full flex items-center justify-between px-8 bg-transparent absolute top-0 z-50 pointer-events-none">
           {/* Header layout uses a grid or flex to center perfectly but keep right items aligned right */}
           <div className="w-1/3"></div>
-          
+
           <div className="w-1/3 flex justify-center items-center gap-4 pointer-events-auto">
             <Link to="/" className="inline-block">
               <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] leading-none">
@@ -105,21 +186,30 @@ function UploadPage() {
               </span>
             </Link>
             <div className="w-px h-6 bg-[#262626]"></div>
-            <span className="text-[#8c8c8b] text-[13px] font-medium tracking-wide">Upload Document</span>
+            <span className="text-[#8c8c8b] text-[13px] font-medium tracking-wide">
+              Upload Document
+            </span>
           </div>
 
           <div className="w-1/3 flex justify-end items-center gap-4 text-[#8c8c8b] pointer-events-auto">
-            <button className="hover:text-[#ffffff] transition-colors"><Bell size={18} /></button>
-            <button className="hover:text-[#ffffff] transition-colors"><Settings size={18} /></button>
+            <button className="hover:text-[#ffffff] transition-colors">
+              <Bell size={18} />
+            </button>
+            <button className="hover:text-[#ffffff] transition-colors">
+              <Settings size={18} />
+            </button>
             <button className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#262626] overflow-hidden ml-2 ring-2 ring-transparent transition-all">
-              <img src="https://i.pravatar.cc/150?img=11" alt="User Avatar" className="w-full h-full object-cover" />
+              <img
+                src="https://i.pravatar.cc/150?img=11"
+                alt="User Avatar"
+                className="w-full h-full object-cover"
+              />
             </button>
           </div>
         </nav>
 
         {/* Scrollable Content */}
         <main className="flex-1 overflow-y-auto w-full pt-[120px] pb-[80px] px-8 flex flex-col items-center layout-scrollbar relative">
-          
           {/* Background Highlight */}
           <div className="absolute top-0 right-[20%] w-[600px] h-[600px] bg-[#c5fe00] opacity-[0.03] blur-[120px] rounded-full pointer-events-none z-0"></div>
 
@@ -129,56 +219,106 @@ function UploadPage() {
               digital <span className="text-[#c5fe00]">transmission</span>
             </h1>
             <p className="text-[#a0a09f] max-w-xl mx-auto text-lg leading-relaxed font-sans">
-              Prepare your assets for multilingual expansion. Our engine processes semantic nuances across 80+ locales in milliseconds.
+              Prepare your assets for multilingual expansion. Our engine
+              processes semantic nuances across 80+ locales in milliseconds.
             </p>
           </div>
 
           {/* Grid Container */}
           <div className="w-full max-w-[1000px] grid grid-cols-1 lg:grid-cols-3 gap-6 z-10">
-            
             {/* Left Upload Dropzone (Span 2) */}
-            <div className="lg:col-span-2 bg-[#13150d]/40 backdrop-blur-sm border border-[#262b14]/50 rounded-[32px] p-8 min-h-[440px] flex flex-col items-center justify-center group cursor-pointer hover:border-[#c5fe00]/30 transition-all hover:bg-[#171a0f]/60 relative overflow-hidden">
-               {/* Internal glowing ring */}
-               <div className="w-24 h-24 rounded-full bg-[#c5fe00]/5 flex items-center justify-center mb-8 border border-[#c5fe00]/20 group-hover:scale-110 transition-transform duration-500 shadow-[0_0_40px_rgba(197,254,0,0.1)]">
-                 <Upload size={36} className="text-[#c5fe00]" strokeWidth={2.5}/>
-               </div>
-               
-               <h3 className="font-display text-2xl font-bold mb-3 tracking-tight">Drop your document here</h3>
-               <p className="text-[#8c8c8b] text-[13px] font-sans pb-12">Maximum file size: 50MB</p>
+            <div
+              className="lg:col-span-2 bg-[#13150d]/40 backdrop-blur-sm border border-[#262b14]/50 rounded-[32px] p-8 min-h-[440px] flex flex-col items-center justify-center group cursor-pointer hover:border-[#c5fe00]/30 transition-all hover:bg-[#171a0f]/60 relative overflow-hidden"
+              onClick={() => fileInputRef.current?.click()}
+              onDrop={handleDrop}
+              onDragOver={(event) => event.preventDefault()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              {/* Internal glowing ring */}
+              <div className="w-24 h-24 rounded-full bg-[#c5fe00]/5 flex items-center justify-center mb-8 border border-[#c5fe00]/20 group-hover:scale-110 transition-transform duration-500 shadow-[0_0_40px_rgba(197,254,0,0.1)]">
+                <Upload
+                  size={36}
+                  className="text-[#c5fe00]"
+                  strokeWidth={2.5}
+                />
+              </div>
 
-               {/* File Formats */}
-               <div className="flex gap-4 mt-auto">
-                 <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
-                   <FileText size={14} /> PDF
-                 </div>
-                 <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
-                   <File size={14} /> DOCX
-                 </div>
-                 <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
-                   <Code size={14} /> XLIFF
-                 </div>
-               </div>
+              <h3 className="font-display text-2xl font-bold mb-3 tracking-tight">
+                Drop your document here
+              </h3>
+              <p className="text-[#8c8c8b] text-[13px] font-sans pb-6">
+                Maximum file size: 50MB
+              </p>
+              <p className="text-[#555555] text-[11px] font-bold tracking-widest uppercase pb-6">
+                {selectedFile ? selectedFile.name : "No file selected"}
+              </p>
+
+              {/* File Formats */}
+              <div className="flex gap-4 mt-auto">
+                <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
+                  <FileText size={14} /> PDF
+                </div>
+                <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
+                  <File size={14} /> DOCX
+                </div>
+                <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
+                  <Code size={14} /> XLIFF
+                </div>
+              </div>
             </div>
 
             {/* Right Config Column */}
             <div className="flex flex-col gap-6">
-              
               {/* Target Language Card */}
               <div className="bg-[#151515] border border-[#262626] rounded-[32px] p-8 flex-1">
-                <p className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-6">Target Language</p>
-                
+                <p className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-6">
+                  Target Language
+                </p>
+
                 <div className="bg-[#222222] border border-transparent focus-within:border-[#333333] rounded-full flex items-center px-4 py-3 gap-3 mb-8 transition-colors">
                   <Globe size={16} className="text-[#c5fe00]" />
-                  <input type="text" placeholder="Search language" className="bg-transparent border-none text-[#ffffff] focus:outline-none w-full text-[13px] placeholder:text-[#555555]" />
+                  <input
+                    type="text"
+                    placeholder="Search language"
+                    value={targetLang}
+                    onChange={(event) => setTargetLang(event.target.value)}
+                    className="bg-transparent border-none text-[#ffffff] focus:outline-none w-full text-[13px] placeholder:text-[#555555]"
+                  />
                   <ChevronDown size={16} className="text-[#555555]" />
                 </div>
 
-                <p className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-4">Quick Select</p>
-                
+                <p className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-4">
+                  Quick Select
+                </p>
+
                 <div className="flex flex-wrap gap-2">
-                   <button className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors">German</button>
-                   <button className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors">Japanese</button>
-                   <button className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors mt-2">Spanish (LATAM)</button>
+                  <button
+                    className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors"
+                    onClick={() => setTargetLang("German")}
+                    type="button"
+                  >
+                    German
+                  </button>
+                  <button
+                    className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors"
+                    onClick={() => setTargetLang("Japanese")}
+                    type="button"
+                  >
+                    Japanese
+                  </button>
+                  <button
+                    className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors mt-2"
+                    onClick={() => setTargetLang("Spanish (LATAM)")}
+                    type="button"
+                  >
+                    Spanish (LATAM)
+                  </button>
                 </div>
               </div>
 
@@ -187,37 +327,65 @@ function UploadPage() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#c5fe00] opacity-10 blur-[50px] rounded-full pointer-events-none group-hover:opacity-20 transition-opacity"></div>
                 <div className="flex items-center gap-4 mb-8">
                   <div className="w-8 h-8 rounded-full bg-[#1a200a] text-[#c5fe00] flex items-center justify-center shadow-[inset_0_0_10px_rgba(197,254,0,0.1)]">
-                    <Zap size={14} className="fill-[#c5fe00]"/>
+                    <Zap size={14} className="fill-[#c5fe00]" />
                   </div>
-                  <span className="text-[#c5fe00] font-bold text-[10px] tracking-widest uppercase">Priority Processing</span>
+                  <span className="text-[#c5fe00] font-bold text-[10px] tracking-widest uppercase">
+                    Priority Processing
+                  </span>
                 </div>
-                
-                <button className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full py-4 flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300">
-                  <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" /> Start Translation
+
+                <button
+                  className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full py-4 flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  onClick={handleUpload}
+                  type="button"
+                  disabled={isUploading}
+                >
+                  <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
+                  {isUploading ? "Uploading..." : "Start Translation"}
                 </button>
+                {error ? (
+                  <p className="text-[#ff7351] text-[11px] font-bold tracking-widest uppercase mt-4">
+                    {error}
+                  </p>
+                ) : null}
               </div>
-
             </div>
-
           </div>
-
         </main>
+
+        {isUploading ? (
+          <div className="absolute inset-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-sm flex items-center justify-center">
+            <div className="bg-[#15170d] border border-[#2a2e16] rounded-[24px] px-8 py-6 text-center shadow-[0_0_30px_rgba(197,254,0,0.08)]">
+              <p className="text-[#c5fe00] text-[10px] font-bold uppercase tracking-[0.2em] mb-2">
+                Uploading
+              </p>
+              <p className="text-[#ffffff] text-sm">
+                Processing your document...
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         {/* Global Footer Status Bar */}
         <footer className="absolute bottom-0 w-full h-[48px] bg-[#0a0a0a]/90 backdrop-blur-md border-t border-[#262626] flex items-center justify-between px-8 text-[9px] font-bold tracking-[0.2em] uppercase text-[#555555] z-50 pointer-events-none">
           <div className="flex items-center gap-8 pointer-events-auto">
-            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#c5fe00] rounded-full"></span> System Live</span>
-            <span className="flex items-center gap-2 hidden md:flex">Latency <span className="text-[#c5fe00]">128ms</span></span>
-            <span className="flex items-center gap-2 hidden md:flex">Context Retention <span className="text-[#c5fe00]">99.9%</span></span>
+            <span className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[#c5fe00] rounded-full"></span>{" "}
+              System Live
+            </span>
+            <span className="flex items-center gap-2 hidden md:flex">
+              Latency <span className="text-[#c5fe00]">128ms</span>
+            </span>
+            <span className="flex items-center gap-2 hidden md:flex">
+              Context Retention <span className="text-[#c5fe00]">99.9%</span>
+            </span>
           </div>
-          
+
           <div className="flex items-center gap-3 pointer-events-auto">
             V4.2.0-STABLE <Monitor size={12} className="text-[#a0a09f]" />
           </div>
         </footer>
-
       </div>
-
     </div>
   );
 }

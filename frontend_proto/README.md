@@ -1,16 +1,63 @@
-# React + Vite
+# TransSync Frontend Integration Notes
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+These notes describe how the frontend_proto UI should connect to the backend and how each page behaves. This is the source of truth while we wire the frontend to the FastAPI flow.
 
-Currently, two official plugins are available:
+## Orchestration Rule
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- The frontend orchestrates the pipeline step-by-step, and each backend step must be user-approved.
+- The Start Translation button triggers the process, but the user remains in control between parse -> validate -> translate -> review.
 
-## React Compiler
+## Core Flow
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+UploadPage -> ValidationPage -> ReviewPage
 
-## Expanding the ESLint configuration
+State handoff:
+- UploadPage produces doc_id + raw_text
+- ValidationPage produces sentences[] (and validation status/errors)
+- ReviewPage uses results[] and lets the user approve or discard
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Shared state (Context or Zustand) must persist:
+- doc_id
+- raw_text
+- sentences[]
+- results[]
+- language selection
+
+## Dashboard Requirements
+
+- Show total documents uploaded
+- Show in-progress (processing) documents
+- Show completed translations
+- Recent documents list with a progress bar per document showing pipeline stage
+
+## Upload Page Requirements
+
+- File upload control
+- Language selection
+- Start Translation button
+- Start Translation must not skip steps; it should trigger parse -> validate -> translate in order, with user approval between stages
+
+## Validation Page Requirements
+
+- Show validation errors sorted by severity
+- Validation summary: counts per severity level
+- Document health bar showing percentage health score
+- Proceed button enabled only when status == ok
+
+## Review Page Requirements
+
+- Show source and translated text side-by-side in batches
+- User can approve or discard each batch
+- On approval, save each sentence to Supabase
+- On discard, skip that batch and move forward
+- Show progress bar for how many batches are completed
+- Show counts for pending vs reviewed
+
+## Glossary
+
+- Further instructions will be provided later
+
+## Implementation Focus (Phase 1)
+
+- First, connect frontend actions to backend APIs (clicking buttons triggers the correct pipeline step)
+- Later, implement all dashboard metrics, counters, and progress bar data

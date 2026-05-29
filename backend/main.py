@@ -4,6 +4,7 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routes import upload, translate, memory
+from backend.routes import upload, translate, memory, validate
 
 app = FastAPI(
     title="TransSync AI",
@@ -22,7 +23,9 @@ app.add_middleware(
 app.include_router(upload.router,    prefix="/api", tags=["Upload"])
 app.include_router(translate.router, prefix="/api", tags=["Translate"])
 app.include_router(memory.router,    prefix="/api", tags=["Memory"])
+app.include_router(validate.router, prefix="/api", tags=["Validate"])
 
 @app.get("/")
 def health_check():
     return {"status": "TransSync AI backend is running"}
+
