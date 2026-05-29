@@ -11,6 +11,7 @@ We have established the foundation for frontend-backend integration in frontend_
   - validateText(rawText, docId)
   - translateSentences(sentences, sourceLang, targetLang)
   - approveTranslations(reviewed)
+  - Upload timeout safeguard (60s) for long-running uploads
   - File: [frontend_proto/src/services/api.js](../src/services/api.js)
 
 - Shared app state added using context for cross-page workflow data:
@@ -26,7 +27,8 @@ We have established the foundation for frontend-backend integration in frontend_
   - Start Translation triggers uploadDocument
   - On success: docId + rawText stored in context, route to /validation
   - Target language stored in context
-  - Loading overlay + basic error message
+  - Loading overlay + basic error message (button now surfaces missing file/lang errors)
+  - Upload timeout now surfaces a clear error if backend stalls
   - File: [frontend_proto/src/pages/UploadPage.jsx](../src/pages/UploadPage.jsx)
 
 - ValidationPage wired to backend validation flow:

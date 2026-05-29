@@ -33,14 +33,7 @@ export function AppProvider({ children }) {
       setTargetLang,
       resetFlow,
     }),
-    [
-      docId,
-      rawText,
-      sentences,
-      results,
-      sourceLang,
-      targetLang,
-    ]
+    [docId, rawText, sentences, results, sourceLang, targetLang],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

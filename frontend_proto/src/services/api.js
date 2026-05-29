@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 async function handleResponse(response) {
   if (response.ok) {
@@ -20,12 +21,25 @@ export async function uploadDocument(file) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE_URL}/api/upload-document`, {
-    method: "POST",
-    body: formData,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-  return handleResponse(response);
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/upload-document`, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+    });
+
+    return handleResponse(response);
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("Upload timed out. Please try a smaller file or retry.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function validateText(rawText, docId) {
