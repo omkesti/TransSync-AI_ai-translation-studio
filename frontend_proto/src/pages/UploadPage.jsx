@@ -1,5 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { uploadDocument } from '../services/api';
+import { useAppContext } from '../context/AppContext';
 import { 
   Bell, 
   Settings, 
@@ -23,6 +25,63 @@ import {
 } from 'lucide-react';
 
 function UploadPage() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  const {
+    setDocId,
+    setRawText,
+    setTargetLang,
+    targetLang,
+    resetFlow,
+  } = useAppContext();
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setError('');
+    }
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setError('');
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setError('Please select a file to upload.');
+      return;
+    }
+    if (!targetLang) {
+      setError('Please select a target language.');
+      return;
+    }
+
+    setIsUploading(true);
+    setError('');
+
+    try {
+      const response = await uploadDocument(selectedFile);
+      resetFlow();
+      setDocId(response.doc_id || '');
+      setRawText(response.raw_text || '');
+      navigate('/validation');
+    } catch (uploadError) {
+      setError(uploadError.message || 'Upload failed.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
       
@@ -137,14 +196,29 @@ function UploadPage() {
           <div className="w-full max-w-[1000px] grid grid-cols-1 lg:grid-cols-3 gap-6 z-10">
             
             {/* Left Upload Dropzone (Span 2) */}
-            <div className="lg:col-span-2 bg-[#13150d]/40 backdrop-blur-sm border border-[#262b14]/50 rounded-[32px] p-8 min-h-[440px] flex flex-col items-center justify-center group cursor-pointer hover:border-[#c5fe00]/30 transition-all hover:bg-[#171a0f]/60 relative overflow-hidden">
+            <div
+              className="lg:col-span-2 bg-[#13150d]/40 backdrop-blur-sm border border-[#262b14]/50 rounded-[32px] p-8 min-h-[440px] flex flex-col items-center justify-center group cursor-pointer hover:border-[#c5fe00]/30 transition-all hover:bg-[#171a0f]/60 relative overflow-hidden"
+              onClick={() => fileInputRef.current?.click()}
+              onDrop={handleDrop}
+              onDragOver={(event) => event.preventDefault()}
+            >
+               <input
+                 ref={fileInputRef}
+                 type="file"
+                 accept=".pdf,.docx"
+                 className="hidden"
+                 onChange={handleFileChange}
+               />
                {/* Internal glowing ring */}
                <div className="w-24 h-24 rounded-full bg-[#c5fe00]/5 flex items-center justify-center mb-8 border border-[#c5fe00]/20 group-hover:scale-110 transition-transform duration-500 shadow-[0_0_40px_rgba(197,254,0,0.1)]">
                  <Upload size={36} className="text-[#c5fe00]" strokeWidth={2.5}/>
                </div>
                
                <h3 className="font-display text-2xl font-bold mb-3 tracking-tight">Drop your document here</h3>
-               <p className="text-[#8c8c8b] text-[13px] font-sans pb-12">Maximum file size: 50MB</p>
+               <p className="text-[#8c8c8b] text-[13px] font-sans pb-6">Maximum file size: 50MB</p>
+               <p className="text-[#555555] text-[11px] font-bold tracking-widest uppercase pb-6">
+                 {selectedFile ? selectedFile.name : 'No file selected'}
+               </p>
 
                {/* File Formats */}
                <div className="flex gap-4 mt-auto">
@@ -169,16 +243,40 @@ function UploadPage() {
                 
                 <div className="bg-[#222222] border border-transparent focus-within:border-[#333333] rounded-full flex items-center px-4 py-3 gap-3 mb-8 transition-colors">
                   <Globe size={16} className="text-[#c5fe00]" />
-                  <input type="text" placeholder="Search language" className="bg-transparent border-none text-[#ffffff] focus:outline-none w-full text-[13px] placeholder:text-[#555555]" />
+                  <input
+                    type="text"
+                    placeholder="Search language"
+                    value={targetLang}
+                    onChange={(event) => setTargetLang(event.target.value)}
+                    className="bg-transparent border-none text-[#ffffff] focus:outline-none w-full text-[13px] placeholder:text-[#555555]"
+                  />
                   <ChevronDown size={16} className="text-[#555555]" />
                 </div>
 
                 <p className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-4">Quick Select</p>
                 
                 <div className="flex flex-wrap gap-2">
-                   <button className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors">German</button>
-                   <button className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors">Japanese</button>
-                   <button className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors mt-2">Spanish (LATAM)</button>
+                   <button
+                     className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors"
+                     onClick={() => setTargetLang('German')}
+                     type="button"
+                   >
+                     German
+                   </button>
+                   <button
+                     className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors"
+                     onClick={() => setTargetLang('Japanese')}
+                     type="button"
+                   >
+                     Japanese
+                   </button>
+                   <button
+                     className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors mt-2"
+                     onClick={() => setTargetLang('Spanish (LATAM)')}
+                     type="button"
+                   >
+                     Spanish (LATAM)
+                   </button>
                 </div>
               </div>
 
@@ -192,9 +290,20 @@ function UploadPage() {
                   <span className="text-[#c5fe00] font-bold text-[10px] tracking-widest uppercase">Priority Processing</span>
                 </div>
                 
-                <button className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full py-4 flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300">
-                  <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" /> Start Translation
+                <button
+                  className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full py-4 flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  onClick={handleUpload}
+                  type="button"
+                  disabled={isUploading || !selectedFile}
+                >
+                  <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
+                  {isUploading ? 'Uploading...' : 'Start Translation'}
                 </button>
+                {error ? (
+                  <p className="text-[#ff7351] text-[11px] font-bold tracking-widest uppercase mt-4">
+                    {error}
+                  </p>
+                ) : null}
               </div>
 
             </div>
@@ -202,6 +311,15 @@ function UploadPage() {
           </div>
 
         </main>
+
+        {isUploading ? (
+          <div className="absolute inset-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-sm flex items-center justify-center">
+            <div className="bg-[#15170d] border border-[#2a2e16] rounded-[24px] px-8 py-6 text-center shadow-[0_0_30px_rgba(197,254,0,0.08)]">
+              <p className="text-[#c5fe00] text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Uploading</p>
+              <p className="text-[#ffffff] text-sm">Processing your document...</p>
+            </div>
+          </div>
+        ) : null}
 
         {/* Global Footer Status Bar */}
         <footer className="absolute bottom-0 w-full h-[48px] bg-[#0a0a0a]/90 backdrop-blur-md border-t border-[#262626] flex items-center justify-between px-8 text-[9px] font-bold tracking-[0.2em] uppercase text-[#555555] z-50 pointer-events-none">

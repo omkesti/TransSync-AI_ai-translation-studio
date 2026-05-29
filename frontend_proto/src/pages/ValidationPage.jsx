@@ -1,5 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { validateText } from '../services/api';
+import { useAppContext } from '../context/AppContext';
 import { 
   Bell, 
   LayoutDashboard,
@@ -18,6 +20,50 @@ import {
 } from 'lucide-react';
 
 function ValidationPage() {
+  const navigate = useNavigate();
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationStatus, setValidationStatus] = useState('idle');
+  const [validationErrors, setValidationErrors] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const { docId, rawText, setSentences } = useAppContext();
+
+  useEffect(() => {
+    const runValidation = async () => {
+      if (!docId || !rawText) {
+        setValidationStatus('error');
+        setValidationErrors(['Missing document data. Please upload again.']);
+        return;
+      }
+
+      setIsValidating(true);
+      setValidationStatus('running');
+      setErrorMessage('');
+
+      try {
+        const result = await validateText(rawText, docId);
+        setValidationStatus(result.status || 'error');
+        setValidationErrors(result.errors || []);
+        setSentences(result.sentences || []);
+      } catch (error) {
+        setValidationStatus('error');
+        setValidationErrors([error.message || 'Validation failed.']);
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+    runValidation();
+  }, [docId, rawText, setSentences]);
+
+  const canProceed = validationStatus === 'ok';
+
+  const handleProceed = () => {
+    if (canProceed) {
+      navigate('/review');
+    }
+  };
+
   return (
     <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
       
@@ -89,7 +135,7 @@ function ValidationPage() {
                <span className="text-[#c5fe00] text-[9px] font-bold uppercase tracking-[0.2em] leading-none">Active File</span>
              </div>
              <h2 className="font-display text-[22px] font-bold tracking-tight text-white leading-none">
-               Document: annual_report.v2.docx
+               Document: {docId ? docId : 'No active document'}
              </h2>
            </div>
 
@@ -138,6 +184,11 @@ function ValidationPage() {
               </div>
 
               <div className="space-y-8">
+                {errorMessage ? (
+                  <div className="bg-[#2a1313] border border-[#ff4d4d] rounded-[24px] p-6 text-[#ff4d4d] text-sm">
+                    {errorMessage}
+                  </div>
+                ) : null}
                 
                 {/* High Severity Card */}
                 <div className="bg-[#151515] border border-[#262626] rounded-[32px] p-8 relative overflow-hidden transition-colors hover:border-[#333333]">
@@ -160,7 +211,7 @@ function ValidationPage() {
                   </div>
 
                   <p className="text-[#a0a09f] text-[14px] leading-relaxed mb-8 max-w-xl font-sans relative z-10">
-                    The term "EBITDA" is used interchangeably with "Operating Earnings" and "Adjusted Margin" in the fiscal summary section. This may confuse the LLM during cross-context translation.
+                    {validationErrors[0] || 'No critical issues detected.'}
                   </p>
 
                   <div className="flex gap-4 relative z-10">
@@ -194,7 +245,7 @@ function ValidationPage() {
                   </div>
 
                   <p className="text-[#a0a09f] text-[14px] leading-relaxed mb-8 max-w-xl font-sans relative z-10">
-                    The name "TransSync-Core-V2" was detected as a primary product identifier. Verify if this should remain untranslated or localized for European markets.
+                    {validationErrors[1] || 'No warning-level issues detected.'}
                   </p>
 
                   <div className="flex gap-4 relative z-10">
@@ -219,15 +270,15 @@ function ValidationPage() {
                 <div className="space-y-3">
                   <div className="bg-[#111111] border border-[#1a1a1a] rounded-[20px] p-5 flex items-center justify-between">
                     <span className="text-[#a0a09f] text-[13px] font-medium">Critical Issues</span>
-                    <span className="font-display font-bold text-xl text-[#ff4d4d]">01</span>
+                    <span className="font-display font-bold text-xl text-[#ff4d4d]">{validationErrors.length}</span>
                   </div>
                   <div className="bg-[#111111] border border-[#1a1a1a] rounded-[20px] p-5 flex items-center justify-between">
                     <span className="text-[#a0a09f] text-[13px] font-medium">Warnings</span>
-                    <span className="font-display font-bold text-xl text-[#ffd166]">12</span>
+                    <span className="font-display font-bold text-xl text-[#ffd166]">{Math.max(0, validationErrors.length - 1)}</span>
                   </div>
                   <div className="bg-[#111111] border border-[#1a1a1a] rounded-[20px] p-5 flex items-center justify-between">
                     <span className="text-[#a0a09f] text-[13px] font-medium">Style Suggestions</span>
-                    <span className="font-display font-bold text-xl text-[#ffd166]">08</span>
+                    <span className="font-display font-bold text-xl text-[#ffd166]">{validationErrors.length > 2 ? validationErrors.length - 2 : 0}</span>
                   </div>
                 </div>
               </div>
@@ -268,7 +319,7 @@ function ValidationPage() {
                   Enable auto-fix for all low-severity issues to speed up the workflow by 25%.
                 </p>
                 <button className="text-[#c5fe00] hover:text-[#b9ef00] transition-colors font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 relative z-10">
-                  Activate Auto-Pilot <ArrowRight size={14} />
+                  {isValidating ? 'Validating...' : 'Activate Auto-Pilot'} <ArrowRight size={14} />
                 </button>
               </div>
 
@@ -292,7 +343,11 @@ function ValidationPage() {
           </div>
 
           {/* Core Navigation CTA */}
-          <button className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300">
+          <button
+            className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+            onClick={handleProceed}
+            disabled={!canProceed || isValidating}
+          >
             Proceed to Translation <ArrowRight strokeWidth={3} size={16} />
           </button>
         </div>

@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { translateSentences } from '../services/api';
+import { useAppContext } from '../context/AppContext';
 import { 
   Bell, 
   Settings, 
@@ -19,6 +21,66 @@ import {
 } from 'lucide-react';
 
 function ReviewPage() {
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const {
+    sentences,
+    results,
+    setResults,
+    sourceLang,
+    targetLang,
+  } = useAppContext();
+
+  const hasResults = results && results.length > 0;
+
+  useEffect(() => {
+    const runTranslation = async () => {
+      if (!sentences || sentences.length === 0) {
+        setErrorMessage('No validated sentences found. Please validate the document first.');
+        return;
+      }
+
+      if (!targetLang) {
+        setErrorMessage('Target language is missing. Please select a language.');
+        return;
+      }
+
+      if (hasResults) {
+        return;
+      }
+
+      setIsTranslating(true);
+      setErrorMessage('');
+
+      try {
+        const response = await translateSentences(sentences, sourceLang, targetLang);
+        setResults(response.results || []);
+      } catch (error) {
+        setErrorMessage(error.message || 'Translation failed.');
+      } finally {
+        setIsTranslating(false);
+      }
+    };
+
+    runTranslation();
+  }, [sentences, sourceLang, targetLang, hasResults, setResults]);
+
+  const displayResults = useMemo(() => {
+    if (hasResults) {
+      return results;
+    }
+    return [];
+  }, [hasResults, results]);
+
+  const matchLabel = (matchType) => {
+    if (!matchType) {
+      return 'Pending';
+    }
+
+    return matchType.replace('_', ' ').toUpperCase();
+  };
+
   return (
     <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
       
@@ -95,7 +157,9 @@ function ReviewPage() {
              <div className="w-px h-6 bg-[#262626]"></div>
              <div className="flex items-center gap-2">
                <span className="text-[#555555] font-bold text-[10px] uppercase tracking-widest">Project:</span>
-               <span className="text-[#ffffff] text-[13px] font-bold">Q4_Retail_Marketing_V2.xliff</span>
+               <span className="text-[#ffffff] text-[13px] font-bold">
+                 {targetLang ? `Target: ${targetLang}` : 'No target language'}
+               </span>
              </div>
            </div>
 
@@ -121,101 +185,52 @@ function ReviewPage() {
           {/* Main Translation Stream Column */}
           <main className="flex-1 overflow-y-auto layout-scrollbar bg-[#0a0a0a]">
              <div className="p-8 max-w-5xl mx-auto space-y-6">
-               
-               {/* Segment Card 1 - Completed */}
-               <div className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden grid grid-cols-1 md:grid-cols-2 relative group hover:border-[#333333] transition-colors">
-                 
-                 {/* Source */}
-                 <div className="p-8 border-r border-[#262626] flex flex-col">
-                   <div className="flex justify-between items-center mb-4">
-                     <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">Source &mdash; EN-US</span>
-                   </div>
-                   <p className="text-[#a0a09f] text-[16px] leading-[1.6] font-sans">
-                     Experience the ultimate convergence of performance and luxury in our latest flagship collection.
-                   </p>
+               {errorMessage ? (
+                 <div className="bg-[#2a1313] border border-[#ff4d4d] rounded-[24px] p-6 text-[#ff4d4d] text-sm">
+                   {errorMessage}
                  </div>
+               ) : null}
 
-                 {/* Target */}
-                 <div className="p-8 flex flex-col relative">
-                   <div className="flex justify-between items-center mb-4">
-                     <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">Target &mdash; DE-DE</span>
-                   </div>
-                   <p className="text-[#ffffff] text-[16px] leading-[1.6] font-sans pr-2">
-                     Erleben Sie die ultimative Konvergenz von Leistung und Luxus in unserer neuesten Flaggschiff-Kollektion.
-                   </p>
-                   {/* Pill */}
-                   <div className="absolute bottom-6 left-8 bg-[#1a200a] text-[#c5fe00] border border-[#2a2e16] text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 flex items-center shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
-                     100% Match
-                   </div>
+               {isTranslating ? (
+                 <div className="bg-[#15170d] border border-[#2a2e16] rounded-[24px] p-8 text-[#c5fe00] text-sm">
+                   Translating sentences...
                  </div>
-               </div>
+               ) : null}
 
-               {/* Segment Card 2 - ACTIVE */}
-               <div className="bg-[#15170d] border border-[#c5fe00] rounded-[24px] overflow-hidden grid grid-cols-1 md:grid-cols-2 shadow-[0_0_30px_rgba(197,254,0,0.05)]">
-                 
-                 {/* Source */}
-                 <div className="p-8 border-r border-[#2a2e16] flex flex-col bg-[#111111]">
-                   <div className="flex justify-between items-center mb-4">
-                     <span className="text-[#8c8c8b] text-[10px] font-bold uppercase tracking-[0.2em]">Source &mdash; EN-US</span>
-                     <span className="text-[#555555] text-[9px] font-bold tracking-widest">ID: 44029-A</span>
-                   </div>
-                   <p className="text-[#ffffff] text-[20px] leading-[1.5] font-sans">
-                     Our proprietary <span className="border-b-2 border-dashed border-[#c5fe00] pb-0.5 relative group cursor-pointer">
-                        TransSync-Core™
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#222222] text-[#c5fe00] text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">Glossary Match</span>
-                     </span> Engine delivers sub-millisecond response times for even the most demanding architectural workloads.
-                   </p>
+               {displayResults.length === 0 && !isTranslating && !errorMessage ? (
+                 <div className="bg-[#111111] border border-[#262626] rounded-[24px] p-8 text-[#8c8c8b] text-sm">
+                   No translation results yet.
                  </div>
+               ) : null}
 
-                 {/* Target */}
-                 <div className="p-8 flex flex-col relative bg-[#13150a]">
-                   <div className="flex justify-between items-center mb-6">
-                     <span className="text-[#8c8c8b] text-[10px] font-bold uppercase tracking-[0.2em]">Target &mdash; DE-DE</span>
-                     <div className="flex items-center gap-1.5 text-[#c5fe00]">
-                       <Zap size={14} className="fill-[#c5fe00]"/>
-                       <span className="text-[10px] font-bold tracking-widest uppercase">98% AI Confidence</span>
+               {displayResults.map((item, index) => (
+                 <div key={`${item.source}-${index}`} className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden grid grid-cols-1 md:grid-cols-2 relative group hover:border-[#333333] transition-colors">
+                   <div className="p-8 border-r border-[#262626] flex flex-col">
+                     <div className="flex justify-between items-center mb-4">
+                       <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                         Source — {sourceLang.toUpperCase()}
+                       </span>
+                     </div>
+                     <p className="text-[#a0a09f] text-[16px] leading-[1.6] font-sans">
+                       {item.source}
+                     </p>
+                   </div>
+
+                   <div className="p-8 flex flex-col relative">
+                     <div className="flex justify-between items-center mb-4">
+                       <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                         Target — {targetLang ? targetLang.toUpperCase() : 'TBD'}
+                       </span>
+                     </div>
+                     <p className="text-[#ffffff] text-[16px] leading-[1.6] font-sans pr-2">
+                       {item.translation}
+                     </p>
+                     <div className="absolute bottom-6 left-8 bg-[#1a200a] text-[#c5fe00] border border-[#2a2e16] text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 flex items-center shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
+                       {matchLabel(item.match_type)}
                      </div>
                    </div>
-                   <p className="text-[#ffffff] text-[20px] leading-[1.5] font-sans mb-12">
-                     Unsere proprietäre TransSync-Core™ Engine liefert Antwortzeiten im Sub-Millisekunden-Bereich, selbst bei den anspruchsvollsten architektonischen Workloads.
-                   </p>
-
-                   {/* Action Buttons */}
-                   <div className="flex items-center justify-end gap-3 mt-auto absolute bottom-8 right-8">
-                     <button className="bg-[#1a200a] text-[#8c8c8b] hover:text-[#c5fe00] hover:bg-[#20290c] hover:border-[#c5fe00]/30 transition-all border border-[#2a2e16] rounded-full px-5 py-2.5 flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase">
-                       <History size={14}/> History
-                     </button>
-                     <button className="bg-[#1a200a] text-[#8c8c8b] hover:text-[#c5fe00] hover:bg-[#20290c] hover:border-[#c5fe00]/30 transition-all border border-[#2a2e16] rounded-full px-5 py-2.5 flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase">
-                       <Languages size={14}/> Machine Alt
-                     </button>
-                   </div>
                  </div>
-               </div>
-
-               {/* Segment Card 3 - Pending */}
-               <div className="bg-[#0e0e0e] border border-[#262626] border-dashed rounded-[24px] overflow-hidden grid grid-cols-1 md:grid-cols-2 relative">
-                 
-                 {/* Source */}
-                 <div className="p-8 border-r border-[#262626] flex flex-col opacity-50">
-                   <div className="flex justify-between items-center mb-4">
-                     <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">Source &mdash; EN-US</span>
-                   </div>
-                   <p className="text-[#a0a09f] text-[16px] leading-[1.6] font-sans">
-                     Tailored for the next generation of digital nomads, the design reflects a spirit of unbridled freedom.
-                   </p>
-                 </div>
-
-                 {/* Target */}
-                 <div className="p-8 flex flex-col relative opacity-50 justify-center">
-                   <div className="absolute top-8 left-8 flex justify-between items-center w-[calc(100%-4rem)]">
-                     <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">Target &mdash; DE-DE</span>
-                   </div>
-                   <p className="text-[#555555] text-[16px] leading-[1.6] font-sans italic mt-4">
-                     Drafting in progress...
-                   </p>
-                 </div>
-               </div>
-
+               ))}
              </div>
           </main>
 
