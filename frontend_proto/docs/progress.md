@@ -10,6 +10,7 @@ We have established the foundation for frontend-backend integration in frontend_
   - uploadDocument(file)
   - validateText(rawText, docId)
   - translateSentences(sentences, sourceLang, targetLang)
+  - approveTranslations(reviewed)
   - File: [frontend_proto/src/services/api.js](../src/services/api.js)
 
 - Shared app state added using context for cross-page workflow data:
@@ -39,18 +40,23 @@ We have established the foundation for frontend-backend integration in frontend_
   - Reads sentences + language from context
   - Calls translateSentences on page load
   - Stores results in context
-  - Renders source/translation with match_type badge
+  - Renders results as a single batch container with match_type badges per sentence
   - File: [frontend_proto/src/pages/ReviewPage.jsx](../src/pages/ReviewPage.jsx)
+
+- ReviewPage approve flow wired:
+  - Batches results and tracks reviewed/pending counts
+  - Displays one batch (multiple sentences) at a time
+  - Discard advances batch without saving
+  - Approve posts to /api/approve
+  - Progress bar reflects reviewed percentage
+  - File: [frontend_proto/src/pages/ReviewPage.jsx](../src/pages/ReviewPage.jsx)
+  - File: [frontend_proto/src/services/api.js](../src/services/api.js)
 
 ## Not Started Yet
 
-- ReviewPage: approve to Supabase
 - Dashboard: live counts, recent docs, progress bars
 - Glossary: pending requirements
 
 ## Next Step
 
-Wire ReviewPage approve flow to:
-- POST approved sentences to /api/approve
-- track reviewed vs pending counts
-- advance batches after approve/discard
+Connect Dashboard metrics and recent docs list to backend data.

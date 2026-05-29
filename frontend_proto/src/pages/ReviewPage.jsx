@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { translateSentences } from '../services/api';
+import { approveTranslations, translateSentences } from '../services/api';
 import { useAppContext } from '../context/AppContext';
 import { 
   Bell, 
@@ -22,7 +22,10 @@ import {
 
 function ReviewPage() {
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
+  const [reviewedCount, setReviewedCount] = useState(0);
 
   const {
     sentences,
@@ -33,6 +36,14 @@ function ReviewPage() {
   } = useAppContext();
 
   const hasResults = results && results.length > 0;
+  const totalCount = results.length;
+
+  useEffect(() => {
+    if (hasResults) {
+      setCurrentBatchIndex(0);
+      setReviewedCount(0);
+    }
+  }, [hasResults, totalCount]);
 
   useEffect(() => {
     const runTranslation = async () => {
@@ -66,12 +77,29 @@ function ReviewPage() {
     runTranslation();
   }, [sentences, sourceLang, targetLang, hasResults, setResults]);
 
-  const displayResults = useMemo(() => {
-    if (hasResults) {
-      return results;
+  const batches = useMemo(() => {
+    const chunkSize = 10;
+    const items = hasResults ? results : [];
+    const output = [];
+
+    for (let i = 0; i < items.length; i += chunkSize) {
+      output.push(items.slice(i, i + chunkSize));
     }
-    return [];
+
+    return output;
   }, [hasResults, results]);
+
+  const displayResults = useMemo(() => {
+    if (!batches.length) {
+      return [];
+    }
+    return batches[currentBatchIndex] || [];
+  }, [batches, currentBatchIndex]);
+
+  const totalBatches = batches.length;
+
+  const pendingCount = Math.max(0, totalCount - reviewedCount);
+  const progressPercent = totalCount > 0 ? Math.round((reviewedCount / totalCount) * 100) : 0;
 
   const matchLabel = (matchType) => {
     if (!matchType) {
@@ -79,6 +107,48 @@ function ReviewPage() {
     }
 
     return matchType.replace('_', ' ').toUpperCase();
+  };
+
+  const buildApprovedPayload = (batch) => (
+    batch.map((item) => ({
+      source_text: item.source,
+      translated_text: item.translation,
+      target_lang: targetLang,
+      match_type: item.match_type,
+      action: 'approved',
+      faiss_index: item.faiss_index ?? null,
+    }))
+  );
+
+  const advanceBatch = (batchSize) => {
+    setReviewedCount((prev) => prev + batchSize);
+    setCurrentBatchIndex((prev) => prev + 1);
+  };
+
+  const handleApprove = async () => {
+    if (!displayResults.length || isApproving) {
+      return;
+    }
+
+    setIsApproving(true);
+    setErrorMessage('');
+
+    try {
+      const approvedPayload = buildApprovedPayload(displayResults);
+      await approveTranslations(approvedPayload);
+      advanceBatch(displayResults.length);
+    } catch (error) {
+      setErrorMessage(error.message || 'Approval failed.');
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  const handleDiscard = () => {
+    if (!displayResults.length || isApproving) {
+      return;
+    }
+    advanceBatch(displayResults.length);
   };
 
   return (
@@ -199,38 +269,53 @@ function ReviewPage() {
 
                {displayResults.length === 0 && !isTranslating && !errorMessage ? (
                  <div className="bg-[#111111] border border-[#262626] rounded-[24px] p-8 text-[#8c8c8b] text-sm">
-                   No translation results yet.
+                   {hasResults ? 'No more batches to review.' : 'No translation results yet.'}
                  </div>
                ) : null}
 
-               {displayResults.map((item, index) => (
-                 <div key={`${item.source}-${index}`} className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden grid grid-cols-1 md:grid-cols-2 relative group hover:border-[#333333] transition-colors">
-                   <div className="p-8 border-r border-[#262626] flex flex-col">
-                     <div className="flex justify-between items-center mb-4">
-                       <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
-                         Source — {sourceLang.toUpperCase()}
-                       </span>
-                     </div>
-                     <p className="text-[#a0a09f] text-[16px] leading-[1.6] font-sans">
-                       {item.source}
-                     </p>
+               {displayResults.length > 0 ? (
+                 <div className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden">
+                   <div className="px-8 py-5 border-b border-[#262626] flex items-center justify-between">
+                     <span className="text-[#c5fe00] text-[10px] font-bold uppercase tracking-[0.2em]">
+                       Batch {totalBatches ? currentBatchIndex + 1 : 0} / {totalBatches}
+                     </span>
+                     <span className="text-[#555555] text-[10px] font-bold uppercase tracking-[0.2em]">
+                       {displayResults.length} sentences
+                     </span>
                    </div>
 
-                   <div className="p-8 flex flex-col relative">
-                     <div className="flex justify-between items-center mb-4">
-                       <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
-                         Target — {targetLang ? targetLang.toUpperCase() : 'TBD'}
-                       </span>
-                     </div>
-                     <p className="text-[#ffffff] text-[16px] leading-[1.6] font-sans pr-2">
-                       {item.translation}
-                     </p>
-                     <div className="absolute bottom-6 left-8 bg-[#1a200a] text-[#c5fe00] border border-[#2a2e16] text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 flex items-center shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
-                       {matchLabel(item.match_type)}
-                     </div>
+                   <div className="divide-y divide-[#262626]">
+                     {displayResults.map((item, index) => (
+                       <div key={`${item.source}-${index}`} className="grid grid-cols-1 md:grid-cols-2">
+                         <div className="p-6 border-r border-[#262626]">
+                           <div className="flex justify-between items-center mb-3">
+                             <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                               Source — {sourceLang.toUpperCase()}
+                             </span>
+                           </div>
+                           <p className="text-[#a0a09f] text-[15px] leading-[1.6] font-sans">
+                             {item.source}
+                           </p>
+                         </div>
+
+                         <div className="p-6">
+                           <div className="flex justify-between items-center mb-3">
+                             <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                               Target — {targetLang ? targetLang.toUpperCase() : 'TBD'}
+                             </span>
+                             <span className="bg-[#1a200a] text-[#c5fe00] border border-[#2a2e16] text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
+                               {matchLabel(item.match_type)}
+                             </span>
+                           </div>
+                           <p className="text-[#ffffff] text-[15px] leading-[1.6] font-sans">
+                             {item.translation}
+                           </p>
+                         </div>
+                       </div>
+                     ))}
                    </div>
                  </div>
-               ))}
+               ) : null}
              </div>
           </main>
 
@@ -345,30 +430,38 @@ function ReviewPage() {
             <div className="flex flex-col gap-2 w-[240px]">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555]">
                 <span>Progress</span>
-                <span className="text-[#ffffff]">68%</span>
+                <span className="text-[#ffffff]">{progressPercent}%</span>
               </div>
               <div className="w-full h-1.5 rounded-full bg-[#262626] overflow-hidden">
-                <div className="w-[68%] h-full bg-[#c5fe00] rounded-full"></div>
+                <div className="h-full bg-[#c5fe00] rounded-full" style={{ width: `${progressPercent}%` }}></div>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-8 text-[#a0a09f] text-[11px] font-bold tracking-[0.1em] uppercase">
              <div className="flex items-center gap-2">
-               <CheckCircle size={14} className="text-[#c5fe00]" /> 1,240 Reviewed
+               <CheckCircle size={14} className="text-[#c5fe00]" /> {reviewedCount} Reviewed
              </div>
              <div className="flex items-center gap-2">
-               <MoreHorizontal size={14} className="text-[#8c8c8b]" /> 412 Pending
+               <MoreHorizontal size={14} className="text-[#8c8c8b]" /> {pendingCount} Pending
              </div>
           </div>
 
           {/* Core Action CTA */}
           <div className="flex items-center gap-6">
-            <button className="text-[#a0a09f] hover:text-[#ff4d4d] transition-colors font-bold text-xs uppercase tracking-widest">
-              Discard Draft
+            <button
+              className="text-[#a0a09f] hover:text-[#ff4d4d] transition-colors font-bold text-xs uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={handleDiscard}
+              disabled={!displayResults.length || isApproving}
+            >
+              Discard Batch
             </button>
-            <button className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300">
-              Approve & Next
+            <button
+              className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={handleApprove}
+              disabled={!displayResults.length || isApproving}
+            >
+              {isApproving ? 'Approving...' : 'Approve & Next'}
             </button>
           </div>
 

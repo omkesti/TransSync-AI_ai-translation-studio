@@ -58,3 +58,17 @@ export async function translateSentences(sentences, sourceLang, targetLang) {
 
   return handleResponse(response);
 }
+
+export async function approveTranslations(reviewed) {
+  const response = await fetch(`${API_BASE_URL}/api/approve`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      reviewed,
+    }),
+  });
+
+  return handleResponse(response);
+}
