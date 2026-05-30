@@ -72,6 +72,76 @@ class ApproveResponse(BaseModel):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+@router.get("/dashboard-stats")
+async def get_dashboard_stats():
+    """
+    GET /api/dashboard-stats
+
+    Returns aggregated metrics computed from translation_memory for the
+    Dashboard page.  All aggregation is done in Python from a single DB
+    fetch so we don't need extra Supabase queries.
+
+    Response shape:
+        {
+            "total_translations": 312,
+            "match_type_breakdown": {
+                "tm_exact":    45,
+                "faiss_direct": 80,
+                "llm_guided":  90,
+                "llm_cold":    97
+            },
+            "languages": ["fr", "de", "es"],
+            "recent": [
+                {
+                    "source_text":     "The contract is binding.",
+                    "translated_text": "Le contrat est contraignant.",
+                    "target_lang":     "fr",
+                    "match_type":      "llm_cold",
+                    "created_at":      "2024-06-01T..."
+                },
+                ...  (up to 5 records)
+            ]
+        }
+    """
+    try:
+        records = fetch_all_memory()  # already sorted newest-first
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch translation memory stats: {str(e)}",
+        )
+
+    # ── Aggregate ─────────────────────────────────────────────────────────────
+    breakdown = {"tm_exact": 0, "faiss_direct": 0, "llm_guided": 0, "llm_cold": 0}
+    seen_langs: set[str] = set()
+
+    for r in records:
+        mt = r.get("match_type", "")
+        if mt in breakdown:
+            breakdown[mt] += 1
+        lang = r.get("target_lang")
+        if lang:
+            seen_langs.add(lang)
+
+    recent = [
+        {
+            "source_text":     r.get("source_text", ""),
+            "translated_text": r.get("translated_text", ""),
+            "target_lang":     r.get("target_lang", ""),
+            "match_type":      r.get("match_type", ""),
+            "created_at":      r.get("created_at", ""),
+        }
+        for r in records[:5]
+    ]
+
+    return {
+        "total_translations":  len(records),
+        "match_type_breakdown": breakdown,
+        "languages":           sorted(seen_langs),
+        "recent":              recent,
+    }
+
+
 @router.get("/translation-memory")
 async def get_translation_memory(
     target_lang: Optional[str] = Query(

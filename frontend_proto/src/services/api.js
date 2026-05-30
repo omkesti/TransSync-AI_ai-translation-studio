@@ -86,3 +86,46 @@ export async function approveTranslations(reviewed) {
 
   return handleResponse(response);
 }
+
+// ── Dashboard ──────────────────────────────────────────────────────────────────
+
+export async function fetchDashboardStats() {
+  const response = await fetch(`${API_BASE_URL}/api/dashboard-stats`);
+  return handleResponse(response);
+}
+
+// ── Glossary ───────────────────────────────────────────────────────────────────
+
+export async function fetchGlossary({ targetLang, search } = {}) {
+  const params = new URLSearchParams();
+  if (targetLang) params.set("target_lang", targetLang);
+  if (search) params.set("search", search);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/glossary${qs}`);
+  return handleResponse(response);
+}
+
+export async function addGlossaryTerm(term) {
+  const response = await fetch(`${API_BASE_URL}/api/glossary`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(term),
+  });
+  return handleResponse(response);
+}
+
+export async function updateGlossaryTerm(id, patch) {
+  const response = await fetch(`${API_BASE_URL}/api/glossary/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  return handleResponse(response);
+}
+
+export async function deleteGlossaryTerm(id) {
+  const response = await fetch(`${API_BASE_URL}/api/glossary/${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(response);
+}

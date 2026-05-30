@@ -23,11 +23,16 @@ from typing import Optional
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-# Load .env from repo root (two levels up from this file)
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+# Load .env — first try the backend/ folder (where .env lives),
+# then fall back to the repo root in case it's been moved there.
+_this_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(dotenv_path=os.path.join(_this_dir, '..', '.env'))        # backend/.env
+load_dotenv(dotenv_path=os.path.join(_this_dir, '..', '..', '.env'))  # repo-root/.env (fallback)
 
 SUPABASE_URL: str = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY: str = os.environ.get("SUPABASE_KEY")
+
+_client: Client = None  # singleton — initialised on first call to get_client()
 
 def get_client() -> Client:
     """Returns a singleton Supabase client (initialised once)."""
@@ -128,9 +133,88 @@ def bulk_insert_translations(rows: list[dict]) -> list[dict]:
             "source_lang":     r.get("source_lang", "en"),
             "target_lang":     r["target_lang"],
             "match_type":      r["match_type"],
-            **({"faiss_index": r["faiss_index"]} if r.get("faiss_index") is not None else {}),
+            **({("faiss_index"): r["faiss_index"]} if r.get("faiss_index") is not None else {}),
         }
         for r in rows
     ]
     response = client.table("translation_memory").insert(formatted).execute()
     return response.data
+
+
+# ── Glossary ──────────────────────────────────────────────────────────────────
+# Table: glossary
+#   id          uuid (PK, auto)
+#   source_term text
+#   target_term text
+#   source_lang varchar  (default "en")
+#   target_lang varchar
+#   category    varchar  ("TECHNICAL", "LEGAL", "ESG", ...)
+#   status      varchar  ("PENDING" | "VERIFIED")
+#   created_at  timestamp (auto)
+
+def fetch_all_glossary(
+    target_lang: Optional[str] = None,
+    search: Optional[str] = None,
+) -> list[dict]:
+    """
+    Returns all rows from the glossary table, newest first.
+    Optionally filter by target_lang and/or search term (applied to source_term).
+    """
+    client = get_client()
+    query = client.table("glossary").select("*").order("created_at", desc=True)
+    if target_lang:
+        query = query.eq("target_lang", target_lang)
+    if search:
+        query = query.ilike("source_term", f"%{search}%")
+    response = query.execute()
+    return response.data
+
+
+def insert_glossary_term(row: dict) -> dict:
+    """
+    Inserts a new term into the glossary table.
+    row must contain: source_term, target_term, target_lang
+    Optional: category, status, source_lang
+    """
+    client = get_client()
+    payload = {
+        "source_term": row["source_term"],
+        "target_term": row["target_term"],
+        "target_lang": row["target_lang"],
+        "source_lang": row.get("source_lang", "en"),
+        "category":    row.get("category", ""),
+        "status":      row.get("status", "PENDING"),
+    }
+    response = client.table("glossary").insert(payload).execute()
+    return response.data[0]
+
+
+def update_glossary_term(term_id: str, patch: dict) -> dict:
+    """
+    Partially updates a glossary term by id.
+    patch may contain any subset of: target_term, category, status.
+    """
+    client = get_client()
+    response = (
+        client.table("glossary")
+        .update(patch)
+        .eq("id", term_id)
+        .execute()
+    )
+    rows = response.data
+    return rows[0] if rows else {}
+
+
+def delete_glossary_term(term_id: str) -> bool:
+    """
+    Deletes a glossary term by id.
+    Returns True if a row was deleted, False otherwise.
+    """
+    client = get_client()
+    response = (
+        client.table("glossary")
+        .delete()
+        .eq("id", term_id)
+        .execute()
+    )
+    return len(response.data) > 0
