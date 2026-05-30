@@ -95,11 +95,24 @@ We have established the foundation for frontend-backend integration in frontend_
 - ~~Dashboard: live counts, recent docs, progress bars~~ ✅ Done
 - ~~Glossary: pending requirements~~ ✅ Done
 
+- UX Flow Fixes and Live Validation UI:
+  - **Duplicate insertion bug fixed** — `ReviewPage` now filters `tm_exact` and `faiss_direct` results out of the approve payload. Only `llm_guided` and `llm_cold` translations are sent to `POST /api/approve` (already-stored matches are skipped silently). Each batch header shows how many TM-hit rows were skipped.
+  - **Auto-fire UX fixed (ValidationPage)** — Removed `useEffect` that auto-called `POST /api/validate` on mount. Page now shows an idle state with a prominent "Start Validation" button. Validation only fires on explicit user click.
+  - **Auto-fire UX fixed (ReviewPage)** — Removed `useEffect` that auto-called `POST /api/translate` on mount. Page now shows an idle state with a "Start Translation" CTA. Translation only fires on explicit user click. If results exist in context (back-navigation), skips idle directly to done.
+  - **Live Validation UI** — ValidationPage is fully data-driven from the API response:
+    - `idle` → hero CTA card ("Start Validation") or "Go to Upload" if no doc loaded
+    - `running` → spinner card with animated dots
+    - `done (ok)` → SuccessBanner with real sentence count
+    - `done (error)` → one `ErrorCard` per entry in `errors[]` array, auto-classified as High/Medium/Low by keyword scanning
+    - Health score bar in header: `100 - highCount*20 - mediumCount*8`, color-coded green/yellow/red
+    - Readability Index: proxy metric derived from sentence count
+    - Sidebar summary: live counts for Critical Issues, Warnings, Info Notices, Sentences Extracted — all from real API response
+    - "Proceed to Review" button only navigates — does NOT call any API
+  - Files: [frontend_proto/src/pages/ReviewPage.jsx](../src/pages/ReviewPage.jsx), [frontend_proto/src/pages/ValidationPage.jsx](../src/pages/ValidationPage.jsx)
+
 ## Next Step
 
-All frontend-backend integration for the core workflow + dashboard + glossary is complete.
-
 Remaining tasks before final demo:
-1. Create the `glossary` table in Supabase using the SQL in backend/routes/glossary.py
-2. End-to-end integration test: upload a DOCX → validate → translate → approve → confirm Dashboard stats update
+1. Create the `glossary` table in Supabase using the SQL in `backend/routes/glossary.py`
+2. End-to-end integration test: upload → start validation → start translation → approve → confirm Dashboard stats update
 3. (Optional) Add authentication / user sessions if required by the project scope
