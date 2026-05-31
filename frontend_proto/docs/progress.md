@@ -110,9 +110,31 @@ We have established the foundation for frontend-backend integration in frontend_
     - "Proceed to Review" button only navigates — does NOT call any API
   - Files: [frontend_proto/src/pages/ReviewPage.jsx](../src/pages/ReviewPage.jsx), [frontend_proto/src/pages/ValidationPage.jsx](../src/pages/ValidationPage.jsx)
 
+- Document Export & Download:
+  - `pip install python-docx` (python-docx 1.2.0 + lxml 6.1.1)
+  - New `POST /api/export` backend route (`backend/routes/export.py`):
+    - Accepts `{ doc_id, filename, source_lang, target_lang, translations[] }` from frontend
+    - Builds an in-memory DOCX via `python-docx`: title page (branding, filename, language pair, date, stats) + page break + translated paragraphs + appendix table (source | translation | match type)
+    - Streams DOCX back as `Content-Disposition: attachment` file download
+    - Output filename: `translated_<base>_<lang>.docx`
+  - Registered in `backend/main.py`
+  - `exportDocument()` added to `frontend_proto/src/services/api.js`: POST to `/api/export`, receives blob, creates object URL, triggers browser download dialog
+  - `filename` state added to `AppContext` and reset in `resetFlow()`; `UploadPage` stores original filename after upload
+  - `ReviewPage` completion state now shows "Download Translated Document →" button (lime CTA) navigating to `/export` alongside "Back to Dashboard"
+  - New page `frontend_proto/src/pages/ExportPage.jsx` at route `/export`:
+    - 4 stat cards: Total Sentences, TM Hits (with % reuse), LLM Translations, Language Pair
+    - Download card: file info, filename, Download DOCX button (idle/exporting/done/error states)
+    - Pipeline breakdown bars: TM Exact, FAISS Direct, LLM Guided, LLM Cold — live from results
+    - Paginated translation preview table: source | translation | match badge (10 per page)
+    - "New Translation" button resets context and navigates to `/upload`
+    - Empty state: shown when no results in context, with prompt to start a translation
+  - Route `/export` registered in `frontend_proto/src/App.jsx`
+  - "Export" nav item (Download icon) added to all 6 sidebars: Dashboard, Upload, Validation, Review, Glossary, ExportPage (active state on ExportPage)
+  - Files: [ExportPage.jsx](../src/pages/ExportPage.jsx), [backend/routes/export.py](../../backend/routes/export.py), [api.js](../src/services/api.js), [AppContext.jsx](../src/context/AppContext.jsx)
+
 ## Next Step
 
 Remaining tasks before final demo:
 1. Create the `glossary` table in Supabase using the SQL in `backend/routes/glossary.py`
-2. End-to-end integration test: upload → start validation → start translation → approve → confirm Dashboard stats update
+2. End-to-end integration test: upload → validate → translate → approve → download DOCX → verify file
 3. (Optional) Add authentication / user sessions if required by the project scope

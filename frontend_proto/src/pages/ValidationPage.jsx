@@ -21,6 +21,7 @@ import {
   CheckCircle,
   Loader2,
   ShieldCheck,
+  Download,
 } from "lucide-react";
 
 // ── Severity classification ───────────────────────────────────────────────────
@@ -234,6 +235,10 @@ function ValidationPage() {
             <Link to="/glossary" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
               <Book size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Glossary</span>
+            </Link>
+            <Link to="/export" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+              <Download size={18} />
+              <span className="text-[11px] font-bold uppercase tracking-widest">Export</span>
             </Link>
           </nav>
         </div>

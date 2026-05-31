@@ -22,6 +22,7 @@ import {
   FileText,
   File,
   Code,
+  Download,
 } from "lucide-react";
 
 function UploadPage() {
@@ -31,7 +32,7 @@ function UploadPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
 
-  const { setDocId, setRawText, setTargetLang, targetLang, resetFlow } =
+  const { setDocId, setRawText, setTargetLang, targetLang, resetFlow, setFilename } =
     useAppContext();
 
   const handleFileChange = (event) => {
@@ -69,6 +70,7 @@ function UploadPage() {
       resetFlow();
       setDocId(response.doc_id || "");
       setRawText(response.raw_text || "");
+      setFilename(response.filename || selectedFile.name || "document");
       navigate("/validation");
     } catch (uploadError) {
       setError(uploadError.message || "Upload failed.");
@@ -143,6 +145,16 @@ function UploadPage() {
               <Book size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">
                 Glossary
+              </span>
+            </Link>
+
+            <Link
+              to="/export"
+              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+            >
+              <Download size={18} />
+              <span className="text-[11px] font-bold uppercase tracking-widest">
+                Export
               </span>
             </Link>
           </nav>

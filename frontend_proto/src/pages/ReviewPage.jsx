@@ -19,6 +19,7 @@ import {
   Languages,
   Loader2,
   ArrowRight,
+  Download,
 } from "lucide-react";
 
 // ── Match-type helpers ────────────────────────────────────────────────────────
@@ -86,6 +87,10 @@ function Sidebar() {
           <Link to="/glossary" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
             <Book size={18} />
             <span className="text-[11px] font-bold uppercase tracking-widest">Glossary</span>
+          </Link>
+          <Link to="/export" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+            <Download size={18} />
+            <span className="text-[11px] font-bold uppercase tracking-widest">Export</span>
           </Link>
         </nav>
       </div>
@@ -349,17 +354,25 @@ function ReviewPage() {
                     <CheckCircle size={28} className="text-[#c5fe00]" />
                   </div>
                   <h2 className="font-display font-bold text-2xl tracking-tight mb-2">All Batches Reviewed</h2>
-                  <p className="text-[#8c8c8b] text-[14px]">
+                  <p className="text-[#8c8c8b] text-[14px] mb-8">
                     {hasResults
                       ? `${reviewedCount} sentences reviewed. Approved translations have been saved.`
                       : "No translation results available."}
                   </p>
-                  <Link
-                    to="/dashboard"
-                    className="mt-8 border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-8 py-3 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
-                  >
-                    Back to Dashboard <ArrowRight size={14} />
-                  </Link>
+                  <div className="flex items-center gap-4">
+                    <Link
+                      to="/export"
+                      className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-8 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
+                    >
+                      <ArrowRight size={14} /> Download Translated Document
+                    </Link>
+                    <Link
+                      to="/dashboard"
+                      className="border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-6 py-3.5 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                    >
+                      Back to Dashboard
+                    </Link>
+                  </div>
                 </div>
               )}
 

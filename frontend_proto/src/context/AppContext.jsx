@@ -9,12 +9,14 @@ export function AppProvider({ children }) {
   const [results, setResults] = useState([]);
   const [sourceLang, setSourceLang] = useState("en");
   const [targetLang, setTargetLang] = useState("");
+  const [filename, setFilename] = useState("");
 
   const resetFlow = () => {
     setDocId("");
     setRawText("");
     setSentences([]);
     setResults([]);
+    setFilename("");
   };
 
   const value = useMemo(
@@ -31,9 +33,11 @@ export function AppProvider({ children }) {
       setSourceLang,
       targetLang,
       setTargetLang,
+      filename,
+      setFilename,
       resetFlow,
     }),
-    [docId, rawText, sentences, results, sourceLang, targetLang],
+    [docId, rawText, sentences, results, sourceLang, targetLang, filename],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

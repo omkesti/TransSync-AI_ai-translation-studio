@@ -7,18 +7,20 @@ import UploadPage from './pages/UploadPage';
 import ValidationPage from './pages/ValidationPage';
 import ReviewPage from './pages/ReviewPage';
 import GlossaryPage from './pages/GlossaryPage';
+import ExportPage from './pages/ExportPage';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/upload" element={<UploadPage />} />
+        <Route path="/"           element={<LandingPage />} />
+        <Route path="/login"      element={<LoginPage />} />
+        <Route path="/dashboard"  element={<DashboardPage />} />
+        <Route path="/upload"     element={<UploadPage />} />
         <Route path="/validation" element={<ValidationPage />} />
-        <Route path="/review" element={<ReviewPage />} />
-        <Route path="/glossary" element={<GlossaryPage />} />
+        <Route path="/review"     element={<ReviewPage />} />
+        <Route path="/glossary"   element={<GlossaryPage />} />
+        <Route path="/export"     element={<ExportPage />} />
       </Routes>
     </BrowserRouter>
   );

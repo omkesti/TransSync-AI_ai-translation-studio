@@ -129,3 +129,47 @@ export async function deleteGlossaryTerm(id) {
   });
   return handleResponse(response);
 }
+
+// ── Export ─────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/export
+ *
+ * Sends translations to the backend, receives a DOCX blob,
+ * and triggers a browser "Save As" download dialog.
+ *
+ * @param {Object} payload
+ * @param {string} payload.doc_id
+ * @param {string} payload.filename        — original upload filename
+ * @param {string} payload.source_lang
+ * @param {string} payload.target_lang
+ * @param {Array}  payload.translations    — [{ source, translation, match_type }]
+ */
+export async function exportDocument(payload) {
+  const response = await fetch(`${API_BASE_URL}/api/export`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    let message = "Export failed.";
+    try {
+      const data = await response.json();
+      message = data?.detail || data?.message || message;
+    } catch (_) { /* ignore */ }
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+
+  const base = (payload.filename || "document").replace(/\.[^/.]+$/, "");
+  a.href     = url;
+  a.download = `translated_${base}_${payload.target_lang}.docx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
