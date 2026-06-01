@@ -1,152 +1,89 @@
 # TransSync AI Translation Studio
 
-TransSync AI Translation Studio is a web-based platform designed to modernize enterprise translation workflows by combining Artificial Intelligence (AI), Natural Language Processing (NLP), retrieval-based translation, and human-in-the-loop review in a single system.
+TransSync AI Translation Studio is a web platform for enterprise translation workflows that combines retrieval-augmented translation, NLP validation, and human review. It supports document upload, quality checks, hybrid translation (TM + RAG + LLM), and approval workflows that feed back into translation memory.
 
-The platform helps teams move from raw source documents to high-quality approved translations with better consistency, reuse, and turnaround time.
+## Features
 
-## Project Highlights
+- Upload PDF and DOCX documents
+- Automatic parsing and sentence-level segmentation
+- Source validation (spelling, grammar, formatting)
+- Hybrid translation: TM reuse + FAISS similarity + LLM fallback
+- Side-by-side review and approval workflow
+- Translation memory and vector index updates after approval
 
-- Upload and process source documents such as PDF and DOCX files
-- Extract and segment text into manageable units (for example, sentence-level segments)
-- Run source quality validation before translation
-- Reuse approved translations through translation memory lookup
-- Use Retrieval-Augmented Generation (RAG) with embeddings + vector search for semantic reuse
-- Generate new translations via LLM when no strong match exists
-- Apply glossary and style guidance to improve consistency
-- Provide side-by-side review, editing, and approval workflows
-- Continuously improve the system by feeding approved translations back into memory and vector storage
+## Architecture Overview
 
-## End-to-End Workflow
+- **Frontend:** React (Vite) UI for upload, validation, review, and glossary
+- **Backend:** FastAPI routes for upload, validation, translation, and approvals
+- **NLP:** spaCy + LanguageTool validation pipeline
+- **AI/RAG:** Sentence Transformers + FAISS + LLM
+- **Data:** Supabase for structured data, FAISS index for semantic retrieval
 
-1. User uploads a PDF/DOCX document.
-2. Backend parses and extracts text while preserving logical structure.
-3. Text is segmented into translation units (primarily sentence-level).
-4. NLP validation checks source quality:
-   - Spelling
-   - Grammar
-   - Punctuation
-   - Terminology and formatting consistency
-5. For each segment, the AI layer runs hybrid translation:
-   - Check translation memory for exact/high-confidence reuse
-   - Run embedding similarity search via vector DB (RAG retrieval)
-   - If no suitable match, call LLM to generate translation
-   - Apply glossary/style constraints during generation
-6. Frontend presents side-by-side source/target for human review.
-7. User edits/approves translations and manages glossary terms.
-8. Approved outputs are written back to translation memory + vector index for future reuse.
+## Workflow
 
-## System Architecture
+1. Upload a PDF/DOCX
+2. Parse and extract raw text
+3. Run validation and produce sentence list
+4. Translate sentences via TM/RAG/LLM
+5. Review and approve translations
+6. Store approved results in Supabase + FAISS
 
-### Frontend (React)
-
-- Interactive user interface for upload, validation display, translation review, and glossary management
-- Side-by-side translation editor for human-in-the-loop quality control
-- API integration layer for backend communication
-
-### Backend (FastAPI)
-
-- API entry point and route orchestration
-- Document upload and parsing pipeline integration
-- Translation and memory endpoints
-- Database communication through Supabase client services
-
-### NLP Module
-
-- Source-language quality checks using tools such as spaCy and LanguageTool
-- Modular checks for spelling, grammar, and terminology
-
-### AI Module
-
-- Sentence embedding generation using Sentence Transformers
-- Vector search and index management via FAISS
-- RAG orchestration pipeline
-- LLM integration and prompt conditioning
-- Translation memory lookup/store logic
-
-### Data Layer (Supabase + Vector Store)
-
-- Supabase stores structured metadata (documents, glossary entries, translation records)
-- Vector database/index stores semantic representations for retrieval
-
-## Team and Module Ownership
-
-Project size: 4 members
-
-- Ajinkya: Frontend
-- Omkar: Backend
-- Devang: NLP
-- Om (AI Engineer): AI module (embeddings, FAISS vector store, RAG pipeline, LLM client, translation memory)
-
-## Repository Structure
+## Repository Layout
 
 ```text
 ai-translation-studio/
 |
-|-- frontend/                        # Ajinkya
+|-- frontend_proto/                  # Primary frontend (React + Vite)
 |   |-- src/
-|   |   |-- components/
-|   |   |   |-- UploadDocument.jsx
-|   |   |   |-- ValidationResults.jsx
-|   |   |   |-- TranslationEditor.jsx
-|   |   |   |-- GlossaryManager.jsx
-|   |   |-- pages/
-|   |   |-- store/                   # Zustand state
-|   |   |-- api/                     # axios calls to backend
-|   |-- package.json
+|   |-- public/
+|   |-- docs/
 |
-|-- backend/                         # Omkar
-|   |-- main.py                      # FastAPI entry point
+|-- frontend/                        # Legacy frontend (not primary)
+|
+|-- backend/                         # FastAPI backend
+|   |-- main.py
 |   |-- routes/
-|   |   |-- upload.py                # POST /upload-document
-|   |   |-- translate.py             # POST /translate
-|   |   |-- memory.py                # GET /translation-memory
 |   |-- services/
-|   |   |-- document_parser.py       # PDF/DOCX extraction
-|   |   |-- supabase_client.py       # DB connection
-|   |-- requirements.txt
 |
-|-- nlp/                             # Devang
-|   |-- validator.py                 # spaCy + LanguageTool checks
-|   |-- checks/
-|   |   |-- spelling.py
-|   |   |-- grammar.py
-|   |   |-- terminology.py
-|   |-- requirements.txt
-|
-|-- ai/                              # Om (AI Engineer)
-|   |-- embeddings.py                # Sentence Transformers
-|   |-- vector_store.py              # FAISS index management
-|   |-- rag_pipeline.py              # Core RAG logic
-|   |-- llm_client.py                # LLM API calls + prompts
-|   |-- translation_memory.py        # TM lookup and storage
-|   |-- requirements.txt
-|
-|-- frontend_proto/                  # Prebuilt prototype frontend
-|                                    # Planned for phased integration
-|
+|-- nlp/                             # NLP validation pipeline
+|-- ai/                              # Embeddings, FAISS, RAG, LLM
 |-- README.md
 ```
 
-## Important Note on `frontend_proto`
+## Team Ownership
 
-This repository contains an extra `frontend_proto` directory that serves as a pre-created/prototype frontend. It is currently kept for reference and incremental integration into the primary `frontend` application.
+- Omkar: Backend
+- Devang: NLP
+- Om (AI Engineer): Frontend, AI/RAG module
 
-## Core Technology Stack
+## Local Development
 
-- Frontend: React, Vite, Zustand, Axios
-- Backend: Python, FastAPI
-- NLP: spaCy, LanguageTool
-- AI/RAG: Sentence Transformers, FAISS, LLM APIs
-- Database: Supabase
+### Backend
 
-## Why This Project Matters
+```bash
+uvicorn backend.main:app --reload
+```
 
-TransSync demonstrates a practical production-style AI architecture that combines:
+### Frontend (primary)
 
-- LLM generation
-- Retrieval and semantic reuse
-- Quality validation pipelines
-- Glossary/style enforcement
-- Human feedback loops
+```bash
+cd frontend_proto
+npm install
+npm run dev
+```
 
-The result is a scalable translation workflow focused on consistency, efficiency, and continuous improvement.
+## Environment Variables
+
+Backend:
+
+- `SUPABASE_URL`
+- `SUPABASE_KEY`
+- `GROK_API_KEY`
+
+Frontend:
+
+- `VITE_API_BASE_URL` (e.g. `http://127.0.0.1:8000`)
+
+## Notes
+
+- `frontend_proto` is the primary UI source. The `frontend/` directory is legacy and will be discarded later.
