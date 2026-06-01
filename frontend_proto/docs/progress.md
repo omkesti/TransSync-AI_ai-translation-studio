@@ -138,3 +138,16 @@ Remaining tasks before final demo:
 1. Create the `glossary` table in Supabase using the SQL in `backend/routes/glossary.py`
 2. End-to-end integration test: upload → validate → translate → approve → download DOCX → verify file
 3. (Optional) Add authentication / user sessions if required by the project scope
+
+- Export — Faithful Document Reconstruction (fix):
+  - Problem: Previous export produced title page + flat sentence list + appendix comparison table. User wants the original document with only the text translated.
+  - Solution: `rawText` (stored in AppContext from upload) already has paragraph structure preserved by the document parser (`\n\n` separator). Backend splits rawText by `\n\n`, builds a `{ source_sentence: translation }` lookup, and for each original paragraph does exact substring replacement of each source sentence with its translation.
+  - `backend/routes/export.py` rewritten:
+    - Added `raw_text: str` field to `ExportRequest`
+    - Replaced `_build_docx()` with `_reconstruct_docx()` using `_reconstruct_paragraphs()` helper
+    - Heading detection heuristic: short lines (≤ 80 chars) not ending in sentence punctuation are rendered bold
+    - Output: translated paragraphs in original order → thin horizontal rule separator → one-line italic attribution footer (`"Translated by TransSync AI · EN → FR · June 01, 2025"`)
+    - No title page, no appendix table
+  - `frontend_proto/src/pages/ExportPage.jsx`: `rawText` added to context destructure and export payload
+  - `api.js`: no change needed (payload is JSON-stringified as-is)
+  - Files: [backend/routes/export.py](../../backend/routes/export.py), [ExportPage.jsx](../src/pages/ExportPage.jsx)

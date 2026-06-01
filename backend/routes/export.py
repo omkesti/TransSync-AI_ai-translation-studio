@@ -4,18 +4,23 @@ export.py
 Route: POST /api/export
 
 Responsibility:
-    Receives the full list of translated sentences from the frontend,
-    builds a formatted DOCX document in memory using python-docx,
-    and streams it back as a file download.
+    Receives the full list of translated sentences + the original raw_text
+    from the frontend, reconstructs the document paragraph by paragraph
+    (replacing source sentences with their translations), and streams
+    a clean DOCX back as a file download.
 
-The original uploaded file is not stored server-side after extraction,
-so this endpoint reconstructs a clean translated document from the
-sentence list provided by the client.
+    Output mirrors the original document structure:
+        - Same number of paragraphs as the original
+        - Same paragraph order
+        - All text translated in-place
+        - A single-line attribution footer at the end
+        - No title page, no appendix comparison table
 
 Output file format: .docx (Microsoft Word Open XML)
 """
 
 import io
+import re
 from datetime import datetime
 from typing import List, Optional
 
@@ -25,6 +30,8 @@ from pydantic import BaseModel
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 router = APIRouter()
 
@@ -42,140 +49,127 @@ class ExportRequest(BaseModel):
     filename:    str = "document"
     source_lang: str = "en"
     target_lang: str
+    raw_text:    str = ""        # original extracted text with \n\n paragraph separators
     translations: List[TranslationItem]
+
+
+# ── Heading detection heuristic ───────────────────────────────────────────────
+
+def _is_heading(text: str) -> bool:
+    """
+    Heuristically detect heading-like paragraphs.
+    A paragraph is treated as a heading if it:
+      - Is short (≤ 80 chars)
+      - Does not end with sentence-ending punctuation
+      - Is not just a number
+    """
+    text = text.strip()
+    if not text or len(text) > 80:
+        return False
+    if text[-1] in ".!?,;:":
+        return False
+    if re.match(r"^\d+\.?$", text):
+        return False
+    return True
+
+
+# ── Paragraph reconstruction ──────────────────────────────────────────────────
+
+def _reconstruct_paragraphs(
+    raw_text: str,
+    translations: List[TranslationItem],
+) -> List[str]:
+    """
+    Splits raw_text into paragraphs (by double newline) and replaces each
+    source sentence with its translation using exact substring matching.
+
+    Returns a list of translated paragraph strings in original order.
+
+    Falls back to flat sentence list if raw_text is empty.
+    """
+    # Build lookup: source text → translated text
+    lookup = {item.source.strip(): item.translation for item in translations}
+
+    if not raw_text.strip():
+        # Fallback: just return translated sentences one per paragraph
+        return [item.translation for item in translations]
+
+    # Split into paragraphs (parser uses \n\n as separator)
+    paragraphs = [p.strip() for p in re.split(r"\n{2,}", raw_text) if p.strip()]
+
+    result = []
+    for paragraph in paragraphs:
+        translated = paragraph
+        for source, translation in lookup.items():
+            if source in translated:
+                # Replace only first occurrence to be safe
+                translated = translated.replace(source, translation, 1)
+        result.append(translated)
+
+    return result
 
 
 # ── DOCX builder ──────────────────────────────────────────────────────────────
 
-def _build_docx(req: ExportRequest) -> io.BytesIO:
-    """
-    Constructs a formatted DOCX from the translation data.
+def _add_horizontal_rule(doc: Document) -> None:
+    """Inserts a thin horizontal rule paragraph."""
+    p = doc.add_paragraph()
+    pPr = p._p.get_or_add_pPr()
+    pBdr = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "6")
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), "CCCCCC")
+    pBdr.append(bottom)
+    pPr.append(pBdr)
 
-    Structure:
-        - Title page  (TransSync AI branding + doc metadata)
-        - Translation body (translated sentences as paragraphs)
-        - Appendix table (source | translation | match type) — optional
+
+def _reconstruct_docx(req: ExportRequest) -> io.BytesIO:
+    """
+    Builds the output DOCX:
+        1. Translated paragraphs in original document order
+        2. A thin horizontal rule separator
+        3. One-line italic attribution footer
     """
     doc = Document()
 
-    # ── Page margins ─────────────────────────────────────────────────────────
+    # ── Page margins ──────────────────────────────────────────────────────────
     for section in doc.sections:
         section.top_margin    = Inches(1)
         section.bottom_margin = Inches(1)
         section.left_margin   = Inches(1.2)
         section.right_margin  = Inches(1.2)
 
-    # ── Title Page ────────────────────────────────────────────────────────────
-    brand = doc.add_paragraph()
-    brand.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = brand.add_run("TransSync AI")
-    run.bold      = True
-    run.font.size = Pt(11)
-    run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
+    # ── Reconstruct paragraphs ────────────────────────────────────────────────
+    translated_paragraphs = _reconstruct_paragraphs(req.raw_text, req.translations)
 
-    doc.add_paragraph()  # spacer
-
-    title_p = doc.add_paragraph()
-    title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title_run = title_p.add_run("Translated Document")
-    title_run.bold      = True
-    title_run.font.size = Pt(26)
-
-    doc.add_paragraph()
-
-    # Original filename
-    orig_p = doc.add_paragraph()
-    orig_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    orig_run = orig_p.add_run(f"Source: {req.filename}")
-    orig_run.font.size  = Pt(11)
-    orig_run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
-
-    # Language pair
-    lang_p = doc.add_paragraph()
-    lang_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    lang_run = lang_p.add_run(
-        f"Translation: {req.source_lang.upper()} → {req.target_lang.upper()}"
-    )
-    lang_run.bold       = True
-    lang_run.font.size  = Pt(13)
-
-    # Date
-    date_p = doc.add_paragraph()
-    date_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    date_run = date_p.add_run(
-        f"Generated: {datetime.utcnow().strftime('%B %d, %Y')}"
-    )
-    date_run.font.size  = Pt(10)
-    date_run.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
-
-    # Stats line
-    total = len(req.translations)
-    tm_hits = sum(
-        1 for t in req.translations
-        if t.match_type in ("tm_exact", "faiss_direct")
-    )
-    llm_count = total - tm_hits
-
-    stats_p = doc.add_paragraph()
-    stats_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    stats_run = stats_p.add_run(
-        f"{total} sentences  ·  {tm_hits} TM hits  ·  {llm_count} LLM translations"
-    )
-    stats_run.font.size  = Pt(10)
-    stats_run.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
-
-    # ── Divider ───────────────────────────────────────────────────────────────
-    doc.add_page_break()
-
-    # ── Translation Body ──────────────────────────────────────────────────────
-    body_heading = doc.add_paragraph()
-    h_run = body_heading.add_run("Translated Content")
-    h_run.bold      = True
-    h_run.font.size = Pt(14)
-
-    doc.add_paragraph()  # spacer
-
-    for item in req.translations:
+    for text in translated_paragraphs:
         p = doc.add_paragraph()
-        p.paragraph_format.space_after = Pt(8)
-        run = p.add_run(item.translation)
+        p.paragraph_format.space_after = Pt(6)
+        run = p.add_run(text)
         run.font.size = Pt(11)
 
-    # ── Source Reference Appendix ─────────────────────────────────────────────
-    doc.add_page_break()
+        if _is_heading(text):
+            run.bold = True
+            run.font.size = Pt(13)
 
-    appendix_heading = doc.add_paragraph()
-    a_run = appendix_heading.add_run("Appendix — Source / Translation Reference")
-    a_run.bold      = True
-    a_run.font.size = Pt(13)
+    # ── Footer separator ──────────────────────────────────────────────────────
+    doc.add_paragraph()  # spacer before rule
+    _add_horizontal_rule(doc)
 
-    doc.add_paragraph()
+    footer_p = doc.add_paragraph()
+    footer_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    footer_run = footer_p.add_run(
+        f"Translated by TransSync AI  ·  "
+        f"{req.source_lang.upper()} → {req.target_lang.upper()}  ·  "
+        f"{datetime.utcnow().strftime('%B %d, %Y')}"
+    )
+    footer_run.italic    = True
+    footer_run.font.size = Pt(9)
+    footer_run.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
 
-    # Table: Source | Translation | Match Type
-    table = doc.add_table(rows=1, cols=3)
-    table.style = "Table Grid"
-
-    # Header row
-    hdr_cells = table.rows[0].cells
-    for cell, label in zip(hdr_cells, ["Source", "Translation", "Match Type"]):
-        p = cell.paragraphs[0]
-        run = p.add_run(label)
-        run.bold      = True
-        run.font.size = Pt(9)
-        p.alignment   = WD_ALIGN_PARAGRAPH.CENTER
-
-    # Data rows
-    for item in req.translations:
-        row_cells = table.add_row().cells
-        for cell, text in zip(
-            row_cells,
-            [item.source, item.translation, item.match_type or "—"],
-        ):
-            p = cell.paragraphs[0]
-            run = p.add_run(text)
-            run.font.size = Pt(9)
-
-    # ── Serialize to bytes ────────────────────────────────────────────────────
+    # ── Serialize ─────────────────────────────────────────────────────────────
     buf = io.BytesIO()
     doc.save(buf)
     buf.seek(0)
@@ -189,8 +183,9 @@ async def export_document(body: ExportRequest):
     """
     POST /api/export
 
-    Accepts the full list of approved translations and returns a downloadable
-    DOCX file with a title page and the translated text.
+    Accepts the original raw_text and the list of approved translations,
+    reconstructs the document paragraph by paragraph with translated text,
+    and returns a downloadable DOCX file.
 
     Request body:
         {
@@ -198,6 +193,7 @@ async def export_document(body: ExportRequest):
             "filename":    "annual_report.pdf",
             "source_lang": "en",
             "target_lang": "fr",
+            "raw_text":    "Full original extracted text with \\n\\n paragraph breaks...",
             "translations": [
                 { "source": "...", "translation": "...", "match_type": "tm_exact" },
                 ...
@@ -206,8 +202,9 @@ async def export_document(body: ExportRequest):
 
     Response:
         Binary DOCX stream (Content-Disposition: attachment)
+        Structure: translated paragraphs in original order + attribution footer
     """
-    docx_buf = _build_docx(body)
+    docx_buf = _reconstruct_docx(body)
 
     # Derive a clean output filename
     base = body.filename.rsplit(".", 1)[0] if "." in body.filename else body.filename

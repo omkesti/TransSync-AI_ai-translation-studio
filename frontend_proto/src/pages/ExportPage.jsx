@@ -72,6 +72,7 @@ function ExportPage() {
     targetLang,
     filename,
     docId,
+    rawText,
     resetFlow,
   } = useAppContext();
 
@@ -102,6 +103,7 @@ function ExportPage() {
         filename:    filename || "document",
         source_lang: sourceLang || "en",
         target_lang: targetLang || "xx",
+        raw_text:    rawText || "",
         translations: results.map(r => ({
           source:      r.source,
           translation: r.translation,
