@@ -36,7 +36,7 @@ def filter_sentences(sentences: list[str]) -> list[str]:
     filtered = []
     for sentence in sentences:
         s = sentence.strip()
-        if len(s) < 6:
+        if len(s) < 2:
             continue
         if _is_mostly_noise(s):
             continue

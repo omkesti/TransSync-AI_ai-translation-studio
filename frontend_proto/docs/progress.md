@@ -151,3 +151,10 @@ Remaining tasks before final demo:
   - `frontend_proto/src/pages/ExportPage.jsx`: `rawText` added to context destructure and export payload
   - `api.js`: no change needed (payload is JSON-stringified as-is)
   - Files: [backend/routes/export.py](../../backend/routes/export.py), [ExportPage.jsx](../src/pages/ExportPage.jsx)
+
+- Missing Sentences & Untranslated Headings (fix):
+  - Problem: Some sentences failed to be replaced in the final DOCX because the NLP cleaner stripped newlines/spacing, meaning the exact string match failed. Also, short headings (like "Aim", "Scope") were completely skipped because `nlp/cleaner.py` dropped any sentence shorter than 6 characters.
+  - Solution:
+    - Modified `backend/routes/export.py`: `_build_fuzzy_pattern()` now builds a case-insensitive regex for each sentence, where literal spaces in the source are replaced with `\s+` to tolerate any whitespace/newline discrepancies during paragraph reconstruction. `re.sub(..., count=1)` is used instead of string replacement.
+    - Modified `nlp/cleaner.py`: Lowered the length threshold in `filter_sentences` from 6 to 2, allowing short headings to pass through validation and reach the translation stage.
+  - Files: [backend/routes/export.py](../../backend/routes/export.py), [nlp/cleaner.py](../../nlp/cleaner.py)

@@ -75,6 +75,17 @@ def _is_heading(text: str) -> bool:
 
 # ── Paragraph reconstruction ──────────────────────────────────────────────────
 
+def _build_fuzzy_pattern(source: str) -> re.Pattern:
+    """
+    Builds a case-insensitive regex that matches the source sentence
+    while tolerating whitespace variations (e.g., extra spaces or line breaks).
+    """
+    # Split by any whitespace, escape each word, and join with the regex \s+ token
+    words = source.strip().split()
+    pattern_str = r"\s+".join(re.escape(word) for word in words)
+    return re.compile(pattern_str, flags=re.IGNORECASE)
+
+
 def _reconstruct_paragraphs(
     raw_text: str,
     translations: List[TranslationItem],
@@ -101,9 +112,11 @@ def _reconstruct_paragraphs(
     for paragraph in paragraphs:
         translated = paragraph
         for source, translation in lookup.items():
-            if source in translated:
-                # Replace only first occurrence to be safe
-                translated = translated.replace(source, translation, 1)
+            if not source:
+                continue
+            # Replace only the first occurrence and tolerate whitespace differences.
+            pattern = _build_fuzzy_pattern(source)
+            translated = pattern.sub(translation, translated, count=1)
         result.append(translated)
 
     return result
