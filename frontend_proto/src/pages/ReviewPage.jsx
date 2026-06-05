@@ -308,8 +308,8 @@ function ReviewPage() {
                 </div>
               )}
 
-              {/* ── Translate All button (multi-doc) ── */}
-              {multiDoc && (
+              {/* ── Translate All button ── */}
+              {documents.filter(d => d.status === "validated").length > 0 && (
                 <button
                   onClick={async () => {
                     setTranslationState("running");

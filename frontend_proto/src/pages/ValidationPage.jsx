@@ -340,8 +340,8 @@ function ValidationPage() {
                 </div>
               )}
 
-              {/* ── Validate All button (multi-doc only) ── */}
-              {multiDoc && validationState !== "running" && (
+              {/* ── Validate All button ── */}
+              {documents.filter(d => d.status === "uploaded").length > 0 && validationState !== "running" && (
                 <button
                   onClick={async () => {
                     setValidationState("running");
