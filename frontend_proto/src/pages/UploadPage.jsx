@@ -23,38 +23,52 @@ import {
   File,
   Code,
   Download,
+  X,
 } from "lucide-react";
 
 function UploadPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(""); // "Uploading file 2 of 5…"
   const [error, setError] = useState("");
 
-  const { setDocId, setRawText, setTargetLang, targetLang, resetFlow, setFilename } =
+  const { addDocuments, setActiveDocIndex, setTargetLang, targetLang, resetFlow } =
     useAppContext();
 
   const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles((prev) => [...prev, ...files]);
       setError("");
     }
+    // Reset input so the same file(s) can be re-selected
+    event.target.value = "";
   };
 
   const handleDrop = (event) => {
     event.preventDefault();
-    const file = event.dataTransfer.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = Array.from(event.dataTransfer.files || []);
+    if (files.length > 0) {
+      setSelectedFiles((prev) => [...prev, ...files]);
       setError("");
     }
   };
 
+  const removeFile = (index) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   const handleUpload = async () => {
-    if (!selectedFile) {
-      setError("Please select a file to upload.");
+    if (selectedFiles.length === 0) {
+      setError("Please select at least one file to upload.");
       return;
     }
     if (!targetLang) {
@@ -64,19 +78,51 @@ function UploadPage() {
 
     setIsUploading(true);
     setError("");
+    resetFlow();
 
-    try {
-      const response = await uploadDocument(selectedFile);
-      resetFlow();
-      setDocId(response.doc_id || "");
-      setRawText(response.raw_text || "");
-      setFilename(response.filename || selectedFile.name || "document");
-      navigate("/validation");
-    } catch (uploadError) {
-      setError(uploadError.message || "Upload failed.");
-    } finally {
-      setIsUploading(false);
+    const uploadedDocs = [];
+    const errors = [];
+
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      setUploadProgress(`Uploading file ${i + 1} of ${selectedFiles.length}…`);
+
+      try {
+        const response = await uploadDocument(file);
+        uploadedDocs.push({
+          docId:    response.doc_id || "",
+          rawText:  response.raw_text || "",
+          filename: response.filename || file.name || "document",
+          status:   "uploaded",
+        });
+      } catch (uploadError) {
+        errors.push(`${file.name}: ${uploadError.message || "Upload failed."}`);
+        uploadedDocs.push({
+          docId:    `error-${i}`,
+          rawText:  "",
+          filename: file.name || "document",
+          status:   "error",
+          error:    uploadError.message || "Upload failed.",
+        });
+      }
     }
+
+    if (uploadedDocs.length > 0) {
+      addDocuments(uploadedDocs);
+      setActiveDocIndex(0);
+    }
+
+    if (errors.length > 0 && errors.length === selectedFiles.length) {
+      // All files failed
+      setError(`All uploads failed:\n${errors.join("\n")}`);
+      setIsUploading(false);
+      setUploadProgress("");
+      return;
+    }
+
+    setIsUploading(false);
+    setUploadProgress("");
+    navigate("/validation");
   };
 
   return (
@@ -177,7 +223,7 @@ function UploadPage() {
             </div>
           </div>
 
-          {/* Moved CTA Button */}
+          {/* CTA */}
           <button className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-[16px] py-4 flex items-center justify-center font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.15)]">
             New Project
           </button>
@@ -188,7 +234,6 @@ function UploadPage() {
       <div className="flex-1 flex flex-col relative w-full h-full overflow-hidden">
         {/* Top Nav Centered */}
         <nav className="h-[80px] w-full flex items-center justify-between px-8 bg-transparent absolute top-0 z-50 pointer-events-none">
-          {/* Header layout uses a grid or flex to center perfectly but keep right items aligned right */}
           <div className="w-1/3"></div>
 
           <div className="w-1/3 flex justify-center items-center gap-4 pointer-events-auto">
@@ -199,7 +244,7 @@ function UploadPage() {
             </Link>
             <div className="w-px h-6 bg-[#262626]"></div>
             <span className="text-[#8c8c8b] text-[13px] font-medium tracking-wide">
-              Upload Document
+              Upload Documents
             </span>
           </div>
 
@@ -249,6 +294,7 @@ function UploadPage() {
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,.docx"
+                multiple
                 className="hidden"
                 onChange={handleFileChange}
               />
@@ -262,14 +308,49 @@ function UploadPage() {
               </div>
 
               <h3 className="font-display text-2xl font-bold mb-3 tracking-tight">
-                Drop your document here
+                Drop your documents here
               </h3>
-              <p className="text-[#8c8c8b] text-[13px] font-sans pb-6">
-                Maximum file size: 50MB
+              <p className="text-[#8c8c8b] text-[13px] font-sans pb-4">
+                Upload multiple files at once · Maximum file size: 50MB each
               </p>
-              <p className="text-[#555555] text-[11px] font-bold tracking-widest uppercase pb-6">
-                {selectedFile ? selectedFile.name : "No file selected"}
-              </p>
+
+              {/* Selected file list */}
+              {selectedFiles.length > 0 && (
+                <div
+                  className="w-full max-w-md space-y-2 mt-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {selectedFiles.map((file, i) => (
+                    <div
+                      key={`${file.name}-${i}`}
+                      className="flex items-center justify-between bg-[#1a1c10] border border-[#2a2e16] rounded-[12px] px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileText size={14} className="text-[#c5fe00] shrink-0" />
+                        <span className="text-[13px] font-medium truncate">{file.name}</span>
+                        <span className="text-[#555555] text-[10px] font-bold tracking-widest shrink-0">
+                          {formatFileSize(file.size)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => removeFile(i)}
+                        className="text-[#555555] hover:text-[#ff6b6b] transition-colors ml-2 shrink-0"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <p className="text-[#555555] text-[10px] font-bold tracking-widest uppercase text-center pt-2">
+                    {selectedFiles.length} file{selectedFiles.length !== 1 ? "s" : ""} selected
+                  </p>
+                </div>
+              )}
+
+              {selectedFiles.length === 0 && (
+                <p className="text-[#555555] text-[11px] font-bold tracking-widest uppercase pb-6">
+                  No files selected
+                </p>
+              )}
 
               {/* File Formats */}
               <div className="flex gap-4 mt-auto">
@@ -353,7 +434,11 @@ function UploadPage() {
                   disabled={isUploading}
                 >
                   <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
-                  {isUploading ? "Uploading..." : "Start Translation"}
+                  {isUploading
+                    ? "Uploading..."
+                    : selectedFiles.length > 1
+                    ? `Start Translation (${selectedFiles.length} files)`
+                    : "Start Translation"}
                 </button>
                 {error ? (
                   <p className="text-[#ff7351] text-[11px] font-bold tracking-widest uppercase mt-4">
@@ -372,7 +457,7 @@ function UploadPage() {
                 Uploading
               </p>
               <p className="text-[#ffffff] text-sm">
-                Processing your document...
+                {uploadProgress || "Processing your documents..."}
               </p>
             </div>
           </div>

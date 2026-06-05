@@ -1,0 +1,80 @@
+"""
+export_batch.py
+───────────────
+Route: POST /api/export/batch
+
+Accepts an array of documents (each with raw_text + translations),
+generates a DOCX for each using the shared docx_builder, packs them
+all into a ZIP archive, and streams it back as a download.
+"""
+
+import io
+import zipfile
+from typing import List
+
+from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+
+from backend.services.docx_builder import DocExportData, reconstruct_docx, make_output_filename
+
+router = APIRouter()
+
+
+class BatchExportRequest(BaseModel):
+    documents: List[DocExportData]
+
+
+@router.post("/export/batch")
+async def export_batch(body: BatchExportRequest):
+    """
+    POST /api/export/batch
+
+    Request body:
+        {
+            "documents": [
+                {
+                    "doc_id":       "uuid-1",
+                    "filename":     "report.pdf",
+                    "source_lang":  "en",
+                    "target_lang":  "hi",
+                    "raw_text":     "Full original text…",
+                    "translations": [{ "source": "…", "translation": "…", "match_type": "…" }]
+                },
+                { … }
+            ]
+        }
+
+    Response:
+        ZIP archive containing one translated DOCX per document.
+    """
+    zip_buf = io.BytesIO()
+
+    # Track filenames to avoid duplicates inside the ZIP
+    used_names: dict[str, int] = {}
+
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for doc_data in body.documents:
+            # Build the DOCX in memory
+            docx_buf = reconstruct_docx(doc_data)
+
+            # Generate a unique filename
+            name = make_output_filename(doc_data.filename, doc_data.target_lang)
+            if name in used_names:
+                used_names[name] += 1
+                base, ext = name.rsplit(".", 1)
+                name = f"{base}_{used_names[name]}.{ext}"
+            else:
+                used_names[name] = 0
+
+            zf.writestr(name, docx_buf.read())
+
+    zip_buf.seek(0)
+
+    return StreamingResponse(
+        zip_buf,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": 'attachment; filename="transsync_batch_export.zip"'
+        },
+    )

@@ -173,3 +173,40 @@ export async function exportDocument(payload) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+// ── Batch Export ───────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/export/batch
+ *
+ * Sends an array of documents to the backend, receives a ZIP blob
+ * containing one translated DOCX per document, and triggers download.
+ *
+ * @param {Array} documents — [{ doc_id, filename, source_lang, target_lang, raw_text, translations }]
+ */
+export async function exportBatch(documents) {
+  const response = await fetch(`${API_BASE_URL}/api/export/batch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ documents }),
+  });
+
+  if (!response.ok) {
+    let message = "Batch export failed.";
+    try {
+      const data = await response.json();
+      message = data?.detail || data?.message || message;
+    } catch (_) { /* ignore */ }
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `transsync_batch_${Date.now()}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

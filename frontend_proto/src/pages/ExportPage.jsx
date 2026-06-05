@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { exportDocument } from "../services/api";
+import { exportDocument, exportBatch } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import {
   Bell,
@@ -74,10 +74,17 @@ function ExportPage() {
     docId,
     rawText,
     resetFlow,
+    documents,
+    activeDocIndex,
+    setActiveDocIndex,
   } = useAppContext();
+
+  const multiDoc = documents.length > 1;
+  const docsWithResults = documents.filter(d => d.results && d.results.length > 0);
 
   // "idle" | "exporting" | "done" | "error"
   const [exportState, setExportState] = useState("idle");
+  const [batchExportState, setBatchExportState] = useState("idle");
   const [exportError, setExportError] = useState("");
   const [previewPage, setPreviewPage] = useState(1);
   const PREVIEW_PER_PAGE = 10;
@@ -122,8 +129,55 @@ function ExportPage() {
     navigate("/upload");
   };
 
+  // ── Batch export handler ───────────────────────────────────────────────────
+  const handleBatchDownload = async () => {
+    if (docsWithResults.length === 0) return;
+    setBatchExportState("exporting");
+    setExportError("");
+    try {
+      await exportBatch(
+        docsWithResults.map(doc => ({
+          doc_id:      doc.docId || "unknown",
+          filename:    doc.filename || "document",
+          source_lang: sourceLang || "en",
+          target_lang: targetLang || "xx",
+          raw_text:    doc.rawText || "",
+          translations: (doc.results || []).map(r => ({
+            source:      r.source,
+            translation: r.translation,
+            match_type:  r.match_type || null,
+          })),
+        }))
+      );
+      setBatchExportState("done");
+    } catch (err) {
+      setExportError(err.message || "Batch export failed.");
+      setBatchExportState("error");
+    }
+  };
+
+  // ── Single-doc download helper ─────────────────────────────────────────────
+  const handleSingleDownload = async (doc) => {
+    try {
+      await exportDocument({
+        doc_id:      doc.docId || "unknown",
+        filename:    doc.filename || "document",
+        source_lang: sourceLang || "en",
+        target_lang: targetLang || "xx",
+        raw_text:    doc.rawText || "",
+        translations: (doc.results || []).map(r => ({
+          source:      r.source,
+          translation: r.translation,
+          match_type:  r.match_type || null,
+        })),
+      });
+    } catch (err) {
+      setExportError(err.message || "Export failed.");
+    }
+  };
+
   // ── Empty state ────────────────────────────────────────────────────────────
-  if (results.length === 0) {
+  if (results.length === 0 && docsWithResults.length === 0) {
     return (
       <div className="h-screen bg-[#0a0a0a] text-white font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
         <Sidebar active="export" />
@@ -194,6 +248,70 @@ function ExportPage() {
                 <RefreshCw size={13} /> New Translation
               </button>
             </div>
+
+            {/* ── Multi-doc Document Table ── */}
+            {multiDoc && docsWithResults.length > 0 && (
+              <div className="bg-[#111111] border border-[#1a1a1a] rounded-[32px] overflow-hidden mb-8 relative z-10">
+                <div className="px-8 py-6 border-b border-[#1a1a1a] flex items-center justify-between">
+                  <div>
+                    <h3 className="font-display font-bold text-lg tracking-tight">Documents</h3>
+                    <p className="text-[#555555] text-[11px] mt-0.5">{docsWithResults.length} document{docsWithResults.length !== 1 ? "s" : ""} ready</p>
+                  </div>
+                  <button
+                    onClick={handleBatchDownload}
+                    disabled={batchExportState === "exporting"}
+                    className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-6 py-3 font-black flex items-center gap-2 text-[10px] uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform transition-all disabled:opacity-60"
+                  >
+                    {batchExportState === "exporting" ? (
+                      <><Loader2 size={12} className="animate-spin" /> Zipping…</>
+                    ) : batchExportState === "done" ? (
+                      <><CheckCircle size={12} /> Downloaded ZIP!</>
+                    ) : (
+                      <><Download size={12} /> Download All as ZIP</>
+                    )}
+                  </button>
+                </div>
+                <div className="divide-y divide-[#1a1a1a]">
+                  {docsWithResults.map((doc, i) => {
+                    const docTm = (doc.results || []).filter(r => ["tm_exact", "faiss_direct"].includes(r.match_type)).length;
+                    const docLlm = (doc.results || []).filter(r => ["llm_guided", "llm_cold"].includes(r.match_type)).length;
+                    const isActive = documents.indexOf(doc) === activeDocIndex;
+                    return (
+                      <div
+                        key={doc.docId}
+                        onClick={() => setActiveDocIndex(documents.indexOf(doc))}
+                        className={`grid grid-cols-12 gap-4 px-8 py-5 cursor-pointer transition-colors ${
+                          isActive ? "bg-[#1a1c10]/50" : "hover:bg-[#141414]"
+                        }`}
+                      >
+                        <div className="col-span-4 flex items-center gap-3 min-w-0">
+                          <FileText size={14} className="text-[#c5fe00] shrink-0" />
+                          <span className="text-[13px] font-medium truncate">{doc.filename}</span>
+                        </div>
+                        <div className="col-span-2 flex items-center">
+                          <span className="text-[#8c8c8b] text-[12px]">{(doc.results || []).length} sentences</span>
+                        </div>
+                        <div className="col-span-2 flex items-center">
+                          <span className="text-[#00c5fe] text-[12px] font-bold">{docTm} TM</span>
+                        </div>
+                        <div className="col-span-2 flex items-center">
+                          <span className="text-[#c500fe] text-[12px] font-bold">{docLlm} LLM</span>
+                        </div>
+                        <div className="col-span-2 flex items-center justify-end">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleSingleDownload(doc); }}
+                            className="text-[#c5fe00] hover:text-[#b9ef00] transition-colors"
+                            title="Download this document"
+                          >
+                            <Download size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 relative z-10">

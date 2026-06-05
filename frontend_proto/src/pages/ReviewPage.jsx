@@ -119,7 +119,8 @@ function ReviewPage() {
   const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
   const [reviewedCount, setReviewedCount] = useState(0);
 
-  const { sentences, results, setResults, sourceLang, targetLang } = useAppContext();
+  const { sentences, results, setResults, sourceLang, targetLang, documents, activeDocIndex, setActiveDocIndex, updateDoc } = useAppContext();
+  const multiDoc = documents.length > 1;
 
   // If results already exist in context (user navigated back), treat as done immediately
   const initialState = results && results.length > 0 ? "done" : "idle";
@@ -279,6 +280,58 @@ function ReviewPage() {
         <div className="flex-1 flex overflow-hidden w-full pb-[100px]">
           <main className="flex-1 overflow-y-auto layout-scrollbar bg-[#0a0a0a]">
             <div className="p-8 max-w-5xl mx-auto space-y-6">
+
+              {/* ── Multi-doc tabs ── */}
+              {multiDoc && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {documents.map((doc, i) => (
+                    <button
+                      key={doc.docId}
+                      onClick={() => { setActiveDocIndex(i); setTranslationState("idle"); setCurrentBatchIndex(0); setReviewedCount(0); setErrorMessage(""); }}
+                      className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-colors ${
+                        i === activeDocIndex
+                          ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16]"
+                          : doc.status === "approved"
+                          ? "bg-[#111111] text-[#8c8c8b] border-[#2a2e16]"
+                          : doc.status === "translated"
+                          ? "bg-[#111111] text-[#a0a09f] border-[#262626]"
+                          : doc.status === "error"
+                          ? "bg-[#1a0a0a] text-[#ff6b6b] border-[#4a1010]"
+                          : "bg-[#111111] text-[#555555] border-[#262626] hover:text-[#8c8c8b]"
+                      }`}
+                    >
+                      {doc.filename.length > 20 ? doc.filename.slice(0, 18) + "…" : doc.filename}
+                      {doc.status === "approved" && " ✓"}
+                      {doc.status === "error" && " ✗"}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Translate All button (multi-doc) ── */}
+              {multiDoc && (
+                <button
+                  onClick={async () => {
+                    setTranslationState("running");
+                    for (let i = 0; i < documents.length; i++) {
+                      const doc = documents[i];
+                      if (doc.status !== "validated" || !doc.sentences || doc.sentences.length === 0) continue;
+                      try {
+                        const response = await translateSentences(doc.sentences, sourceLang, targetLang);
+                        updateDoc(doc.docId, { results: response.results || [], status: "translated" });
+                      } catch (err) {
+                        updateDoc(doc.docId, { status: "error", error: err.message || "Translation failed" });
+                      }
+                    }
+                    setTranslationState("done");
+                    setErrorMessage("");
+                  }}
+                  disabled={translationState === "running"}
+                  className="border border-[#2a2e16] text-[#c5fe00] hover:bg-[#1a1c10] rounded-full px-6 py-3 font-bold text-[10px] uppercase tracking-widest transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Zap size={14} /> Translate All ({documents.filter(d => d.status === "validated").length} pending)
+                </button>
+              )}
 
               {/* Error Banner */}
               {isError && errorMessage && (
