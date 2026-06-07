@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 # This import works because the virtual environment is at the repo root level.
 # Run the server from the repo root:  uvicorn backend.main:app --reload
 from ai.rag_pipeline import translate_pipeline
+from backend.services.supabase_client import fetch_verified_glossary_terms
 
 router = APIRouter()
 
@@ -112,10 +113,22 @@ async def translate_document(body: TranslateRequest):
     # Input:  list[str], str
     # Output: list[{"source": str, "translation": str, "match_type": str}]
 
+    # ── Fetch verified glossary terms (non-blocking) ──────────────────────────
+    # Only VERIFIED terms are injected into the LLM prompt.
+    # PENDING terms are intentionally excluded.
+    glossary_hints: dict = {}
+    try:
+        glossary_hints = fetch_verified_glossary_terms(body.target_lang)
+        if glossary_hints:
+            print(f"[glossary] Enforcing {len(glossary_hints)} verified term(s) for '{body.target_lang}'")
+    except Exception:
+        pass  # Glossary failure must NEVER block translation
+
     input_json = {
         "sentences": body.sentences,
         "source_lang": body.source_lang,
         "target_lang": body.target_lang,
+        "glossary_hints": glossary_hints,
     }
 
     try:

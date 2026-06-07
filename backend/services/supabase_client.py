@@ -218,3 +218,35 @@ def delete_glossary_term(term_id: str) -> bool:
         .execute()
     )
     return len(response.data) > 0
+
+
+def fetch_verified_glossary_terms(target_lang: str) -> dict:
+    """
+    Returns all VERIFIED glossary terms for the given target language as a
+    flat dict: { source_term_lower: target_term }.
+
+    Keys are lowercased so callers can do case-insensitive scanning without
+    repeated .lower() calls on every lookup.
+
+    Only VERIFIED terms are returned — PENDING terms are intentionally excluded
+    so unreviewed translations are never forced on the LLM.
+
+    Called by: backend/routes/translate.py before each translation job.
+    """
+    try:
+        client = get_client()
+        response = (
+            client.table("glossary")
+            .select("source_term, target_term")
+            .eq("target_lang", target_lang)
+            .eq("status", "VERIFIED")
+            .execute()
+        )
+        return {
+            row["source_term"].lower(): row["target_term"]
+            for row in (response.data or [])
+        }
+    except Exception as e:
+        # Glossary fetch failure must never block translation
+        print(f"[glossary] fetch_verified_glossary_terms failed (non-fatal): {e}")
+        return {}
