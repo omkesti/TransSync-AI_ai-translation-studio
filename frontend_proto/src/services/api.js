@@ -3,7 +3,15 @@ const API_BASE_URL =
 
 async function handleResponse(response) {
   if (response.ok) {
-    return response.json();
+    // 204 No Content (e.g. DELETE /api/glossary/{id}) has no JSON body
+    if (response.status === 204) {
+      return null;
+    }
+    const text = await response.text();
+    if (!text) {
+      return null;
+    }
+    return JSON.parse(text);
   }
 
   let message = "Request failed";

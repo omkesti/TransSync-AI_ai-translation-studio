@@ -23,6 +23,8 @@ from typing import Optional
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
+from backend.utils.language_codes import glossary_lookup_codes, normalize_lang_code
+
 # Load .env — first try the backend/ folder (where .env lives),
 # then fall back to the repo root in case it's been moved there.
 _this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -163,7 +165,9 @@ def fetch_all_glossary(
     client = get_client()
     query = client.table("glossary").select("*").order("created_at", desc=True)
     if target_lang:
-        query = query.eq("target_lang", target_lang)
+        normalized = normalize_lang_code(target_lang)
+        if normalized:
+            query = query.eq("target_lang", normalized)
     if search:
         query = query.ilike("source_term", f"%{search}%")
     response = query.execute()
@@ -180,8 +184,8 @@ def insert_glossary_term(row: dict) -> dict:
     payload = {
         "source_term": row["source_term"],
         "target_term": row["target_term"],
-        "target_lang": row["target_lang"],
-        "source_lang": row.get("source_lang", "en"),
+        "target_lang": normalize_lang_code(row["target_lang"]) or row["target_lang"],
+        "source_lang": normalize_lang_code(row.get("source_lang", "en")) or row.get("source_lang", "en"),
         "category":    row.get("category", ""),
         "status":      row.get("status", "PENDING"),
     }
@@ -235,17 +239,21 @@ def fetch_verified_glossary_terms(target_lang: str) -> dict:
     """
     try:
         client = get_client()
-        response = (
-            client.table("glossary")
-            .select("source_term, target_term")
-            .eq("target_lang", target_lang)
-            .eq("status", "VERIFIED")
-            .execute()
-        )
-        return {
-            row["source_term"].lower(): row["target_term"]
-            for row in (response.data or [])
-        }
+        codes = glossary_lookup_codes(normalize_lang_code(target_lang))
+        for code in codes:
+            response = (
+                client.table("glossary")
+                .select("source_term, target_term")
+                .eq("target_lang", code)
+                .eq("status", "VERIFIED")
+                .execute()
+            )
+            if response.data:
+                return {
+                    row["source_term"].lower(): row["target_term"]
+                    for row in response.data
+                }
+        return {}
     except Exception as e:
         # Glossary fetch failure must never block translation
         print(f"[glossary] fetch_verified_glossary_terms failed (non-fatal): {e}")

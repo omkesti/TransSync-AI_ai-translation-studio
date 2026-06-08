@@ -26,6 +26,7 @@ import {
   updateGlossaryTerm,
   deleteGlossaryTerm,
 } from '../services/api';
+import { TARGET_LANGUAGES } from '../constants/languages';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -123,9 +124,17 @@ function AddTermModal({ onClose, onSave }) {
               <input
                 className={inputCls}
                 placeholder="fr, de, es..."
+                list="glossary-target-lang-options"
                 value={form.target_lang}
                 onChange={e => setForm(f => ({ ...f, target_lang: e.target.value }))}
               />
+              <datalist id="glossary-target-lang-options">
+                {TARGET_LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </option>
+                ))}
+              </datalist>
             </div>
             <div>
               <label className={labelCls}>Category</label>

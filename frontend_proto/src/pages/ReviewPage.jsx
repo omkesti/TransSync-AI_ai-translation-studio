@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { approveTranslations, translateSentences } from "../services/api";
 import { useAppContext } from "../context/AppContext";
+import { languageLabel } from "../constants/languages";
 import {
   Bell,
   Settings,
@@ -253,7 +254,9 @@ function ReviewPage() {
             <div className="w-px h-6 bg-[#262626]"></div>
             <div className="flex items-center gap-2">
               <span className="text-[#555555] font-bold text-[10px] uppercase tracking-widest">Target:</span>
-              <span className="text-[#ffffff] text-[13px] font-bold">{targetLang || "—"}</span>
+              <span className="text-[#ffffff] text-[13px] font-bold">
+                {targetLang ? `${languageLabel(targetLang)} (${targetLang})` : "—"}
+              </span>
             </div>
           </div>
 
@@ -355,7 +358,7 @@ function ReviewPage() {
                   <h2 className="font-display font-bold text-3xl tracking-tight mb-3">Ready to Translate</h2>
                   <p className="text-[#8c8c8b] text-[15px] mb-2 max-w-md leading-relaxed">
                     {sentences && sentences.length > 0
-                      ? `${sentences.length} validated sentence${sentences.length > 1 ? "s" : ""} ready for translation into ${targetLang || "your target language"}.`
+                      ? `${sentences.length} validated sentence${sentences.length > 1 ? "s" : ""} ready for translation into ${targetLang ? languageLabel(targetLang) : "your target language"}.`
                       : "No validated sentences found. Please go back and validate your document first."}
                   </p>
                   {sentences && sentences.length > 0 && (
@@ -463,7 +466,7 @@ function ReviewPage() {
                         <div className="p-6">
                           <div className="flex justify-between items-center mb-3">
                             <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
-                              Target — {targetLang ? targetLang.toUpperCase() : "TBD"}
+                              Target — {targetLang ? languageLabel(targetLang) : "TBD"}
                             </span>
                             <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 shadow-[inset_0_0_10px_rgba(197,254,0,0.05)] ${matchBadgeCls(item.match_type)}`}>
                               {matchLabel(item.match_type)}

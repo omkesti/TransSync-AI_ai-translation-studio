@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 # Run the server from the repo root:  uvicorn backend.main:app --reload
 from ai.rag_pipeline import translate_pipeline
 from backend.services.supabase_client import fetch_verified_glossary_terms
+from backend.utils.language_codes import normalize_lang_code
 
 router = APIRouter()
 
@@ -113,21 +114,30 @@ async def translate_document(body: TranslateRequest):
     # Input:  list[str], str
     # Output: list[{"source": str, "translation": str, "match_type": str}]
 
+    normalized_target = normalize_lang_code(body.target_lang)
+    if not normalized_target:
+        raise HTTPException(status_code=400, detail="target_lang is invalid or empty.")
+
+    if normalized_target != body.target_lang.strip().lower():
+        print(f"[glossary] Normalized target_lang '{body.target_lang}' → '{normalized_target}'")
+
     # ── Fetch verified glossary terms (non-blocking) ──────────────────────────
     # Only VERIFIED terms are injected into the LLM prompt.
     # PENDING terms are intentionally excluded.
     glossary_hints: dict = {}
     try:
-        glossary_hints = fetch_verified_glossary_terms(body.target_lang)
+        glossary_hints = fetch_verified_glossary_terms(normalized_target)
         if glossary_hints:
-            print(f"[glossary] Enforcing {len(glossary_hints)} verified term(s) for '{body.target_lang}'")
+            print(f"[glossary] Enforcing {len(glossary_hints)} verified term(s) for '{normalized_target}'")
+        else:
+            print(f"[glossary] No verified terms for '{normalized_target}'")
     except Exception:
         pass  # Glossary failure must NEVER block translation
 
     input_json = {
         "sentences": body.sentences,
         "source_lang": body.source_lang,
-        "target_lang": body.target_lang,
+        "target_lang": normalized_target,
         "glossary_hints": glossary_hints,
     }
 
@@ -141,7 +151,7 @@ async def translate_document(body: TranslateRequest):
 
 
     return TranslateResponse(
-        target_lang=body.target_lang,
+        target_lang=normalized_target,
         sentence_count=len(results),
         results=[TranslationResult(**r) for r in results],
     )

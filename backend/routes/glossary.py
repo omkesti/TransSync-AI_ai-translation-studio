@@ -39,6 +39,7 @@ from backend.services.supabase_client import (
     update_glossary_term,
     delete_glossary_term,
 )
+from backend.utils.language_codes import normalize_lang_code
 
 router = APIRouter()
 
@@ -131,8 +132,14 @@ async def create_glossary_term(body: GlossaryTermCreate):
 
     Returns the newly created term row.
     """
+    normalized_target = normalize_lang_code(body.target_lang)
+    if not normalized_target:
+        raise HTTPException(status_code=400, detail="target_lang is invalid or empty.")
+
     try:
-        term = insert_glossary_term(body.model_dump())
+        payload = body.model_dump()
+        payload["target_lang"] = normalized_target
+        term = insert_glossary_term(payload)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create glossary term: {str(e)}")
 

@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { uploadDocument } from "../services/api";
 import { useAppContext } from "../context/AppContext";
+import { languageLabel, TARGET_LANGUAGES } from "../constants/languages";
 import {
   Bell,
   Settings,
@@ -378,40 +379,46 @@ function UploadPage() {
                   <Globe size={16} className="text-[#c5fe00]" />
                   <input
                     type="text"
-                    placeholder="Search language"
+                    placeholder="Search language (e.g. de, fr)"
+                    list="target-language-options"
                     value={targetLang}
-                    onChange={(event) => setTargetLang(event.target.value)}
+                    onChange={(event) => setTargetLang(event.target.value.trim().toLowerCase())}
                     className="bg-transparent border-none text-[#ffffff] focus:outline-none w-full text-[13px] placeholder:text-[#555555]"
                   />
+                  <datalist id="target-language-options">
+                    {TARGET_LANGUAGES.map((lang) => (
+                      <option key={lang.code} value={lang.code}>
+                        {lang.label}
+                      </option>
+                    ))}
+                  </datalist>
                   <ChevronDown size={16} className="text-[#555555]" />
                 </div>
+                {targetLang ? (
+                  <p className="text-[#555555] text-[10px] font-bold uppercase tracking-widest mb-4 -mt-4">
+                    {languageLabel(targetLang)}
+                  </p>
+                ) : null}
 
                 <p className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-4">
                   Quick Select
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors"
-                    onClick={() => setTargetLang("German")}
-                    type="button"
-                  >
-                    German
-                  </button>
-                  <button
-                    className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors"
-                    onClick={() => setTargetLang("Japanese")}
-                    type="button"
-                  >
-                    Japanese
-                  </button>
-                  <button
-                    className="border border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00] rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors mt-2"
-                    onClick={() => setTargetLang("Spanish (LATAM)")}
-                    type="button"
-                  >
-                    Spanish (LATAM)
-                  </button>
+                  {TARGET_LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      className={`border rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors ${
+                        targetLang === lang.code
+                          ? "border-[#c5fe00]/50 text-[#c5fe00]"
+                          : "border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00]"
+                      }`}
+                      onClick={() => setTargetLang(lang.code)}
+                      type="button"
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
