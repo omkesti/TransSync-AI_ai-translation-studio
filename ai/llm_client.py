@@ -17,6 +17,26 @@ client = OpenAI(
 MODEL_NAME = "gemini-2.5-flash"
 
 
+def _build_glossary_block(hints: dict) -> str:
+    """
+    Builds a formatted 'Mandatory Terminology' constraint block for LLM prompts.
+    Returns an empty string if no hints are provided, so prompts are unchanged
+    when there are no relevant glossary terms for a sentence.
+
+    Example output:
+        Mandatory Terminology (MUST be followed exactly):
+          - "neural interface" MUST be translated as "Interface Neurale"
+          - "data breach" MUST be translated as "violation de données"
+    """
+    if not hints:
+        return ""
+    lines = "\n".join(
+        f'  - "{src}" MUST be translated as "{tgt}"'
+        for src, tgt in hints.items()
+    )
+    return f"\nMandatory Terminology (MUST be followed exactly):\n{lines}\n"
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _parse_batch_response(answer: str) -> list[dict]:
@@ -59,13 +79,16 @@ async def llm_guided_search(
     matched_source: str,
     matched_translation: str,
     target_lang: str,
+    glossary_hints: dict | None = None,
 ) -> dict | None:
     """
     Translate a single mid-similarity sentence with a TM reference for guidance.
+    Glossary hints are injected into a system message for maximum authority.
     """
-    prompt = f"""You are a professional translator.
+    glossary_block = _build_glossary_block(glossary_hints or {})
+    system_content = f"You are a professional translator.{glossary_block}"
 
-Translate the following sentence to {target_lang}.
+    prompt = f"""Translate the following sentence to {target_lang}.
 
 A similar sentence was previously translated as a reference for terminology and style:
   Source:      "{matched_source}"
@@ -75,6 +98,8 @@ Rules:
 - Output ONLY the translated sentence — nothing else
 - No explanations, notes, or alternatives
 - Preserve the original tone, formality, and meaning exactly
+- If the sentence contains technical or legal terminology, translate it accurately
+- You MUST strictly obey all Mandatory Terminology above — no exceptions
 
 Sentence: "{sentence}"
 """
@@ -82,7 +107,10 @@ Sentence: "{sentence}"
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": prompt},
+            ],
             max_tokens=512,
             temperature=0.3,
         )
@@ -96,18 +124,26 @@ Sentence: "{sentence}"
     return {"source": sentence, "translation": answer}
 
 
-async def cold_llm_search(sentence: str, target_lang: str) -> dict | None:
+async def cold_llm_search(
+    sentence: str,
+    target_lang: str,
+    glossary_hints: dict | None = None,
+) -> dict | None:
     """
     Translate a sentence that has never been seen by the pipeline before.
+    Glossary hints are injected into a system message for maximum authority.
     """
-    prompt = f"""You are a professional translator.
+    glossary_block = _build_glossary_block(glossary_hints or {})
+    system_content = f"You are a professional translator.{glossary_block}"
 
-Translate the following sentence into {target_lang}.
+    prompt = f"""Translate the following sentence into {target_lang}.
 
 Rules:
 - Output ONLY the translated sentence — nothing else
 - No explanations, notes, or alternatives
 - Preserve the original tone, formality, and meaning exactly
+- If the sentence contains technical or legal terminology, translate it accurately
+- You MUST strictly obey all Mandatory Terminology in the system instructions — no exceptions
 
 Sentence: {sentence}
 
@@ -116,7 +152,10 @@ Translation:"""
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": prompt},
+            ],
             max_tokens=512,
             temperature=0.3,
         )
@@ -139,11 +178,16 @@ async def llm_guided_batch(items: list[dict], target_lang: str) -> list[dict]:
     if not items:
         return []
 
-    prompt = f"""You are a professional translator.
+    all_hints: dict = {}
+    for item in items:
+        all_hints.update(item.get("glossary_hints") or {})
+    glossary_block = _build_glossary_block(all_hints)
+    system_content = f"You are a professional translator.{glossary_block}"
 
-Translate each item to {target_lang}.
+    prompt = f"""Translate each item to {target_lang}.
 
 Each item includes a reference translation to enforce terminology and style consistency.
+You MUST strictly obey all Mandatory Terminology in the system instructions — no exceptions.
 
 Return ONLY valid JSON (no markdown, no explanation) with this schema:
 {{
@@ -160,7 +204,10 @@ Items:
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": prompt},
+            ],
             max_tokens=8192,
             temperature=0.2,
         )
@@ -179,9 +226,15 @@ async def cold_llm_batch(items: list[dict], target_lang: str) -> list[dict]:
     if not items:
         return []
 
-    prompt = f"""You are a professional translator.
+    all_hints: dict = {}
+    for item in items:
+        all_hints.update(item.get("glossary_hints") or {})
+    glossary_block = _build_glossary_block(all_hints)
+    system_content = f"You are a professional translator.{glossary_block}"
 
-Translate each sentence into {target_lang}.
+    prompt = f"""Translate each sentence into {target_lang}.
+
+You MUST strictly obey all Mandatory Terminology in the system instructions — no exceptions.
 
 Return ONLY valid JSON (no markdown, no explanation) with this schema:
 {{
@@ -198,7 +251,10 @@ Items:
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": prompt},
+            ],
             max_tokens=8192,
             temperature=0.2,
         )

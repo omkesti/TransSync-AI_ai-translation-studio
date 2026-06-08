@@ -26,6 +26,7 @@ import {
   updateGlossaryTerm,
   deleteGlossaryTerm,
 } from '../services/api';
+import { TARGET_LANGUAGES } from '../constants/languages';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -51,13 +52,26 @@ function AddTermModal({ onClose, onSave }) {
       setError('Source term, translation, and target language are required.');
       return;
     }
+
+    // Split target languages by comma to allow multiple at once
+    const langs = form.target_lang.split(',').map(l => l.trim().toLowerCase()).filter(Boolean);
+    if (langs.length === 0) {
+      setError('Please provide at least one valid target language.');
+      return;
+    }
+
     setSaving(true);
     setError('');
     try {
-      const created = await addGlossaryTerm(form);
-      onSave(created);
+      const createdTerms = [];
+      for (const lang of langs) {
+        const payload = { ...form, target_lang: lang };
+        const created = await addGlossaryTerm(payload);
+        createdTerms.push(created);
+      }
+      onSave(createdTerms); // Passing an array of created terms
     } catch (err) {
-      setError(err.message || 'Failed to save term.');
+      setError(err.message || 'Failed to save term(s).');
     } finally {
       setSaving(false);
     }
@@ -110,10 +124,17 @@ function AddTermModal({ onClose, onSave }) {
               <input
                 className={inputCls}
                 placeholder="fr, de, es..."
-                maxLength={10}
+                list="glossary-target-lang-options"
                 value={form.target_lang}
-                onChange={e => setForm(f => ({ ...f, target_lang: e.target.value.toLowerCase() }))}
+                onChange={e => setForm(f => ({ ...f, target_lang: e.target.value }))}
               />
+              <datalist id="glossary-target-lang-options">
+                {TARGET_LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </option>
+                ))}
+              </datalist>
             </div>
             <div>
               <label className={labelCls}>Category</label>
@@ -216,8 +237,12 @@ function GlossaryPage() {
   };
 
   // ── Add term callback ───────────────────────────────────────────────────────
-  const handleSaved = (newTerm) => {
-    setTerms(prev => [newTerm, ...prev]);
+  const handleSaved = (newTerms) => {
+    if (Array.isArray(newTerms)) {
+      setTerms(prev => [...newTerms, ...prev]);
+    } else {
+      setTerms(prev => [newTerms, ...prev]);
+    }
     setShowModal(false);
   };
 
