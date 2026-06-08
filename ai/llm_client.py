@@ -1,213 +1,210 @@
 import json
 import os
 
-from groq import Groq
+from openai import OpenAI
 from dotenv import load_dotenv
+
 load_dotenv()
 
-client = Groq(api_key=os.environ.get("GROK_API_KEY"))
+# ── Gemini 2.5 Flash via Google's OpenAI-compatible API ───────────────────────
+# Docs: https://ai.google.dev/gemini-api/docs/openai
+# The OpenAI client works because Google mirrors the OpenAI API contract.
+client = OpenAI(
+    api_key=os.environ.get("GEMINI_API_KEY"),
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+)
 
-MODEL_NAME = "llama-3.1-8b-instant"
+MODEL_NAME = "gemini-2.5-flash"
 
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _parse_batch_response(answer: str) -> list[dict]:
-    """Parse structured JSON response from the LLM batch prompt."""
+    """
+    Parse structured JSON response from an LLM batch prompt.
+    Strips markdown code fences that Gemini sometimes wraps around JSON.
+    """
     if not answer:
         return []
 
+    # Strip ```json ... ``` or ``` ... ``` wrappers
+    cleaned = answer.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        lines = [l for l in lines if not l.strip().startswith("```")]
+        cleaned = "\n".join(lines).strip()
+
     try:
-        payload = json.loads(answer)
+        payload = json.loads(cleaned)
     except json.JSONDecodeError:
         return []
 
-    translations = payload.get("translations", [])
     results: list[dict] = []
-
-    for item in translations:
+    for item in payload.get("translations", []):
         try:
             index = int(item.get("index"))
             translation = (item.get("translation") or "").strip()
         except (TypeError, ValueError):
             continue
-
         if translation:
             results.append({"index": index, "translation": translation})
 
     return results
 
-async def llm_guided_search(sentence, matched_source, matched_translation, target_lang) -> dict | None:
+
+# ── Single-sentence LLM functions (fallback when batch JSON parse fails) ──────
+
+async def llm_guided_search(
+    sentence: str,
+    matched_source: str,
+    matched_translation: str,
+    target_lang: str,
+) -> dict | None:
     """
-    This function uses ollama model to 
-    translate the sentence which is mid-high similarity (0.8 - 0.95).
-    This prompt is included with the reference sentence which is 
-    already well translated to maintain consistency accross the translations.
+    Translate a single mid-similarity sentence with a TM reference for guidance.
     """
+    prompt = f"""You are a professional translator.
 
-    prompt = f"""
-    Act as a professional translator. 
-    Translate the following sentence to {target_lang}.
+Translate the following sentence to {target_lang}.
 
-    A similar sentence was previously translated as reference:
-    Source: "{matched_source}"
-    Translation: "{matched_translation}"
+A similar sentence was previously translated as a reference for terminology and style:
+  Source:      "{matched_source}"
+  Translation: "{matched_translation}"
 
-    Rules:
-    - Output ONLY the translated sentence, nothing else
-    - No explanations, no notes, no alternatives
-    - Preserve the original tone, formality, and meaning exactly
-    - If the sentence contains technical or legal terminology, translate it accurately
+Rules:
+- Output ONLY the translated sentence — nothing else
+- No explanations, notes, or alternatives
+- Preserve the original tone, formality, and meaning exactly
 
-    Now translate this new sentence, using the reference for terminology 
-    and style consistency but adapting it accurately:
-    Sentence: "{sentence}"
-    """
+Sentence: "{sentence}"
+"""
 
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
-            messages=[{
-                "role": "user", 
-                "content": prompt
-            }],
+            messages=[{"role": "user", "content": prompt}],
             max_tokens=512,
-            temperature=0.3
+            temperature=0.3,
         )
     except Exception as e:
-        print(f"Error during LLM generation: {e}")
+        print(f"[llm_guided_search] Error: {e}")
         return None
-    
-    answer = response.choices[0].message.content.strip() if response.choices else None
 
+    answer = response.choices[0].message.content.strip() if response.choices else None
     if not answer:
         return None
-    
-    return {
-        "source": sentence, 
-        "translation": answer, 
-    }
+    return {"source": sentence, "translation": answer}
 
+
+async def cold_llm_search(sentence: str, target_lang: str) -> dict | None:
+    """
+    Translate a sentence that has never been seen by the pipeline before.
+    """
+    prompt = f"""You are a professional translator.
+
+Translate the following sentence into {target_lang}.
+
+Rules:
+- Output ONLY the translated sentence — nothing else
+- No explanations, notes, or alternatives
+- Preserve the original tone, formality, and meaning exactly
+
+Sentence: {sentence}
+
+Translation:"""
+
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=512,
+            temperature=0.3,
+        )
+    except Exception as e:
+        print(f"[cold_llm_search] Error: {e}")
+        return None
+
+    answer = response.choices[0].message.content.strip() if response.choices else None
+    if not answer:
+        return None
+    return {"source": sentence, "translation": answer}
+
+
+# ── Batch LLM functions (ONE API call for the entire queue) ───────────────────
 
 async def llm_guided_batch(items: list[dict], target_lang: str) -> list[dict]:
-    """Translate a batch of mid-similarity sentences using a guided prompt."""
+    """
+    Translate ALL mid-similarity sentences in a single API call.
+    """
     if not items:
         return []
 
-    prompt = f"""
-    Act as a professional translator.
-    Translate each item to {target_lang}.
+    prompt = f"""You are a professional translator.
 
-    Each item includes a reference translation to enforce terminology consistency.
-    Return ONLY valid JSON with this schema:
-    {{
-      "translations": [
-        {{"index": 0, "translation": "..."}},
-        {{"index": 1, "translation": "..."}}
-      ]
-    }}
+Translate each item to {target_lang}.
 
-    Items:
-    {json.dumps(items, ensure_ascii=False)}
-    """
+Each item includes a reference translation to enforce terminology and style consistency.
+
+Return ONLY valid JSON (no markdown, no explanation) with this schema:
+{{
+  "translations": [
+    {{"index": 0, "translation": "..."}},
+    {{"index": 1, "translation": "..."}}
+  ]
+}}
+
+Items:
+{json.dumps(items, ensure_ascii=False)}
+"""
 
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
-            messages=[{
-                "role": "user",
-                "content": prompt,
-            }],
-            max_tokens=2048,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=8192,
             temperature=0.2,
         )
     except Exception as e:
-        print(f"Error during guided batch generation: {e}")
+        print(f"[llm_guided_batch] Error: {e}")
         return []
 
     answer = response.choices[0].message.content.strip() if response.choices else None
     return _parse_batch_response(answer)
-    
-async def cold_llm_search(sentence, target_lang) -> dict | None:
-    """
-    This function uses ollama model to 
-    translate the sentence which has never seen by the pipeline before.
-    """
-
-    prompt = f"""You are a professional translator. Translate the following sentence into {target_lang}.
-
-    Rules:
-    - Output ONLY the translated sentence, nothing else
-    - No explanations, no notes, no alternatives
-    - Preserve the original tone, formality, and meaning exactly
-    - If the sentence contains technical or legal terminology, translate it accurately
-
-    Sentence: {sentence}
-
-    Translation:"""
-
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{
-                "role": "user", 
-                "content": prompt
-            }],
-            max_tokens=512,
-            temperature=0.3
-        )
-    except Exception as e:
-        print(f"Error during LLM generation: {e}")
-        return None
-    
-    answer = response.choices[0].message.content.strip() if response.choices else None
-
-    if not answer:
-        return None
-    
-    return {
-        "source": sentence, 
-        "translation": answer,
-    }
 
 
 async def cold_llm_batch(items: list[dict], target_lang: str) -> list[dict]:
-    """Translate a batch of sentences without reference guidance."""
+    """
+    Translate ALL cold sentences in a single API call.
+    """
     if not items:
         return []
 
-    prompt = f"""
-    You are a professional translator. Translate each sentence into {target_lang}.
+    prompt = f"""You are a professional translator.
 
-    Rules:
-    - Output ONLY valid JSON
-    - Preserve tone and meaning exactly
+Translate each sentence into {target_lang}.
 
-    JSON schema:
-    {{
-      "translations": [
-        {{"index": 0, "translation": "..."}},
-        {{"index": 1, "translation": "..."}}
-      ]
-    }}
+Return ONLY valid JSON (no markdown, no explanation) with this schema:
+{{
+  "translations": [
+    {{"index": 0, "translation": "..."}},
+    {{"index": 1, "translation": "..."}}
+  ]
+}}
 
-    Items:
-    {json.dumps(items, ensure_ascii=False)}
-    """
+Items:
+{json.dumps(items, ensure_ascii=False)}
+"""
 
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
-            messages=[{
-                "role": "user",
-                "content": prompt,
-            }],
-            max_tokens=2048,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=8192,
             temperature=0.2,
         )
     except Exception as e:
-        print(f"Error during cold batch generation: {e}")
+        print(f"[cold_llm_batch] Error: {e}")
         return []
 
     answer = response.choices[0].message.content.strip() if response.choices else None
     return _parse_batch_response(answer)
-        
-    
