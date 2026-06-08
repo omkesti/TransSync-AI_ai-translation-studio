@@ -32,10 +32,6 @@ test_obj: dict = {
     ...
 ]
 """
-BATCH_SIZE = 15
-
-def _chunk_items(items: list[dict], size: int) -> list[list[dict]]:
-    return [items[i:i + size] for i in range(0, len(items), size)]
 
 
 def _build_result(sentence: str, translation: str, match_type: str) -> dict:
@@ -88,8 +84,10 @@ async def translate_pipeline(obj: dict) -> list[dict]:
             "sentence": sentence,
         })
 
-    # Batch guided LLM calls.
-    for batch in _chunk_items(guided_queue, BATCH_SIZE):
+    # ── Guided LLM — ONE single API call for the entire guided queue ────────────
+    # Previously: ceil(len(guided_queue) / 15) calls
+    # Now:        1 call regardless of queue size
+    if guided_queue:
         llm_items = [
             {
                 "index": item["index"],
@@ -97,18 +95,18 @@ async def translate_pipeline(obj: dict) -> list[dict]:
                 "reference_source": item["reference_source"],
                 "reference_translation": item["reference_translation"],
             }
-            for item in batch
+            for item in guided_queue
         ]
         responses = await llm_guided_batch(llm_items, target_lang)
         response_map = {r["index"]: r["translation"] for r in responses}
 
-        for item in batch:
+        for item in guided_queue:
             idx = item["index"]
             if idx in response_map:
                 results[idx] = _build_result(item["sentence"], response_map[idx], "llm_guided")
                 continue
 
-            # Fallback to single-sentence LLM if batch parsing fails.
+            # Per-item fallback: single-sentence call if batch JSON parse failed for this item
             fallback = await llm_guided_search(
                 item["sentence"],
                 item["reference_source"],
@@ -120,24 +118,27 @@ async def translate_pipeline(obj: dict) -> list[dict]:
             else:
                 results[idx] = _build_result(item["sentence"], f"[Translation failed for: {item['sentence']}]", "error")
 
-    # Batch cold LLM calls.
-    for batch in _chunk_items(cold_queue, BATCH_SIZE):
+    # ── Cold LLM — ONE single API call for the entire cold queue ────────────────
+    # Previously: ceil(len(cold_queue) / 15) calls
+    # Now:        1 call regardless of queue size
+    if cold_queue:
         llm_items = [
             {
                 "index": item["index"],
                 "sentence": item["sentence"],
             }
-            for item in batch
+            for item in cold_queue
         ]
         responses = await cold_llm_batch(llm_items, target_lang)
         response_map = {r["index"]: r["translation"] for r in responses}
 
-        for item in batch:
+        for item in cold_queue:
             idx = item["index"]
             if idx in response_map:
                 results[idx] = _build_result(item["sentence"], response_map[idx], "llm_cold")
                 continue
 
+            # Per-item fallback: single-sentence call if batch JSON parse failed for this item
             fallback = await cold_llm_search(item["sentence"], target_lang)
             if fallback:
                 results[idx] = _build_result(item["sentence"], fallback["translation"], "llm_cold")
