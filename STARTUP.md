@@ -29,10 +29,28 @@ npm run dev
 
 ---
 
-## 3. FAISS Vector Database (Optional / For Setup)
+## 3. FAISS Vector Index
 
-If you need to rebuild the translation memory FAISS index locally (since the index file is gitignored), run the following command from the project root:
+The FAISS index file (`ai/data/translations.index`) is gitignored.
+
+**Normal operation:** The index is updated automatically every time translations
+are approved via the Review UI (`POST /api/approve` calls `ai/tm_indexing.py`).
+No manual action is needed during day-to-day use.
+
+**First-time setup / recovery:** If you are running the project locally for the
+first time, or if the index file is missing/corrupt, run the rebuild script from
+the repo root to regenerate it from the Supabase database:
 
 ```bash
 python rebuild_index.py
 ```
+
+This will:
+1. Fetch all rows from `translation_memory` (ordered by `created_at` ASC)
+2. Build a fresh `IndexFlatL2(384)` index
+3. Embed each `source_text` and assign `faiss_index` positions
+4. Update each Supabase row with its new `faiss_index`
+5. Save the index to `ai/data/translations.index`
+
+> **Note:** Only needed once per machine. After that, `POST /api/approve` keeps
+> the index in sync incrementally.

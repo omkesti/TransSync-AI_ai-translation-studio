@@ -127,17 +127,17 @@ async def translate_pipeline(obj: dict) -> list[dict]:
         # Glossary matches for this specific sentence (computed once, reused)
         sentence_hints = _find_glossary_matches(sentence, glossary_hints)
 
-        # Exact TM lookup
-        exact = await exact_match_lookup(sentence)
+        # Exact TM lookup — language-aware
+        exact = await exact_match_lookup(sentence, target_lang)
         if exact:
             # Apply post-hoc glossary enforcement even on TM hits
             enforced = _apply_glossary_posthoc(sentence, exact, sentence_hints)
             results[index] = _build_result(sentence, enforced, "tm_exact")
             continue
 
-        # FAISS similarity search
+        # FAISS similarity search — language-aware
         embeddings = generate_embeddings(sentence)
-        faiss_result = faiss_search(embeddings)
+        faiss_result = faiss_search(embeddings, target_lang)
 
         if faiss_result:
             if faiss_result["score"] >= 0.95:

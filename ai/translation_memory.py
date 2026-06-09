@@ -2,27 +2,55 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', 'backend', '.env'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))  # fallback
 
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
 supabase = create_client(url, key)
 
-async def exact_match_lookup(sentence: str) -> str:
+
+def _normalize(lang: str) -> str:
+    """Minimal lang-code normaliser kept inside ai/ to avoid circular imports.
+    Strips, lowercases, and maps common display names to ISO codes."""
+    _ALIASES = {
+        "german": "de", "deutsch": "de",
+        "french": "fr", "français": "fr", "francais": "fr",
+        "spanish": "es", "español": "es", "espanol": "es",
+        "japanese": "ja",
+        "english": "en",
+        "hindi": "hi",
+        "marathi": "mar",
+    }
+    if not lang:
+        return ""
+    cleaned = str(lang).strip().lower()
+    return _ALIASES.get(cleaned, cleaned)
+
+
+async def exact_match_lookup(sentence: str, target_lang: str) -> str | None:
     """
-    Check weather exact sentence exists is the database
+    Returns the stored translated_text for an exact (source_text, target_lang) match,
+    or None if no row exists.
+
+    Both source_text AND target_lang must match — prevents returning a French
+    translation when the request is for German.
     """
+    normalized = _normalize(target_lang)
 
     try:
-        response = supabase.from_("translation_memory")\
-            .select("*")\
-            .eq("source_text", sentence)\
+        response = (
+            supabase.from_("translation_memory")
+            .select("translated_text")
+            .eq("source_text", sentence)
+            .eq("target_lang", normalized)
+            .limit(1)
             .execute()
+        )
     except Exception as e:
-        print(f"Error fetching data from Supabase: {e}")
+        print(f"[tm] Error fetching exact match from Supabase: {e}")
         return None
-    
+
     if response.data:
-        return response.data[0]['translated_text']
-    else:        
-        return None
+        return response.data[0]["translated_text"]
+    return None

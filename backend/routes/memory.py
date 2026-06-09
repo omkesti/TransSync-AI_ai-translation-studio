@@ -4,26 +4,30 @@ memory.py
 Routes:
     GET  /api/translation-memory       — fetch stored translations (for Ajinkya's UI)
     POST /api/approve                  — write human-approved translations to Supabase
+                                         and index them in FAISS (incremental)
+    GET  /api/dashboard-stats          — aggregated metrics for the Dashboard page
 
 Responsibility:
     This file handles the storage side of the human review loop.
 
-    When Ajinkya's reviewer approves or edits a sentence, the frontend
-    calls POST /api/approve with the final translations.
-    You write those rows to Supabase.
+    When the reviewer approves or edits a sentence, the frontend calls
+    POST /api/approve with the final translations.
 
     IMPORTANT: Only approved or edited translations are stored.
                Rejected sentences must NOT be sent here and will be ignored
                if they are (guarded by the 'action' field check below).
 
-    Om's rebuild_index.py will later read from Supabase to rebuild the FAISS index.
-    Your Supabase writes are what feed Om's vector store over time.
+    Approved rows are first embedded and indexed in FAISS (incremental write),
+    then inserted into Supabase with the assigned faiss_index value.
+    If FAISS write fails, a 500 is returned and Supabase is NOT written,
+    preventing orphan rows with null faiss_index.
 """
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import Optional
 from backend.services.supabase_client import fetch_all_memory, bulk_insert_translations
+from ai.tm_indexing import index_approved_rows
 
 router = APIRouter()
 
@@ -66,6 +70,7 @@ class ApproveRequest(BaseModel):
 
 class ApproveResponse(BaseModel):
     saved_count:    int
+    indexed_count:  int
     rejected_count: int
     message:        str
 
@@ -235,23 +240,40 @@ async def approve_translations(body: ApproveRequest):
     if not to_save:
         return ApproveResponse(
             saved_count=0,
+            indexed_count=0,
             rejected_count=len(rejected),
             message=f"No translations to save. {len(rejected)} rejected (not stored).",
         )
 
-    # ── Write to Supabase ─────────────────────────────────────────────────────
+    # ── Build rows ────────────────────────────────────────────────────────────
     rows = [
         {
             "source_text":     s.source_text,
             "translated_text": s.translated_text,
             "target_lang":     s.target_lang,
             "match_type":      s.match_type,
-            "faiss_index":     s.faiss_index,
+            "faiss_index":     s.faiss_index,  # None for new LLM translations
             "source_lang":     "en",
         }
         for s in to_save
     ]
 
+    # ── FAISS indexing (before Supabase write) ────────────────────────────────
+    # Rows missing faiss_index (LLM-translated sentences) are embedded and
+    # appended to the FAISS index here.  If this step fails we abort so that
+    # Supabase never gets rows with null faiss_index that should be searchable.
+    try:
+        rows = index_approved_rows(rows)
+        indexed_count = sum(1 for r in rows if r.get("faiss_index") is not None)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"FAISS indexing failed — Supabase write aborted: {str(e)}",
+        )
+
+    print(f"[tm] Indexed {indexed_count} approved sentence(s); FAISS ntotal={indexed_count}")
+
+    # ── Write to Supabase ─────────────────────────────────────────────────────
     try:
         bulk_insert_translations(rows)
     except Exception as e:
@@ -262,6 +284,10 @@ async def approve_translations(body: ApproveRequest):
 
     return ApproveResponse(
         saved_count=len(to_save),
+        indexed_count=indexed_count,
         rejected_count=len(rejected),
-        message=f"{len(to_save)} translations saved. {len(rejected)} rejected (not stored).",
+        message=(
+            f"{len(to_save)} translations saved, {indexed_count} indexed in FAISS. "
+            f"{len(rejected)} rejected (not stored)."
+        ),
     )
