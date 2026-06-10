@@ -1,3 +1,4 @@
 \.env
 \test_scratch.py
 \__pycache__
+\data
