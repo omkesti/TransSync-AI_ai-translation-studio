@@ -9,9 +9,10 @@ Responsibility:
     Returns either errors (rejected) or a clean sentence array.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from nlp.nlp_pipeline import validate_and_split
+from backend.auth.jwt_bearer import CurrentUser, get_current_user
 
 router = APIRouter()
 
@@ -30,7 +31,7 @@ class ValidateResponse(BaseModel):
 
 
 @router.post("/validate", response_model=ValidateResponse)
-async def validate_document(body: ValidateRequest):
+async def validate_document(body: ValidateRequest, current_user: CurrentUser = Depends(get_current_user)):
     """
     POST /api/validate
 

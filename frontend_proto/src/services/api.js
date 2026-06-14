@@ -1,5 +1,25 @@
+/**
+ * api.js
+ * ──────
+ * All backend API calls. Every request includes the Supabase JWT
+ * in the Authorization header for authentication.
+ */
+
+import supabase from "../lib/supabaseClient";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+// ── Auth header helper ──────────────────────────────────────────────────────
+
+async function getAuthHeaders() {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
+}
+
+// ── Response helper ─────────────────────────────────────────────────────────
 
 async function handleResponse(response) {
   if (response.ok) {
@@ -14,6 +34,14 @@ async function handleResponse(response) {
     return JSON.parse(text);
   }
 
+  // Handle 401 — redirect to login
+  if (response.status === 401) {
+    // Session expired or invalid — sign out and redirect
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+    throw new Error("Session expired. Please sign in again.");
+  }
+
   let message = "Request failed";
   try {
     const data = await response.json();
@@ -25,6 +53,8 @@ async function handleResponse(response) {
   throw new Error(message);
 }
 
+// ── Upload ──────────────────────────────────────────────────────────────────
+
 export async function uploadDocument(file) {
   const formData = new FormData();
   formData.append("file", file);
@@ -33,8 +63,10 @@ export async function uploadDocument(file) {
   const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   try {
+    const authHeaders = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/api/upload-document`, {
       method: "POST",
+      headers: { ...authHeaders },
       body: formData,
       signal: controller.signal,
     });
@@ -50,10 +82,14 @@ export async function uploadDocument(file) {
   }
 }
 
+// ── Validate ────────────────────────────────────────────────────────────────
+
 export async function validateText(rawText, docId) {
+  const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/validate`, {
     method: "POST",
     headers: {
+      ...authHeaders,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -65,10 +101,14 @@ export async function validateText(rawText, docId) {
   return handleResponse(response);
 }
 
+// ── Translate ───────────────────────────────────────────────────────────────
+
 export async function translateSentences(sentences, sourceLang, targetLang) {
+  const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/translate`, {
     method: "POST",
     headers: {
+      ...authHeaders,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -81,10 +121,14 @@ export async function translateSentences(sentences, sourceLang, targetLang) {
   return handleResponse(response);
 }
 
+// ── Approve ─────────────────────────────────────────────────────────────────
+
 export async function approveTranslations(reviewed) {
+  const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/approve`, {
     method: "POST",
     headers: {
+      ...authHeaders,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -95,50 +139,60 @@ export async function approveTranslations(reviewed) {
   return handleResponse(response);
 }
 
-// ── Dashboard ──────────────────────────────────────────────────────────────────
+// ── Dashboard ───────────────────────────────────────────────────────────────
 
 export async function fetchDashboardStats() {
-  const response = await fetch(`${API_BASE_URL}/api/dashboard-stats`);
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/dashboard-stats`, {
+    headers: { ...authHeaders },
+  });
   return handleResponse(response);
 }
 
-// ── Glossary ───────────────────────────────────────────────────────────────────
+// ── Glossary ────────────────────────────────────────────────────────────────
 
 export async function fetchGlossary({ targetLang, search } = {}) {
   const params = new URLSearchParams();
   if (targetLang) params.set("target_lang", targetLang);
   if (search) params.set("search", search);
   const qs = params.toString() ? `?${params.toString()}` : "";
-  const response = await fetch(`${API_BASE_URL}/api/glossary${qs}`);
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/glossary${qs}`, {
+    headers: { ...authHeaders },
+  });
   return handleResponse(response);
 }
 
 export async function addGlossaryTerm(term) {
+  const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/glossary`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...authHeaders, "Content-Type": "application/json" },
     body: JSON.stringify(term),
   });
   return handleResponse(response);
 }
 
 export async function updateGlossaryTerm(id, patch) {
+  const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/glossary/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...authHeaders, "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   });
   return handleResponse(response);
 }
 
 export async function deleteGlossaryTerm(id) {
+  const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/glossary/${id}`, {
     method: "DELETE",
+    headers: { ...authHeaders },
   });
   return handleResponse(response);
 }
 
-// ── Export ─────────────────────────────────────────────────────────────────────
+// ── Export ───────────────────────────────────────────────────────────────────
 
 /**
  * POST /api/export
@@ -154,13 +208,19 @@ export async function deleteGlossaryTerm(id) {
  * @param {Array}  payload.translations    — [{ source, translation, match_type }]
  */
 export async function exportDocument(payload) {
+  const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/export`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...authHeaders, "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      await supabase.auth.signOut();
+      window.location.href = "/login";
+      throw new Error("Session expired.");
+    }
     let message = "Export failed.";
     try {
       const data = await response.json();
@@ -182,7 +242,7 @@ export async function exportDocument(payload) {
   URL.revokeObjectURL(url);
 }
 
-// ── Batch Export ───────────────────────────────────────────────────────────────
+// ── Batch Export ─────────────────────────────────────────────────────────────
 
 /**
  * POST /api/export/batch
@@ -193,13 +253,19 @@ export async function exportDocument(payload) {
  * @param {Array} documents — [{ doc_id, filename, source_lang, target_lang, raw_text, translations }]
  */
 export async function exportBatch(documents) {
+  const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/export/batch`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...authHeaders, "Content-Type": "application/json" },
     body: JSON.stringify({ documents }),
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      await supabase.auth.signOut();
+      window.location.href = "/login";
+      throw new Error("Session expired.");
+    }
     let message = "Batch export failed.";
     try {
       const data = await response.json();

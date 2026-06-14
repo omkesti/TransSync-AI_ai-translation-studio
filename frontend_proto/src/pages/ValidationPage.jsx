@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { validateText } from "../services/api";
 import { useAppContext } from "../context/AppContext";
+import UserProfileBlock from "../components/UserProfileBlock";
 import {
   Bell,
   LayoutDashboard,
@@ -250,10 +251,7 @@ function ValidationPage() {
             <HelpCircle size={18} />
             <span className="text-[11px] font-bold uppercase tracking-widest">Help</span>
           </div>
-          <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-            <LogOut size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Logout</span>
-          </div>
+          <UserProfileBlock />
         </div>
       </aside>
 

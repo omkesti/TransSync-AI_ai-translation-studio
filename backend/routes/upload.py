@@ -18,9 +18,10 @@ via POST /api/translate.
 import os
 import uuid
 import shutil
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from backend.services.document_parser import parse_document
+from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
 router = APIRouter()
 
@@ -33,7 +34,10 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx"}
 
 
 @router.post("/upload-document")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    current_user: CurrentUser = Depends(get_current_user),
+):
     """
     POST /api/upload-document
 

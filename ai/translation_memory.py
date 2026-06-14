@@ -28,13 +28,13 @@ def _normalize(lang: str) -> str:
     return _ALIASES.get(cleaned, cleaned)
 
 
-async def exact_match_lookup(sentence: str, target_lang: str) -> str | None:
+async def exact_match_lookup(sentence: str, target_lang: str, org_id: str) -> str | None:
     """
-    Returns the stored translated_text for an exact (source_text, target_lang) match,
-    or None if no row exists.
+    Returns the stored translated_text for an exact (source_text, target_lang, org_id)
+    match, or None if no row exists.
 
-    Both source_text AND target_lang must match — prevents returning a French
-    translation when the request is for German.
+    Both source_text AND target_lang AND org_id must match — prevents returning
+    translations from other organizations or wrong languages.
     """
     normalized = _normalize(target_lang)
 
@@ -44,6 +44,7 @@ async def exact_match_lookup(sentence: str, target_lang: str) -> str | None:
             .select("translated_text")
             .eq("source_text", sentence)
             .eq("target_lang", normalized)
+            .eq("org_id", org_id)
             .limit(1)
             .execute()
         )

@@ -7,16 +7,17 @@ Single-document export. Delegates DOCX reconstruction to the shared
 docx_builder service.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from backend.services.docx_builder import DocExportData, reconstruct_docx, make_output_filename
+from backend.auth.jwt_bearer import CurrentUser, get_current_user
 
 router = APIRouter()
 
 
 @router.post("/export")
-async def export_document(body: DocExportData):
+async def export_document(body: DocExportData, current_user: CurrentUser = Depends(get_current_user)):
     """
     POST /api/export
 

@@ -12,11 +12,12 @@ import io
 import zipfile
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from backend.services.docx_builder import DocExportData, reconstruct_docx, make_output_filename
+from backend.auth.jwt_bearer import CurrentUser, get_current_user
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ class BatchExportRequest(BaseModel):
 
 
 @router.post("/export/batch")
-async def export_batch(body: BatchExportRequest):
+async def export_batch(body: BatchExportRequest, current_user: CurrentUser = Depends(get_current_user)):
     """
     POST /api/export/batch
 

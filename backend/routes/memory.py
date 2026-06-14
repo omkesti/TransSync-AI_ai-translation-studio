@@ -23,11 +23,12 @@ Responsibility:
     preventing orphan rows with null faiss_index.
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 from backend.services.supabase_client import fetch_all_memory, bulk_insert_translations
 from ai.tm_indexing import index_approved_rows
+from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
 router = APIRouter()
 
@@ -78,7 +79,7 @@ class ApproveResponse(BaseModel):
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.get("/dashboard-stats")
-async def get_dashboard_stats():
+async def get_dashboard_stats(current_user: CurrentUser = Depends(get_current_user)):
     """
     GET /api/dashboard-stats
 
@@ -109,7 +110,7 @@ async def get_dashboard_stats():
         }
     """
     try:
-        records = fetch_all_memory()  # already sorted newest-first
+        records = fetch_all_memory(org_id=current_user.org_id)  # already sorted newest-first
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -152,7 +153,8 @@ async def get_translation_memory(
     target_lang: Optional[str] = Query(
         default=None,
         description="Filter by language code, e.g. 'fr'. Omit for all languages.",
-    )
+    ),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     GET /api/translation-memory
@@ -180,7 +182,7 @@ async def get_translation_memory(
         }
     """
     try:
-        records = fetch_all_memory(target_lang=target_lang)
+        records = fetch_all_memory(org_id=current_user.org_id, target_lang=target_lang)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch translation memory: {str(e)}")
 
@@ -188,7 +190,7 @@ async def get_translation_memory(
 
 
 @router.post("/approve", response_model=ApproveResponse)
-async def approve_translations(body: ApproveRequest):
+async def approve_translations(body: ApproveRequest, current_user: CurrentUser = Depends(get_current_user)):
     """
     POST /api/approve
 
@@ -254,6 +256,7 @@ async def approve_translations(body: ApproveRequest):
             "match_type":      s.match_type,
             "faiss_index":     s.faiss_index,  # None for new LLM translations
             "source_lang":     "en",
+            "org_id":          current_user.org_id,
         }
         for s in to_save
     ]

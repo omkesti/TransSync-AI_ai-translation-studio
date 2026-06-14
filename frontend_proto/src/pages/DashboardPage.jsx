@@ -19,6 +19,8 @@ import {
   Download,
 } from 'lucide-react';
 import { fetchDashboardStats } from '../services/api';
+import UserProfileBlock from '../components/UserProfileBlock';
+import { useAuth } from '../context/AuthContext';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -97,6 +99,7 @@ function SkeletonRow() {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 function DashboardPage() {
+  const { accessToken } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -114,9 +117,10 @@ function DashboardPage() {
     }
   };
 
+  // Only fetch once we have a valid session token
   useEffect(() => {
-    loadStats();
-  }, []);
+    if (accessToken) loadStats();
+  }, [accessToken]);
 
   // Derived values from stats
   const total = stats?.total_translations ?? 0;
@@ -239,10 +243,7 @@ function DashboardPage() {
               <HelpCircle size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Help</span>
             </div>
-            <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-              <LogOut size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Logout</span>
-            </div>
+            <UserProfileBlock />
           </div>
         </aside>
 

@@ -51,13 +51,13 @@ def get_client() -> Client:
 
 # ── Read ──────────────────────────────────────────────────────────────────────
 
-def fetch_all_memory(target_lang: Optional[str] = None) -> list[dict]:
+def fetch_all_memory(org_id: str, target_lang: Optional[str] = None) -> list[dict]:
     """
-    Returns all rows from translation_memory.
+    Returns all rows from translation_memory for a given org.
     Optionally filter by target_lang (e.g. "fr").
     """
     client = get_client()
-    query = client.table("translation_memory").select("*").order("created_at", desc=True)
+    query = client.table("translation_memory").select("*").eq("org_id", org_id).order("created_at", desc=True)
 
     if target_lang:
         query = query.eq("target_lang", target_lang)
@@ -66,13 +66,10 @@ def fetch_all_memory(target_lang: Optional[str] = None) -> list[dict]:
     return response.data
 
 
-def fetch_exact_match(source_text: str, target_lang: str) -> Optional[dict]:
+def fetch_exact_match(source_text: str, target_lang: str, org_id: str) -> Optional[dict]:
     """
-    Looks up an exact source_text + target_lang match in Supabase.
+    Looks up an exact source_text + target_lang match in Supabase, scoped to org.
     Returns the first matching row or None.
-
-    Note: Om's tm_exact tier already handles this inside translate_pipeline().
-    This helper is exposed in case you need it independently (e.g. for admin checks).
     """
     client = get_client()
     response = (
@@ -80,6 +77,7 @@ def fetch_exact_match(source_text: str, target_lang: str) -> Optional[dict]:
         .select("*")
         .eq("source_text", source_text)
         .eq("target_lang", target_lang)
+        .eq("org_id", org_id)
         .limit(1)
         .execute()
     )
@@ -135,6 +133,7 @@ def bulk_insert_translations(rows: list[dict]) -> list[dict]:
             "source_lang":     r.get("source_lang", "en"),
             "target_lang":     r["target_lang"],
             "match_type":      r["match_type"],
+            "org_id":          r["org_id"],
             **({("faiss_index"): r["faiss_index"]} if r.get("faiss_index") is not None else {}),
         }
         for r in rows
@@ -155,15 +154,16 @@ def bulk_insert_translations(rows: list[dict]) -> list[dict]:
 #   created_at  timestamp (auto)
 
 def fetch_all_glossary(
+    org_id: str,
     target_lang: Optional[str] = None,
     search: Optional[str] = None,
 ) -> list[dict]:
     """
-    Returns all rows from the glossary table, newest first.
+    Returns all rows from the glossary table for a given org, newest first.
     Optionally filter by target_lang and/or search term (applied to source_term).
     """
     client = get_client()
-    query = client.table("glossary").select("*").order("created_at", desc=True)
+    query = client.table("glossary").select("*").eq("org_id", org_id).order("created_at", desc=True)
     if target_lang:
         normalized = normalize_lang_code(target_lang)
         if normalized:
@@ -177,7 +177,7 @@ def fetch_all_glossary(
 def insert_glossary_term(row: dict) -> dict:
     """
     Inserts a new term into the glossary table.
-    row must contain: source_term, target_term, target_lang
+    row must contain: source_term, target_term, target_lang, org_id
     Optional: category, status, source_lang
     """
     client = get_client()
@@ -188,6 +188,7 @@ def insert_glossary_term(row: dict) -> dict:
         "source_lang": normalize_lang_code(row.get("source_lang", "en")) or row.get("source_lang", "en"),
         "category":    row.get("category", ""),
         "status":      row.get("status", "PENDING"),
+        "org_id":      row["org_id"],
     }
     response = client.table("glossary").insert(payload).execute()
     return response.data[0]
@@ -224,10 +225,10 @@ def delete_glossary_term(term_id: str) -> bool:
     return len(response.data) > 0
 
 
-def fetch_verified_glossary_terms(target_lang: str) -> dict:
+def fetch_verified_glossary_terms(target_lang: str, org_id: str) -> dict:
     """
-    Returns all VERIFIED glossary terms for the given target language as a
-    flat dict: { source_term_lower: target_term }.
+    Returns all VERIFIED glossary terms for the given target language and org
+    as a flat dict: { source_term_lower: target_term }.
 
     Keys are lowercased so callers can do case-insensitive scanning without
     repeated .lower() calls on every lookup.
@@ -246,6 +247,7 @@ def fetch_verified_glossary_terms(target_lang: str) -> dict:
                 .select("source_term, target_term")
                 .eq("target_lang", code)
                 .eq("status", "VERIFIED")
+                .eq("org_id", org_id)
                 .execute()
             )
             if response.data:

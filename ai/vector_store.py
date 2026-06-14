@@ -118,10 +118,11 @@ def add_embeddings_batch(embeddings: list[np.ndarray]) -> list[int]:
 
 # ── Read API ──────────────────────────────────────────────────────────────────
 
-def faiss_search(embedding: np.ndarray, target_lang: str) -> dict | None:
+def faiss_search(embedding: np.ndarray, target_lang: str, org_id: str) -> dict | None:
     """
     Finds the nearest neighbour in the FAISS index and resolves it against
-    Supabase, filtering by target_lang to prevent cross-language hits.
+    Supabase, filtering by target_lang AND org_id to prevent cross-language
+    and cross-tenant hits.
 
     Returns:
         {source_text, translated_text, score}  — for guided LLM (score < 0.95)
@@ -148,13 +149,14 @@ def faiss_search(embedding: np.ndarray, target_lang: str) -> dict | None:
         if score > 0.8:
             continue  # Too dissimilar — skip
 
-        # Resolve against Supabase with language filter
+        # Resolve against Supabase with language + org filter
         try:
             response = (
                 supabase.from_("translation_memory")
                 .select("source_text, translated_text")
                 .eq("faiss_index", int(f_index))
                 .eq("target_lang", normalized)
+                .eq("org_id", org_id)
                 .limit(1)
                 .execute()
             )
@@ -163,7 +165,7 @@ def faiss_search(embedding: np.ndarray, target_lang: str) -> dict | None:
             continue
 
         if not response.data:
-            # Vector exists but no matching row for this language — try next k
+            # Vector exists but no matching row for this language/org — try next k
             continue
 
         row = response.data[0]

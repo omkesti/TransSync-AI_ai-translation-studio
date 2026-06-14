@@ -117,6 +117,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
 
     sentences = obj.get("sentences", [])
     target_lang = obj.get("target_lang")
+    org_id = obj.get("org_id", "")
     glossary_hints: dict = obj.get("glossary_hints") or {}
 
     results: list[dict | None] = [None] * len(sentences)
@@ -127,17 +128,17 @@ async def translate_pipeline(obj: dict) -> list[dict]:
         # Glossary matches for this specific sentence (computed once, reused)
         sentence_hints = _find_glossary_matches(sentence, glossary_hints)
 
-        # Exact TM lookup — language-aware
-        exact = await exact_match_lookup(sentence, target_lang)
+        # Exact TM lookup — language-aware + org-scoped
+        exact = await exact_match_lookup(sentence, target_lang, org_id)
         if exact:
             # Apply post-hoc glossary enforcement even on TM hits
             enforced = _apply_glossary_posthoc(sentence, exact, sentence_hints)
             results[index] = _build_result(sentence, enforced, "tm_exact")
             continue
 
-        # FAISS similarity search — language-aware
+        # FAISS similarity search — language-aware + org-scoped
         embeddings = generate_embeddings(sentence)
-        faiss_result = faiss_search(embeddings, target_lang)
+        faiss_result = faiss_search(embeddings, target_lang, org_id)
 
         if faiss_result:
             if faiss_result["score"] >= 0.95:
@@ -248,6 +249,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
 async def translate_sentence(
     sentence: str,
     target_lang: str,
+    org_id: str = "",
     glossary_hints: dict | None = None,
 ) -> dict:
     """
@@ -256,6 +258,7 @@ async def translate_sentence(
     results = await translate_pipeline({
         "sentences": [sentence],
         "target_lang": target_lang,
+        "org_id": org_id,
         "glossary_hints": glossary_hints or {},
     })
     return results[0]

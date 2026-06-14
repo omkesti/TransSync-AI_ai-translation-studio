@@ -27,6 +27,8 @@ import {
   deleteGlossaryTerm,
 } from '../services/api';
 import { TARGET_LANGUAGES } from '../constants/languages';
+import UserProfileBlock from '../components/UserProfileBlock';
+import { useAuth } from '../context/AuthContext';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -174,6 +176,7 @@ function AddTermModal({ onClose, onSave }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 function GlossaryPage() {
+  const { accessToken } = useAuth();
   const [terms, setTerms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -199,7 +202,7 @@ function GlossaryPage() {
     }
   };
 
-  useEffect(() => { loadTerms(); }, []);
+  useEffect(() => { if (accessToken) loadTerms(); }, [accessToken]);
 
   // Debounced search
   const handleSearchChange = (e) => {
@@ -314,10 +317,7 @@ function GlossaryPage() {
             <HelpCircle size={18} />
             <span className="text-[11px] font-bold uppercase tracking-widest">Help</span>
           </div>
-          <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-            <LogOut size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Logout</span>
-          </div>
+          <UserProfileBlock />
         </div>
       </aside>
 

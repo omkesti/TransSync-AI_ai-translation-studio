@@ -30,7 +30,7 @@ SQL to create the table in Supabase:
     );
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 from backend.services.supabase_client import (
@@ -40,6 +40,7 @@ from backend.services.supabase_client import (
     delete_glossary_term,
 )
 from backend.utils.language_codes import normalize_lang_code
+from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
 router = APIRouter()
 
@@ -89,6 +90,7 @@ async def list_glossary(
         default=None,
         description="Case-insensitive substring match on source_term.",
     ),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     GET /api/glossary
@@ -116,7 +118,7 @@ async def list_glossary(
         }
     """
     try:
-        terms = fetch_all_glossary(target_lang=target_lang, search=search)
+        terms = fetch_all_glossary(org_id=current_user.org_id, target_lang=target_lang, search=search)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch glossary: {str(e)}")
 
@@ -124,7 +126,7 @@ async def list_glossary(
 
 
 @router.post("/glossary", status_code=201)
-async def create_glossary_term(body: GlossaryTermCreate):
+async def create_glossary_term(body: GlossaryTermCreate, current_user: CurrentUser = Depends(get_current_user)):
     """
     POST /api/glossary
 
@@ -132,6 +134,7 @@ async def create_glossary_term(body: GlossaryTermCreate):
 
     Returns the newly created term row.
     """
+    require_role(current_user, "owner", "admin")
     normalized_target = normalize_lang_code(body.target_lang)
     if not normalized_target:
         raise HTTPException(status_code=400, detail="target_lang is invalid or empty.")
@@ -139,6 +142,7 @@ async def create_glossary_term(body: GlossaryTermCreate):
     try:
         payload = body.model_dump()
         payload["target_lang"] = normalized_target
+        payload["org_id"] = current_user.org_id
         term = insert_glossary_term(payload)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create glossary term: {str(e)}")
@@ -147,7 +151,7 @@ async def create_glossary_term(body: GlossaryTermCreate):
 
 
 @router.patch("/glossary/{term_id}")
-async def patch_glossary_term(term_id: str, body: GlossaryTermPatch):
+async def patch_glossary_term(term_id: str, body: GlossaryTermPatch, current_user: CurrentUser = Depends(get_current_user)):
     """
     PATCH /api/glossary/{id}
 
@@ -156,6 +160,7 @@ async def patch_glossary_term(term_id: str, body: GlossaryTermPatch):
 
     Returns the updated term row.
     """
+    require_role(current_user, "owner", "admin")
     patch = {k: v for k, v in body.model_dump().items() if v is not None}
     if not patch:
         raise HTTPException(status_code=400, detail="No fields provided to update.")
@@ -172,13 +177,14 @@ async def patch_glossary_term(term_id: str, body: GlossaryTermPatch):
 
 
 @router.delete("/glossary/{term_id}", status_code=204)
-async def remove_glossary_term(term_id: str):
+async def remove_glossary_term(term_id: str, current_user: CurrentUser = Depends(get_current_user)):
     """
     DELETE /api/glossary/{id}
 
     Deletes a glossary term by id.
     Returns 204 No Content on success, 404 if not found.
     """
+    require_role(current_user, "owner", "admin")
     try:
         deleted = delete_glossary_term(term_id)
     except Exception as e:

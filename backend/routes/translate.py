@@ -15,15 +15,14 @@ Data flow:
     NLP module  →  POST /api/translate  →  translate_pipeline()  →  JSON response  →  Frontend review UI
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 # ── Om's interface contract ───────────────────────────────────────────────────
-# This import works because the virtual environment is at the repo root level.
-# Run the server from the repo root:  uvicorn backend.main:app --reload
 from ai.rag_pipeline import translate_pipeline
 from backend.services.supabase_client import fetch_verified_glossary_terms
 from backend.utils.language_codes import normalize_lang_code
+from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
 router = APIRouter()
 
@@ -77,7 +76,7 @@ class TranslateResponse(BaseModel):
 # ── Route ─────────────────────────────────────────────────────────────────────
 
 @router.post("/translate", response_model=TranslateResponse)
-async def translate_document(body: TranslateRequest):
+async def translate_document(body: TranslateRequest, current_user: CurrentUser = Depends(get_current_user)):
     """
     POST /api/translate
 
@@ -126,7 +125,7 @@ async def translate_document(body: TranslateRequest):
     # PENDING terms are intentionally excluded.
     glossary_hints: dict = {}
     try:
-        glossary_hints = fetch_verified_glossary_terms(normalized_target)
+        glossary_hints = fetch_verified_glossary_terms(normalized_target, current_user.org_id)
         if glossary_hints:
             print(f"[glossary] Enforcing {len(glossary_hints)} verified term(s) for '{normalized_target}'")
         else:
@@ -138,6 +137,7 @@ async def translate_document(body: TranslateRequest):
         "sentences": body.sentences,
         "source_lang": body.source_lang,
         "target_lang": normalized_target,
+        "org_id": current_user.org_id,
         "glossary_hints": glossary_hints,
     }
 
