@@ -34,8 +34,8 @@ test_obj: dict = {
 """
 
 
-def _build_result(sentence: str, translation: str, match_type: str) -> dict:
-    return {"source": sentence, "translation": translation, "match_type": match_type}
+def _build_result(sentence: str, translation: str, match_type: str, score: float | None = None) -> dict:
+    return {"source": sentence, "translation": translation, "match_type": match_type, "score": score}
 
 
 def _find_glossary_matches(sentence: str, glossary_hints: dict) -> dict:
@@ -133,7 +133,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
         if exact:
             # Apply post-hoc glossary enforcement even on TM hits
             enforced = _apply_glossary_posthoc(sentence, exact, sentence_hints)
-            results[index] = _build_result(sentence, enforced, "tm_exact")
+            results[index] = _build_result(sentence, enforced, "tm_exact", score=0.0)
             continue
 
         # FAISS similarity search — language-aware + org-scoped
@@ -145,7 +145,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
                 faiss_translation = faiss_result["translated_text"]
                 # Apply post-hoc glossary enforcement on FAISS direct hits too
                 enforced = _apply_glossary_posthoc(sentence, faiss_translation, sentence_hints)
-                results[index] = _build_result(sentence, enforced, "faiss_direct")
+                results[index] = _build_result(sentence, enforced, "faiss_direct", score=faiss_result["score"])
                 continue
 
             guided_queue.append({
@@ -154,6 +154,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
                 "reference_source": faiss_result["source_text"],
                 "reference_translation": faiss_result["translated_text"],
                 "glossary_hints": sentence_hints,
+                "faiss_score": faiss_result["score"],
             })
             continue
 
@@ -186,7 +187,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
             if idx in response_map:
                 raw = response_map[idx]
                 enforced = _apply_glossary_posthoc(item["sentence"], raw, item_hints)
-                results[idx] = _build_result(item["sentence"], enforced, "llm_guided")
+                results[idx] = _build_result(item["sentence"], enforced, "llm_guided", score=item.get("faiss_score"))
                 continue
 
             # Per-item fallback: single-sentence call if batch JSON parse failed for this item
@@ -199,7 +200,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
             )
             if fallback:
                 enforced = _apply_glossary_posthoc(item["sentence"], fallback["translation"], item_hints)
-                results[idx] = _build_result(item["sentence"], enforced, "llm_guided")
+                results[idx] = _build_result(item["sentence"], enforced, "llm_guided", score=item.get("faiss_score"))
             else:
                 results[idx] = _build_result(item["sentence"], f"[Translation failed for: {item['sentence']}]", "error")
 

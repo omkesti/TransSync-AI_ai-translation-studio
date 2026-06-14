@@ -31,27 +31,29 @@ const SKIP_MATCH_TYPES = new Set(["tm_exact", "faiss_direct"]);
 const matchLabel = (matchType) => {
   if (!matchType) return "Pending";
   switch (matchType) {
-    case "tm_exact":    return "TM Exact";
+    case "tm_exact":     return "TM Exact";
     case "faiss_direct": return "FAISS Direct";
-    case "llm_guided":  return "LLM Guided";
-    case "llm_cold":    return "LLM Cold";
-    default:            return matchType.replace("_", " ").toUpperCase();
+    case "llm_guided":   return "LLM Guided";
+    case "llm_cold":     return "LLM Cold";
+    default:             return matchType.replace("_", " ").toUpperCase();
   }
 };
 
 const matchBadgeCls = (matchType) => {
   switch (matchType) {
     case "tm_exact":
-      return "bg-[#1a2010] text-[#c5fe00] border border-[#2a2e16]";
+      return "bg-[#1a2010] text-[#c5fe00] border-[#2a2e16]"; // Green
     case "faiss_direct":
-      return "bg-[#101820] text-[#00c5fe] border border-[#162030]";
+      return "bg-[#201c00] text-[#ffcc00] border-[#3a3000]"; // Yellow
     case "llm_guided":
-      return "bg-[#1a1020] text-[#c500fe] border border-[#2a1630]";
+      return "bg-[#2a130a] text-[#ff8800] border-[#4a2310]"; // Orange
     case "llm_cold":
     default:
-      return "bg-[#1a200a] text-[#c5fe00] border border-[#2a2e16]";
+      return "bg-[#2a0a0a] text-[#ff4d4d] border-[#4a1010]"; // Red
   }
 };
+
+const ORDERED_MATCH_TYPES = ["llm_cold", "llm_guided", "faiss_direct", "tm_exact"];
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
@@ -98,37 +100,169 @@ function Sidebar() {
       </div>
 
       <div className="p-6 space-y-1 pb-8">
-
         <UserProfileBlock />
       </div>
     </aside>
   );
 }
 
+// ── Review Section Component ──────────────────────────────────────────────────
+
+function ReviewSection({ matchType, items, offset, onApprove, onDiscard, isApproving, sourceLang, targetLang }) {
+  if (!items || items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[300px] text-center bg-[#111111] border border-[#262626] rounded-[24px]">
+        <div className="w-16 h-16 rounded-full bg-[#1a1a1a] border border-[#262626] flex items-center justify-center mb-6">
+          <Languages size={28} className="text-[#555555]" />
+        </div>
+        <h2 className="font-display font-bold text-xl tracking-tight mb-2 text-[#8c8c8b]">No {matchLabel(matchType)} Matches</h2>
+        <p className="text-[#555555] text-[13px] max-w-sm">
+          There are no sentences that matched this translation layer in the current document.
+        </p>
+      </div>
+    );
+  }
+
+  const CHUNK_SIZE = 10;
+  const isCompleted = offset >= items.length;
+
+  if (isCompleted) {
+    return (
+      <div className="bg-[#111111] border border-[#262626] rounded-[24px] p-6 text-center mb-6">
+        <CheckCircle size={24} className="mx-auto mb-2 text-[#555555]" />
+        <p className="text-[11px] uppercase tracking-widest font-bold text-[#8c8c8b]">All {matchLabel(matchType)} reviewed</p>
+      </div>
+    );
+  }
+
+  const batch = items.slice(offset, offset + CHUNK_SIZE);
+  const currentBatchNum = Math.floor(offset / CHUNK_SIZE) + 1;
+  const totalBatches = Math.ceil(items.length / CHUNK_SIZE);
+  const skippedInBatch = batch.filter(item => SKIP_MATCH_TYPES.has(item.match_type)).length;
+
+  return (
+    <div className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden mb-6">
+      <div className="px-8 py-5 border-b border-[#262626] flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 shadow-[inset_0_0_10px_rgba(197,254,0,0.05)] ${matchBadgeCls(matchType)}`}>
+            {matchLabel(matchType)}
+          </span>
+          <span className="text-[#8c8c8b] text-[10px] font-bold uppercase tracking-[0.2em]">
+            Batch {currentBatchNum} / {totalBatches}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          {skippedInBatch > 0 && (
+            <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+              {skippedInBatch} already in TM
+            </span>
+          )}
+          <span className="text-[#555555] text-[10px] font-bold uppercase tracking-[0.2em]">
+            {batch.length} sentences
+          </span>
+        </div>
+      </div>
+
+      <div className="divide-y divide-[#262626]">
+        {batch.map((item, index) => {
+          const conf = item.score !== undefined && item.score !== null
+            ? Math.max(0, Math.round(100 - (item.score * 100)))
+            : null;
+
+          return (
+            <div key={`${item.source}-${index}`} className="grid grid-cols-1 md:grid-cols-2">
+              <div className="p-6 border-r border-[#262626]">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                    Source — {sourceLang?.toUpperCase() || "EN"}
+                  </span>
+                </div>
+                <p className="text-[#a0a09f] text-[15px] leading-[1.6] font-sans">{item.source}</p>
+              </div>
+
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                    Target — {targetLang ? languageLabel(targetLang) : "TBD"}
+                  </span>
+
+                  {conf !== null && item.match_type !== "llm_cold" && (
+                    <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2 py-1 ${matchBadgeCls(matchType)} bg-opacity-20`}>
+                      {conf}% Confidence
+                    </span>
+                  )}
+                </div>
+                <p className="text-[#ffffff] text-[15px] leading-[1.6] font-sans">{item.translation}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Section Footer Actions */}
+      <div className="p-6 bg-[#0a0a0a] border-t border-[#262626] flex justify-end gap-4">
+        <button
+          className="text-[#a0a09f] hover:text-[#ff4d4d] transition-colors font-bold text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed px-6 py-3 border border-[#262626] rounded-full"
+          onClick={() => onDiscard(batch, matchType)}
+          disabled={isApproving}
+        >
+          Discard Batch
+        </button>
+        <button
+          className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-6 py-3 font-bold flex items-center gap-2 text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
+          onClick={() => onApprove(batch, matchType)}
+          disabled={isApproving}
+        >
+          {isApproving ? (
+            <><Loader2 size={14} className="animate-spin" /> Approving…</>
+          ) : (
+            "Approve & Next"
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 function ReviewPage() {
-  // "idle" | "running" | "done" | "error"
   const [translationState, setTranslationState] = useState("idle");
   const [isApproving, setIsApproving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
   const [reviewedCount, setReviewedCount] = useState(0);
 
   const { sentences, results, setResults, sourceLang, targetLang, documents, activeDocIndex, setActiveDocIndex, updateDoc } = useAppContext();
   const multiDoc = documents.length > 1;
 
-  // If results already exist in context (user navigated back), treat as done immediately
   const initialState = results && results.length > 0 ? "done" : "idle";
   const [state] = useState(initialState);
-
-  // Use whichever is truthy — state set at mount, translationState updated dynamically
   const effectiveState = translationState === "idle" && state === "done" ? "done" : translationState;
 
   const hasResults = results && results.length > 0;
-  const totalCount = results.length;
+  const totalCount = results?.length || 0;
 
-  // ── Start Translation ─────────────────────────────────────────────────────
+  // Track offsets for each section
+  const [offsets, setOffsets] = useState({
+    llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0
+  });
+
+  const [activeSection, setActiveSection] = useState("llm_cold");
+  const [sidebarTab, setSidebarTab] = useState("match_types");
+
+  // Group results by match_type
+  const groupedResults = useMemo(() => {
+    const groups = { llm_cold: [], llm_guided: [], faiss_direct: [], tm_exact: [] };
+    if (!results) return groups;
+    results.forEach(r => {
+      if (groups[r.match_type]) {
+        groups[r.match_type].push(r);
+      } else {
+        groups.llm_cold.push(r);
+      }
+    });
+    return groups;
+  }, [results]);
 
   const handleStartTranslation = async () => {
     if (!sentences || sentences.length === 0) {
@@ -148,7 +282,8 @@ function ReviewPage() {
     try {
       const response = await translateSentences(sentences, sourceLang, targetLang);
       setResults(response.results || []);
-      setCurrentBatchIndex(0);
+      setOffsets({ llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 });
+      setActiveSection("llm_cold");
       setReviewedCount(0);
       setTranslationState("done");
     } catch (error) {
@@ -157,59 +292,33 @@ function ReviewPage() {
     }
   };
 
-  // ── Batching ──────────────────────────────────────────────────────────────
-
-  const batches = useMemo(() => {
-    const chunkSize = 10;
-    const items = hasResults ? results : [];
-    const output = [];
-    for (let i = 0; i < items.length; i += chunkSize) {
-      output.push(items.slice(i, i + chunkSize));
-    }
-    return output;
-  }, [hasResults, results]);
-
-  const displayResults = useMemo(() => {
-    if (!batches.length) return [];
-    return batches[currentBatchIndex] || [];
-  }, [batches, currentBatchIndex]);
-
-  const totalBatches = batches.length;
   const pendingCount = Math.max(0, totalCount - reviewedCount);
   const progressPercent = totalCount > 0 ? Math.round((reviewedCount / totalCount) * 100) : 0;
 
-  // ── Approve (with duplicate-insertion fix) ────────────────────────────────
-
-  const buildApprovedPayload = (batch) =>
-    batch
-      .filter((item) => !SKIP_MATCH_TYPES.has(item.match_type))
-      .map((item) => ({
-        source_text:     item.source,
-        translated_text: item.translation,
-        target_lang:     targetLang,
-        match_type:      item.match_type,
-        action:          "approved",
-        faiss_index:     item.faiss_index ?? null,
-      }));
-
-  const advanceBatch = (batchSize) => {
-    setReviewedCount((prev) => prev + batchSize);
-    setCurrentBatchIndex((prev) => prev + 1);
-  };
-
-  const handleApprove = async () => {
-    if (!displayResults.length || isApproving) return;
+  const handleApproveBatch = async (batch, matchType) => {
+    if (!batch.length || isApproving) return;
 
     setIsApproving(true);
     setErrorMessage("");
 
     try {
-      const payload = buildApprovedPayload(displayResults);
-      // Only call API if there are LLM-derived sentences to store
+      const payload = batch
+        .filter((item) => !SKIP_MATCH_TYPES.has(item.match_type))
+        .map((item) => ({
+          source_text:     item.source,
+          translated_text: item.translation,
+          target_lang:     targetLang,
+          match_type:      item.match_type,
+          action:          "approved",
+          faiss_index:     item.faiss_index ?? null,
+        }));
+
       if (payload.length > 0) {
         await approveTranslations(payload);
       }
-      advanceBatch(displayResults.length);
+      
+      setReviewedCount(prev => prev + batch.length);
+      setOffsets(prev => ({ ...prev, [matchType]: prev[matchType] + batch.length }));
     } catch (error) {
       setErrorMessage(error.message || "Approval failed.");
     } finally {
@@ -217,23 +326,19 @@ function ReviewPage() {
     }
   };
 
-  const handleDiscard = () => {
-    if (!displayResults.length || isApproving) return;
-    advanceBatch(displayResults.length);
+  const handleDiscardBatch = (batch, matchType) => {
+    if (!batch.length || isApproving) return;
+    setReviewedCount(prev => prev + batch.length);
+    setOffsets(prev => ({ ...prev, [matchType]: prev[matchType] + batch.length }));
   };
 
-  // ── Count how many in current batch are skipped (already in DB) ───────────
-  const skippedInBatch = displayResults.filter(
-    (item) => SKIP_MATCH_TYPES.has(item.match_type)
-  ).length;
-
-  // ── Determine effective state (context results present = skip idle) ────────
   const isIdle    = effectiveState === "idle";
   const isRunning = translationState === "running";
   const isDone    = effectiveState === "done" || hasResults;
   const isError   = translationState === "error";
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // Check if ALL sections are fully reviewed
+  const allReviewed = hasResults && ORDERED_MATCH_TYPES.every(mt => offsets[mt] >= groupedResults[mt].length);
 
   return (
     <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
@@ -286,7 +391,14 @@ function ReviewPage() {
                   {documents.map((doc, i) => (
                     <button
                       key={doc.docId}
-                      onClick={() => { setActiveDocIndex(i); setTranslationState("idle"); setCurrentBatchIndex(0); setReviewedCount(0); setErrorMessage(""); }}
+                      onClick={() => { 
+                        setActiveDocIndex(i); 
+                        setTranslationState("idle"); 
+                        setOffsets({ llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 }); 
+                        setActiveSection("llm_cold");
+                        setReviewedCount(0); 
+                        setErrorMessage(""); 
+                      }}
                       className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-colors ${
                         i === activeDocIndex
                           ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16]"
@@ -399,13 +511,13 @@ function ReviewPage() {
                 </div>
               )}
 
-              {/* ── DONE STATE — no more batches ── */}
-              {isDone && !isRunning && displayResults.length === 0 && (
+              {/* ── DONE STATE — ALL REVIEWED ── */}
+              {isDone && !isRunning && allReviewed && (
                 <div className="flex flex-col items-center justify-center min-h-[300px] text-center">
                   <div className="w-16 h-16 rounded-full bg-[#1a2010] border border-[#2a2e16] flex items-center justify-center mb-6">
                     <CheckCircle size={28} className="text-[#c5fe00]" />
                   </div>
-                  <h2 className="font-display font-bold text-2xl tracking-tight mb-2">All Batches Reviewed</h2>
+                  <h2 className="font-display font-bold text-2xl tracking-tight mb-2">All Sections Reviewed</h2>
                   <p className="text-[#8c8c8b] text-[14px] mb-8">
                     {hasResults
                       ? `${reviewedCount} sentences reviewed. Approved translations have been saved.`
@@ -428,51 +540,19 @@ function ReviewPage() {
                 </div>
               )}
 
-              {/* ── DONE STATE — current batch ── */}
-              {isDone && !isRunning && displayResults.length > 0 && (
-                <div className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden">
-                  <div className="px-8 py-5 border-b border-[#262626] flex items-center justify-between">
-                    <span className="text-[#c5fe00] text-[10px] font-bold uppercase tracking-[0.2em]">
-                      Batch {currentBatchIndex + 1} / {totalBatches}
-                    </span>
-                    <div className="flex items-center gap-4">
-                      {skippedInBatch > 0 && (
-                        <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
-                          {skippedInBatch} already in TM — will not be re-saved
-                        </span>
-                      )}
-                      <span className="text-[#555555] text-[10px] font-bold uppercase tracking-[0.2em]">
-                        {displayResults.length} sentences
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="divide-y divide-[#262626]">
-                    {displayResults.map((item, index) => (
-                      <div key={`${item.source}-${index}`} className="grid grid-cols-1 md:grid-cols-2">
-                        <div className="p-6 border-r border-[#262626]">
-                          <div className="flex justify-between items-center mb-3">
-                            <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
-                              Source — {sourceLang?.toUpperCase() || "EN"}
-                            </span>
-                          </div>
-                          <p className="text-[#a0a09f] text-[15px] leading-[1.6] font-sans">{item.source}</p>
-                        </div>
-
-                        <div className="p-6">
-                          <div className="flex justify-between items-center mb-3">
-                            <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
-                              Target — {targetLang ? languageLabel(targetLang) : "TBD"}
-                            </span>
-                            <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 shadow-[inset_0_0_10px_rgba(197,254,0,0.05)] ${matchBadgeCls(item.match_type)}`}>
-                              {matchLabel(item.match_type)}
-                            </span>
-                          </div>
-                          <p className="text-[#ffffff] text-[15px] leading-[1.6] font-sans">{item.translation}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              {/* ── DONE STATE — SECTIONS ── */}
+              {isDone && !isRunning && !allReviewed && (
+                <div className="space-y-8">
+                  <ReviewSection
+                    matchType={activeSection}
+                    items={groupedResults[activeSection]}
+                    offset={offsets[activeSection]}
+                    onApprove={handleApproveBatch}
+                    onDiscard={handleDiscardBatch}
+                    isApproving={isApproving}
+                    sourceLang={sourceLang}
+                    targetLang={targetLang}
+                  />
                 </div>
               )}
 
@@ -482,66 +562,74 @@ function ReviewPage() {
           {/* Right Context Panel */}
           <aside className="w-[360px] border-l border-[#262626] bg-[#0e0e0e] shrink-0 flex flex-col overflow-y-auto layout-scrollbar">
             <div className="flex items-center gap-6 border-b border-[#262626] px-8 pt-8">
-              <div className="text-[#c5fe00] text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 border-[#c5fe00]">Context</div>
-              <div className="text-[#555555] text-[10px] font-bold uppercase tracking-widest pb-4">Activity</div>
+              <button 
+                onClick={() => setSidebarTab("match_types")}
+                className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "match_types" ? "text-[#c5fe00] border-[#c5fe00]" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
+              >
+                Match Types
+              </button>
+              <button 
+                onClick={() => setSidebarTab("context")}
+                className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "context" ? "text-[#c5fe00] border-[#c5fe00]" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
+              >
+                Context
+              </button>
             </div>
 
             <div className="p-8 space-y-10">
-              {/* Session Stats */}
-              <div>
-                <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Session Stats</h4>
-                <div className="space-y-3">
-                  <div className="bg-[#111111] border border-[#1a1a1a] rounded-[16px] p-4 flex items-center justify-between">
-                    <span className="text-[#8c8c8b] text-[13px]">Total Sentences</span>
-                    <span className="font-bold text-[16px]">{totalCount}</span>
-                  </div>
-                  <div className="bg-[#111111] border border-[#1a1a1a] rounded-[16px] p-4 flex items-center justify-between">
-                    <span className="text-[#8c8c8b] text-[13px]">Reviewed</span>
-                    <span className="font-bold text-[16px] text-[#c5fe00]">{reviewedCount}</span>
-                  </div>
-                  <div className="bg-[#111111] border border-[#1a1a1a] rounded-[16px] p-4 flex items-center justify-between">
-                    <span className="text-[#8c8c8b] text-[13px]">Pending</span>
-                    <span className="font-bold text-[16px] text-[#8c8c8b]">{pendingCount}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Match Type Legend */}
-              <div>
-                <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Match Types</h4>
-                <div className="space-y-3">
-                  {[
-                    { type: "tm_exact",    desc: "Exact match from Translation Memory. Already stored — not re-saved." },
-                    { type: "faiss_direct", desc: "FAISS similarity ≥ 0.95. Already stored — not re-saved." },
-                    { type: "llm_guided",  desc: "LLM translation guided by a reference pair." },
-                    { type: "llm_cold",    desc: "LLM cold translation with no reference." },
-                  ].map(({ type, desc }) => (
-                    <div key={type} className="bg-[#111111] border border-[#1a1a1a] rounded-[16px] p-4">
-                      <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2 py-1 inline-block mb-2 ${matchBadgeCls(type)}`}>
-                        {matchLabel(type)}
-                      </span>
-                      <p className="text-[#555555] text-[11px] leading-relaxed">{desc}</p>
+              {sidebarTab === "context" && (
+                <div>
+                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Draft Settings</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-[13px]">
+                      <span className="text-[#8c8c8b]">Tone of Voice</span>
+                      <span className="text-[#c5fe00] font-bold">Sophisticated</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Draft Settings */}
-              <div>
-                <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Draft Settings</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-[13px]">
-                    <span className="text-[#8c8c8b]">Tone of Voice</span>
-                    <span className="text-[#c5fe00] font-bold">Sophisticated</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[13px]">
-                    <span className="text-[#8c8c8b]">Formality</span>
-                    <div className="w-[100px] h-1.5 rounded-full bg-[#262626] overflow-hidden">
-                      <div className="w-[85%] h-full bg-[#c5fe00] rounded-full"></div>
+                    <div className="flex items-center justify-between text-[13px]">
+                      <span className="text-[#8c8c8b]">Formality</span>
+                      <div className="w-[100px] h-1.5 rounded-full bg-[#262626] overflow-hidden">
+                        <div className="w-[85%] h-full bg-[#c5fe00] rounded-full"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {sidebarTab === "match_types" && (
+                <div>
+                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Match Types</h4>
+                  <div className="space-y-3">
+                    {[
+                      { type: "llm_cold",    desc: "LLM cold translation with no reference." },
+                      { type: "llm_guided",  desc: "LLM translation guided by a reference pair." },
+                      { type: "faiss_direct", desc: "FAISS similarity ≥ 0.95." },
+                      { type: "tm_exact",    desc: "Exact match from Translation Memory." },
+                    ].map(({ type, desc }) => {
+                      const count = groupedResults ? (groupedResults[type]?.length || 0) : 0;
+                      const isActive = activeSection === type;
+                      return (
+                        <button 
+                          key={type}
+                          onClick={() => setActiveSection(type)}
+                          className={`w-full text-left bg-[#111111] border rounded-[16px] p-4 transition-colors ${
+                            isActive ? 'border-[#c5fe00]' : 'border-[#1a1a1a] hover:border-[#333333]'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2 py-1 inline-block ${matchBadgeCls(type)}`}>
+                              {matchLabel(type)}
+                            </span>
+                            <span className={`text-[10px] font-bold ${isActive ? 'text-[#ffffff]' : 'text-[#555555]'}`}>
+                              {count} pending
+                            </span>
+                          </div>
+                          <p className="text-[#555555] text-[11px] leading-relaxed">{desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </aside>
         </div>
@@ -553,7 +641,7 @@ function ReviewPage() {
             <div className="flex items-center gap-12">
               <div className="flex flex-col gap-2 w-[240px]">
                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555]">
-                  <span>Progress</span>
+                  <span>Overall Progress</span>
                   <span className="text-[#ffffff]">{progressPercent}%</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-[#262626] overflow-hidden">
@@ -571,26 +659,9 @@ function ReviewPage() {
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Actions are now managed per-section, so we keep this space clean or put something else here */}
             <div className="flex items-center gap-6">
-              <button
-                className="text-[#a0a09f] hover:text-[#ff4d4d] transition-colors font-bold text-xs uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
-                onClick={handleDiscard}
-                disabled={!displayResults.length || isApproving}
-              >
-                Discard Batch
-              </button>
-              <button
-                className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-                onClick={handleApprove}
-                disabled={!displayResults.length || isApproving}
-              >
-                {isApproving ? (
-                  <><Loader2 size={14} className="animate-spin" /> Approving…</>
-                ) : (
-                  "Approve & Next"
-                )}
-              </button>
+               <span className="text-[#555555] text-[10px] uppercase tracking-widest font-bold">Approve items in the sections above</span>
             </div>
           </div>
         )}

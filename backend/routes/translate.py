@@ -65,6 +65,7 @@ class TranslationResult(BaseModel):
     source:      str
     translation: str
     match_type:  str   # "tm_exact" | "faiss_direct" | "llm_guided" | "llm_cold"
+    score:       float | None = None
 
 
 class TranslateResponse(BaseModel):
