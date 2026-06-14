@@ -130,7 +130,7 @@ function UploadPage() {
   return (
     <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
       {/* Left Sidebar */}
-      <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 relative">
+      <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 relative overflow-y-auto layout-scrollbar">
         <div className="p-6 pb-2 flex-1 flex flex-col">
           {/* Workspace Selector */}
           <div className="flex items-center gap-3 mb-12">
@@ -211,12 +211,6 @@ function UploadPage() {
         <div className="p-6 space-y-4">
           {/* Bottom Links */}
           <div className="space-y-1 mb-8">
-            <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-              <HelpCircle size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">
-                Help
-              </span>
-            </div>
             <UserProfileBlock />
           </div>
 
@@ -248,6 +242,9 @@ function UploadPage() {
           <div className="w-1/3 flex justify-end items-center gap-4 text-[#8c8c8b] pointer-events-auto">
             <button className="hover:text-[#ffffff] transition-colors">
               <Bell size={18} />
+            </button>
+            <button className="hover:text-[#ffffff] transition-colors">
+              <HelpCircle size={18} />
             </button>
             <button className="hover:text-[#ffffff] transition-colors">
               <Settings size={18} />

@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Book,
   HelpCircle,
+  Settings,
   LogOut,
   FileText,
   AlertTriangle,
@@ -211,7 +212,7 @@ function ValidationPage() {
     <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
 
       {/* Left Sidebar */}
-      <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50">
+      <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
         <div className="p-6 pb-2 flex-1 flex flex-col">
           <div className="mb-12">
             <h1 className="font-display font-black text-2xl tracking-tight text-[#c5fe00] leading-none mb-1">TransSync</h1>
@@ -247,10 +248,7 @@ function ValidationPage() {
         </div>
 
         <div className="p-6 space-y-1 pb-8">
-          <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-            <HelpCircle size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Help</span>
-          </div>
+
           <UserProfileBlock />
         </div>
       </aside>
@@ -294,6 +292,12 @@ function ValidationPage() {
             </div>
 
             <div className="flex items-center gap-4 border-l border-[#262626] pl-8">
+              <button className="w-10 h-10 rounded-full bg-[#151515] border border-[#262626] flex items-center justify-center text-[#8c8c8b] hover:text-white hover:bg-[#222222] transition-all">
+                <HelpCircle size={18} />
+              </button>
+              <button className="w-10 h-10 rounded-full bg-[#151515] border border-[#262626] flex items-center justify-center text-[#8c8c8b] hover:text-white hover:bg-[#222222] transition-all">
+                <Settings size={18} />
+              </button>
               <button className="w-10 h-10 rounded-full bg-[#151515] border border-[#262626] flex items-center justify-center text-[#8c8c8b] hover:text-white hover:bg-[#222222] transition-all">
                 <Bell size={18} />
               </button>

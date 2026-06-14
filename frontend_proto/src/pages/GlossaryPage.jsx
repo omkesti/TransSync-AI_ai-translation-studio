@@ -263,7 +263,7 @@ function GlossaryPage() {
       {showModal && <AddTermModal onClose={() => setShowModal(false)} onSave={handleSaved} />}
 
       {/* Left Sidebar */}
-      <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50">
+      <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
         <div className="p-6 pb-2 flex-1 flex flex-col">
 
           {/* Logo / Branding */}
@@ -313,10 +313,7 @@ function GlossaryPage() {
         </div>
 
         <div className="p-6 space-y-1 pb-8">
-          <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-            <HelpCircle size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Help</span>
-          </div>
+
           <UserProfileBlock />
         </div>
       </aside>
@@ -348,6 +345,7 @@ function GlossaryPage() {
 
           <div className="w-1/3 flex justify-end items-center gap-6">
             <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors"><Bell size={18} /></button>
+            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors"><HelpCircle size={18} /></button>
             <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors"><Settings size={18} /></button>
             <button className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#262626] overflow-hidden ml-2">
               <img src="https://i.pravatar.cc/150?img=11" alt="User Avatar" className="w-full h-full object-cover" />

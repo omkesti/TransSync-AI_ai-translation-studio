@@ -22,23 +22,24 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState(null);      // "owner" | "admin" | "translator" | "reviewer" | "viewer"
   const [loading, setLoading] = useState(true);
 
-  // ── Fetch org + role from memberships ────────────────────────────────────
-  const fetchMembership = useCallback(async (userId) => {
+  // ── Fetch org + role from backend ────────────────────────────────────────
+  const fetchMembership = useCallback(async (accessToken) => {
     try {
-      const { data, error } = await supabase
-        .from('memberships')
-        .select('org_id, role, organizations(id, name, slug)')
-        .eq('user_id', userId)
-        .limit(1)
-        .single();
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
 
-      if (error || !data) {
-        console.warn('[auth] No membership found for user:', userId);
+      if (!response.ok) {
+        console.warn('[auth] Failed to fetch membership from backend:', response.status);
         setOrg(null);
         setRole(null);
         return;
       }
 
+      const data = await response.json();
       setRole(data.role);
       setOrg(data.organizations || { id: data.org_id, name: 'Unknown', slug: '' });
     } catch (err) {
@@ -55,8 +56,8 @@ export function AuthProvider({ children }) {
       setSession(initialSession);
       setUser(initialSession?.user ?? null);
 
-      if (initialSession?.user) {
-        fetchMembership(initialSession.user.id).then(() => setLoading(false));
+      if (initialSession?.user && initialSession?.access_token) {
+        fetchMembership(initialSession.access_token).then(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -68,8 +69,8 @@ export function AuthProvider({ children }) {
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
-        if (newSession?.user) {
-          await fetchMembership(newSession.user.id);
+        if (newSession?.user && newSession?.access_token) {
+          await fetchMembership(newSession.access_token);
         } else {
           setOrg(null);
           setRole(null);

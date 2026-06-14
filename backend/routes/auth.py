@@ -211,3 +211,32 @@ async def accept_invite(body: AcceptInviteRequest):
         pass  # Non-critical — membership is already created
 
     return {"message": "Invitation accepted. You are now a member of the organization."}
+
+
+@router.get("/auth/me")
+async def get_my_membership(current_user: CurrentUser = Depends(get_current_user)):
+    """
+    GET /api/auth/me
+    
+    Returns the user's role and organization info.
+    This bypasses RLS on the frontend by letting the backend (service role) fetch it.
+    """
+    client = get_client()
+    
+    response = (
+        client.table("organizations")
+        .select("id, name, slug")
+        .eq("id", current_user.org_id)
+        .limit(1)
+        .execute()
+    )
+    
+    org = response.data[0] if response.data else None
+    
+    return {
+        "user_id": current_user.user_id,
+        "email": current_user.email,
+        "role": current_user.role,
+        "org_id": current_user.org_id,
+        "organizations": org
+    }

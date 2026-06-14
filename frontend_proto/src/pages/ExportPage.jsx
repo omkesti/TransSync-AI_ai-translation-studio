@@ -218,6 +218,7 @@ function ExportPage() {
           </div>
           <div className="flex items-center gap-6">
             <button className="text-[#8c8c8b] hover:text-white transition-colors"><Bell size={18} /></button>
+            <button className="text-[#8c8c8b] hover:text-white transition-colors"><HelpCircle size={18} /></button>
             <button className="text-[#8c8c8b] hover:text-white transition-colors"><Settings size={18} /></button>
             <button className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#262626] overflow-hidden ml-2">
               <img src="https://i.pravatar.cc/150?img=11" alt="avatar" className="w-full h-full object-cover" />
@@ -530,7 +531,7 @@ function Sidebar({ active }) {
   ];
 
   return (
-    <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50">
+    <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
       <div className="p-6 pb-2 flex-1 flex flex-col">
         <div className="flex items-center gap-3 mb-12">
           <div className="w-10 h-10 rounded-full bg-[#c5fe00] text-[#0a0a0a] flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,254,0,0.2)]">
@@ -560,10 +561,6 @@ function Sidebar({ active }) {
       </div>
 
       <div className="p-6 space-y-1 pb-8">
-        <div className="flex items-center gap-4 text-[#8c8c8b] hover:text-white hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-          <HelpCircle size={18} />
-          <span className="text-[11px] font-bold uppercase tracking-widest">Help</span>
-        </div>
         <UserProfileBlock />
       </div>
     </aside>
