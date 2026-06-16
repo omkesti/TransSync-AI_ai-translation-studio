@@ -437,6 +437,20 @@ function ReviewPage() {
   const initialState = results && results.length > 0 ? "done" : "idle";
   const [translationState, setTranslationState] = useState(initialState);
 
+  // ── On mount: auto-select the first reviewable doc if current one isn't ready ──
+  useEffect(() => {
+    const currentDoc = documents[activeDocIndex];
+    const isReviewable = currentDoc && ["validated", "translating", "translated", "approved"].includes(currentDoc.status);
+    if (!isReviewable) {
+      const firstReviewableIndex = documents.findIndex(d =>
+        ["validated", "translating", "translated", "approved"].includes(d.status)
+      );
+      if (firstReviewableIndex !== -1) {
+        setActiveDocIndex(firstReviewableIndex);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Sync offsets + reviewedCount from AppContext whenever active doc changes ──
   useEffect(() => {
     const doc = documents[activeDocIndex];
