@@ -8,3 +8,5 @@ venv
 \.vscode
 \tests
 \.kiro
+\.hypothesis
+\.pytest_cache

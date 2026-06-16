@@ -20,7 +20,7 @@ import uuid
 import shutil
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
-from backend.services.document_parser import parse_document
+from backend.services.document_parser import parse_document, parse_document_structured
 from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
 router = APIRouter()
@@ -48,8 +48,16 @@ async def upload_document(
         {
             "filename":    "contract.pdf",
             "doc_id":      "a1b2c3...",          # unique ID for this upload
-            "raw_text":    "The contract is...", # full extracted text
-            "char_count":  1234
+            "raw_text":    "The contract is...", # full extracted text (backward compatibility)
+            "char_count":  1234,
+            "extraction_data": {                 # NEW: structured extraction with IDs (optional)
+                "type": "docx" | "pdf",
+                "raw_text": "...",
+                "units": {
+                    "para_0": {"text": "...", "formatting": {...}, "position": {...}},
+                    ...
+                }
+            }
         }
 
     Errors:
@@ -78,7 +86,9 @@ async def upload_document(
 
     # ── 3. Extract text ──────────────────────────────────────────────────────
     try:
-        raw_text = parse_document(save_path)
+        # Use structured extraction for DOCX files, plain extraction for PDFs
+        extraction_data = parse_document_structured(save_path)
+        raw_text = extraction_data.get("raw_text", "")
     except ValueError as e:
         # Clean up the saved file before returning error
         os.remove(save_path)
@@ -94,8 +104,9 @@ async def upload_document(
 
     # ── 5. Return extracted text ─────────────────────────────────────────────
     return JSONResponse(content={
-        "filename":   original_name,
-        "doc_id":     doc_id,
-        "raw_text":   raw_text,
-        "char_count": len(raw_text),
+        "filename":       original_name,
+        "doc_id":         doc_id,
+        "raw_text":       raw_text,              # Backward compatibility
+        "char_count":     len(raw_text),
+        "extraction_data": extraction_data,      # NEW: Structured extraction with IDs
     })
