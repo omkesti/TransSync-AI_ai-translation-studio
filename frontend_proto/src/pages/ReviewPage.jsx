@@ -1,8 +1,8 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { approveTranslations, translateSentences } from "../services/api";
 import { useAppContext } from "../context/AppContext";
-import { languageLabel } from "../constants/languages";
+import { languageLabel, TARGET_LANGUAGES } from "../constants/languages";
 import UserProfileBlock from "../components/UserProfileBlock";
 import {
   Bell,
@@ -22,6 +22,8 @@ import {
   Loader2,
   ArrowRight,
   Download,
+  Globe,
+  ChevronDown,
 } from "lucide-react";
 
 // ── Match-type helpers ────────────────────────────────────────────────────────
@@ -295,6 +297,82 @@ function ReviewSection({
   );
 }
 
+// ── Target Language Selector ─────────────────────────────────────────────────
+
+function TargetLanguageSelector() {
+  const { documents, activeDocIndex, updateDoc, targetLang, setTargetLang } = useAppContext();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  const activeDoc = documents[activeDocIndex] || null;
+  // Active doc's lang takes precedence; fall back to global targetLang
+  const currentLang = activeDoc?.targetLang || targetLang || "";
+  const currentLabel = currentLang ? languageLabel(currentLang) : null;
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const handleSelect = (code) => {
+    // Update global lang
+    setTargetLang(code);
+    // Also update every document's targetLang so translation uses it
+    documents.forEach((doc) => {
+      if (!doc.targetLang || doc.status === "uploaded" || doc.status === "validated") {
+        updateDoc(doc.docId, { targetLang: code });
+      }
+    });
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2.5 bg-[#111111] hover:bg-[#1a1a1a] border border-[#262626] hover:border-[#333333] rounded-full px-4 py-2 transition-colors"
+      >
+        <Globe size={13} className="text-[#c5fe00] shrink-0" />
+        <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest">
+          Target:
+        </span>
+        <span className={`text-[13px] font-bold ${currentLabel ? "text-white" : "text-[#555555]"}`}>
+          {currentLabel ? `${currentLabel} (${currentLang})` : "Select language"}
+        </span>
+        <ChevronDown size={13} className={`text-[#555555] transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-2 w-[220px] bg-[#111111] border border-[#262626] rounded-[16px] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] z-50">
+          <div className="px-4 py-3 border-b border-[#1a1a1a]">
+            <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest">Target Language</span>
+          </div>
+          <div className="py-1">
+            {TARGET_LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => handleSelect(lang.code)}
+                className={`w-full text-left px-4 py-2.5 flex items-center justify-between transition-colors text-[13px] ${
+                  currentLang === lang.code
+                    ? "bg-[#1a1c10] text-[#c5fe00]"
+                    : "text-[#a0a09f] hover:bg-[#1a1a1a] hover:text-white"
+                }`}
+              >
+                <span>{lang.label}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#555555]">{lang.code}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 function ReviewPage() {
@@ -531,16 +609,8 @@ function ReviewPage() {
               </span>
             </Link>
             <div className="w-px h-6 bg-[#262626]"></div>
-            <div className="flex items-center gap-2">
-              <span className="text-[#555555] font-bold text-[10px] uppercase tracking-widest">
-                Target:
-              </span>
-              <span className="text-[#ffffff] text-[13px] font-bold">
-                {docTargetLang
-                  ? `${languageLabel(docTargetLang)} (${docTargetLang})`
-                  : "—"}
-              </span>
-            </div>
+            {/* ── Target Language Selector ── */}
+            <TargetLanguageSelector />
           </div>
 
           {/* Live Sync Badge */}

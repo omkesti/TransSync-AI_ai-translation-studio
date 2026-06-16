@@ -85,6 +85,10 @@ function ExportPage() {
   const docsWithResults = documents.filter(d => d.results && d.results.length > 0);
   const effectiveTargetLang = docTargetLang || targetLang;
 
+  // A doc is fully approved when status === "approved"
+  const activeDocApproved = documents[activeDocIndex]?.status === "approved";
+  const allDocsApproved = docsWithResults.length > 0 && docsWithResults.every(d => d.status === "approved");
+
   // "idle" | "exporting" | "done" | "error"
   const [exportState, setExportState] = useState("idle");
   const [batchExportState, setBatchExportState] = useState("idle");
@@ -263,8 +267,9 @@ function ExportPage() {
                   </div>
                   <button
                     onClick={handleBatchDownload}
-                    disabled={batchExportState === "exporting"}
-                    className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-6 py-3 font-black flex items-center gap-2 text-[10px] uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform transition-all disabled:opacity-60"
+                    disabled={batchExportState === "exporting" || !allDocsApproved}
+                    title={!allDocsApproved ? "All documents must be fully approved before batch download" : ""}
+                    className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-6 py-3 font-black flex items-center gap-2 text-[10px] uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
                   >
                     {batchExportState === "exporting" ? (
                       <><Loader2 size={12} className="animate-spin" /> Zipping…</>
@@ -304,8 +309,9 @@ function ExportPage() {
                         <div className="col-span-2 flex items-center justify-end">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleSingleDownload(doc); }}
-                            className="text-[#c5fe00] hover:text-[#b9ef00] transition-colors"
-                            title="Download this document"
+                            disabled={doc.status !== "approved"}
+                            title={doc.status !== "approved" ? "Approve all batches for this document first" : "Download"}
+                            className="text-[#c5fe00] hover:text-[#b9ef00] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <Download size={16} />
                           </button>
@@ -378,8 +384,9 @@ function ExportPage() {
                     {/* Download button */}
                     <button
                       onClick={handleDownload}
-                      disabled={exportState === "exporting"}
-                      className="w-full bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full py-4 font-black flex items-center justify-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
+                      disabled={exportState === "exporting" || !activeDocApproved}
+                      title={!activeDocApproved ? "Complete review and approve all batches before downloading" : ""}
+                      className="w-full bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full py-4 font-black flex items-center justify-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
                     >
                       {exportState === "exporting" ? (
                         <><Loader2 size={14} className="animate-spin" /> Generating…</>
@@ -389,6 +396,12 @@ function ExportPage() {
                         <><Download size={14} strokeWidth={2.5} /> Download DOCX</>
                       )}
                     </button>
+
+                    {!activeDocApproved && (
+                      <p className="text-[#555555] text-[11px] text-center mt-3 leading-relaxed">
+                        Approve all translation batches in the Review page to unlock download.
+                      </p>
+                    )}
 
                     {exportState === "done" && (
                       <p className="text-[#555555] text-[11px] text-center mt-3">

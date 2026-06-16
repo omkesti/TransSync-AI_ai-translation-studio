@@ -2,7 +2,6 @@ import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { uploadDocument } from "../services/api";
 import { useAppContext } from "../context/AppContext";
-import { languageLabel, TARGET_LANGUAGES } from "../constants/languages";
 import UserProfileBlock from "../components/UserProfileBlock";
 import {
   Bell,
@@ -16,8 +15,6 @@ import {
   HelpCircle,
   LogOut,
   Upload,
-  Globe,
-  ChevronDown,
   Zap,
   Monitor,
   CloudUpload,
@@ -36,7 +33,7 @@ function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState(""); // "Uploading file 2 of 5…"
   const [error, setError] = useState("");
 
-  const { addDocuments, setActiveDocIndex, setTargetLang, targetLang, resetFlow } =
+  const { addDocuments, setActiveDocIndex, resetFlow } =
     useAppContext();
 
   const handleFileChange = (event) => {
@@ -73,10 +70,6 @@ function UploadPage() {
       setError("Please select at least one file to upload.");
       return;
     }
-    if (!targetLang) {
-      setError("Please select a target language.");
-      return;
-    }
 
     setIsUploading(true);
     setError("");
@@ -96,7 +89,6 @@ function UploadPage() {
           rawText:  response.raw_text || "",
           filename: response.filename || file.name || "document",
           status:   "uploaded",
-          targetLang: targetLang,
         });
       } catch (uploadError) {
         errors.push(`${file.name}: ${uploadError.message || "Upload failed."}`);
@@ -363,61 +355,8 @@ function UploadPage() {
 
             {/* Right Config Column */}
             <div className="flex flex-col gap-6">
-              {/* Target Language Card */}
-              <div className="bg-[#151515] border border-[#262626] rounded-[32px] p-8 flex-1">
-                <p className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-6">
-                  Target Language
-                </p>
-
-                <div className="bg-[#222222] border border-transparent focus-within:border-[#333333] rounded-full flex items-center px-4 py-3 gap-3 mb-8 transition-colors">
-                  <Globe size={16} className="text-[#c5fe00]" />
-                  <input
-                    type="text"
-                    placeholder="Search language (e.g. de, fr)"
-                    list="target-language-options"
-                    value={targetLang}
-                    onChange={(event) => setTargetLang(event.target.value.trim().toLowerCase())}
-                    className="bg-transparent border-none text-[#ffffff] focus:outline-none w-full text-[13px] placeholder:text-[#555555]"
-                  />
-                  <datalist id="target-language-options">
-                    {TARGET_LANGUAGES.map((lang) => (
-                      <option key={lang.code} value={lang.code}>
-                        {lang.label}
-                      </option>
-                    ))}
-                  </datalist>
-                  <ChevronDown size={16} className="text-[#555555]" />
-                </div>
-                {targetLang ? (
-                  <p className="text-[#555555] text-[10px] font-bold uppercase tracking-widest mb-4 -mt-4">
-                    {languageLabel(targetLang)}
-                  </p>
-                ) : null}
-
-                <p className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-4">
-                  Quick Select
-                </p>
-
-                <div className="flex flex-wrap gap-2">
-                  {TARGET_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang.code}
-                      className={`border rounded-lg px-4 py-2 font-bold text-[10px] tracking-widest uppercase transition-colors ${
-                        targetLang === lang.code
-                          ? "border-[#c5fe00]/50 text-[#c5fe00]"
-                          : "border-[#262626] text-[#8c8c8b] hover:border-[#c5fe00]/50 hover:text-[#c5fe00]"
-                      }`}
-                      onClick={() => setTargetLang(lang.code)}
-                      type="button"
-                    >
-                      {lang.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Priority Row */}
-              <div className="bg-[#15170d] border border-[#2a2e16] rounded-[32px] p-8 shadow-[0_20px_40px_rgba(197,254,0,0.05)] relative overflow-hidden group">
+              <div className="bg-[#15170d] border border-[#2a2e16] rounded-[32px] p-8 shadow-[0_20px_40px_rgba(197,254,0,0.05)] relative overflow-hidden group flex-1 flex flex-col justify-center">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#c5fe00] opacity-10 blur-[50px] rounded-full pointer-events-none group-hover:opacity-20 transition-opacity"></div>
                 <div className="flex items-center gap-4 mb-8">
                   <div className="w-8 h-8 rounded-full bg-[#1a200a] text-[#c5fe00] flex items-center justify-center shadow-[inset_0_0_10px_rgba(197,254,0,0.1)]">
@@ -427,6 +366,10 @@ function UploadPage() {
                     Priority Processing
                   </span>
                 </div>
+
+                <p className="text-[#555555] text-[12px] leading-relaxed mb-8 font-sans">
+                  Select your target language on the Review page before starting translation. Upload your files here to get started.
+                </p>
 
                 <button
                   className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full py-4 flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -438,8 +381,8 @@ function UploadPage() {
                   {isUploading
                     ? "Uploading..."
                     : selectedFiles.length > 1
-                    ? `Start Translation (${selectedFiles.length} files)`
-                    : "Start Translation"}
+                    ? `Upload ${selectedFiles.length} Files`
+                    : "Upload & Continue"}
                 </button>
                 {error ? (
                   <p className="text-[#ff7351] text-[11px] font-bold tracking-widest uppercase mt-4">
