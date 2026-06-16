@@ -24,6 +24,7 @@ import {
   Loader2,
   ShieldCheck,
   Download,
+  Zap,
 } from "lucide-react";
 
 // ── Severity classification ───────────────────────────────────────────────────
@@ -162,7 +163,7 @@ function ValidationPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   let validationState = "idle";
-  if (isAnyValidating || activeDocStatus === "validating") {
+  if (activeDocStatus === "validating") {
     validationState = "running";
   } else if (errorMessage || activeDocStatus === "error") {
     validationState = "error";
@@ -170,7 +171,7 @@ function ValidationPage() {
     validationState = "done";
   }
 
-  const displayError = errorMessage || activeDoc?.error || "Validation failed.";
+  const displayError = errorMessage || activeDoc?.error || "";
   
   const multiDoc = documents.length > 1;
   const validatedCount = documents.filter(d => d.status === "validated" || d.status === "translated" || d.status === "approved").length;
@@ -485,6 +486,19 @@ function ValidationPage() {
                   </div>
                 )}
 
+                {/* ── DONE: Re-validate button ── */}
+                {validationState === "done" && docId && (
+                  <div className="flex justify-center mt-4">
+                    <button
+                      onClick={() => handleStartValidation(false)}
+                      className="bg-transparent border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-[#8c8c8b] rounded-full px-8 py-3 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                    >
+                      <ShieldCheck size={14} />
+                      Re-validate This Document
+                    </button>
+                  </div>
+                )}
+
               </div>
             </main>
 
@@ -624,14 +638,28 @@ function ValidationPage() {
 
           {/* Right CTA */}
           {(validationState === "idle" || validationState === "error") && (
-            <button
-              onClick={handleStartValidation}
-              disabled={!docId || validationState === "running"}
-              className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <ShieldCheck size={14} strokeWidth={2.5} />
-              Start Validation
-            </button>
+            <div className="flex items-center gap-3">
+              {multiDoc && pendingDocsCount > 1 && (
+                <button
+                  onClick={() => handleStartValidation(true)}
+                  disabled={!docId}
+                  className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <ShieldCheck size={14} strokeWidth={2.5} />
+                  Validate All {pendingDocsCount} Docs
+                </button>
+              )}
+              <button
+                onClick={() => handleStartValidation(false)}
+                disabled={!docId}
+                className={multiDoc && pendingDocsCount > 1
+                  ? "border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-white transition-colors rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
+                  : "bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"}
+              >
+                <ShieldCheck size={14} strokeWidth={2.5} />
+                {multiDoc && pendingDocsCount > 1 ? "Validate Current Doc" : "Start Validation"}
+              </button>
+            </div>
           )}
 
           {validationState === "running" && (

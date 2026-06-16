@@ -14,7 +14,7 @@ const AppContext = createContext(null);
  *     results:   [{ source, translation, match_type }, …],
  *     validationResult: { status: "ok", errors: [], sentence_count: 0 },
  *     targetLang: "fr",
- *     status:    "uploaded" | "validated" | "translated" | "approved" | "error",
+ *     status:    "uploaded" | "validating" | "validated" | "translating" | "translated" | "approved" | "error",
  *     error:     null | "message",
  *   },
  *   …

@@ -361,15 +361,20 @@ function ReviewPage() {
         "llm_cold";
       setActiveSection(firstPopulated);
     } else {
-      setTranslationState("idle");
+      const activeDoc = documents[activeDocIndex];
+      if (activeDoc?.status === "translating") {
+        setTranslationState("running");
+      } else {
+        setTranslationState("idle");
+      }
     }
-  }, [results, docId, groupedResults]);
+  }, [results, docId, groupedResults, documents, activeDocIndex]);
 
-  const handleStartTranslation = async () => {
+  const handleStartTranslation = async (translateAll = true) => {
     const pendingDocs = documents.filter(
       (d) => d.status === "validated" && d.sentences?.length > 0,
     );
-    const isMultiMode = documents.length > 1;
+    const isMultiMode = documents.length > 1 && translateAll;
 
     if (!isMultiMode && (!sentences || sentences.length === 0)) {
       setErrorMessage(
@@ -408,6 +413,8 @@ function ReviewPage() {
             doc.sentences.length === 0
           )
             continue;
+
+          updateDoc(doc.docId, { status: "translating" });
 
           const response = await translateSentences(
             doc.sentences,
@@ -599,15 +606,18 @@ function ReviewPage() {
                             ? "bg-[#111111] text-[#8c8c8b] border-[#2a2e16]"
                             : doc.status === "translated"
                               ? "bg-[#111111] text-[#a0a09f] border-[#262626]"
-                              : doc.status === "error"
-                                ? "bg-[#1a0a0a] text-[#ff6b6b] border-[#4a1010]"
-                                : "bg-[#111111] text-[#555555] border-[#262626] hover:text-[#8c8c8b]"
+                              : doc.status === "translating"
+                                ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16] opacity-60 animate-pulse"
+                                : doc.status === "error"
+                                  ? "bg-[#1a0a0a] text-[#ff6b6b] border-[#4a1010]"
+                                  : "bg-[#111111] text-[#555555] border-[#262626] hover:text-[#8c8c8b]"
                       }`}
                     >
                       {doc.filename.length > 20
                         ? doc.filename.slice(0, 18) + "…"
                         : doc.filename}
                       {doc.status === "approved" && " ✓"}
+                      {doc.status === "translating" && " ⟳"}
                       {doc.status === "error" && " ✗"}
                     </button>
                   ))}
@@ -647,20 +657,28 @@ function ReviewPage() {
                     </p>
                   )}
                   {sentences && sentences.length > 0 ? (
-                    <button
-                      onClick={handleStartTranslation}
-                      className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
-                    >
-                      <Zap
-                        size={16}
-                        strokeWidth={3}
-                        className="fill-[#0a0a0a]"
-                      />
-                      {documents.filter((d) => d.status === "validated")
-                        .length > 1
-                        ? `Translate All ${documents.filter((d) => d.status === "validated").length} Documents`
-                        : "Start Translation"}
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                      {multiDoc && documents.filter((d) => d.status === "validated").length > 1 && (
+                        <button
+                          onClick={() => handleStartTranslation(true)}
+                          className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
+                        >
+                          <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
+                          {`Translate All ${documents.filter((d) => d.status === "validated").length} Docs`}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleStartTranslation(false)}
+                        className={
+                          multiDoc && documents.filter((d) => d.status === "validated").length > 1
+                            ? "border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-[#ffffff] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest transition-colors"
+                            : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
+                        }
+                      >
+                        <Zap size={16} strokeWidth={3} className={multiDoc && documents.filter((d) => d.status === "validated").length > 1 ? "" : "fill-[#0a0a0a]"} />
+                        {multiDoc && documents.filter((d) => d.status === "validated").length > 1 ? "Translate Current Doc" : "Start Translation"}
+                      </button>
+                    </div>
                   ) : (
                     <Link
                       to="/validation"
