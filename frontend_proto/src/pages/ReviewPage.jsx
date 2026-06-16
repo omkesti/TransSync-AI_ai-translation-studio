@@ -378,7 +378,6 @@ function TargetLanguageSelector() {
 function ReviewPage() {
   const [isApproving, setIsApproving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [reviewedCount, setReviewedCount] = useState(0);
 
   const {
     docId,
@@ -398,13 +397,15 @@ function ReviewPage() {
   const hasResults = results && results.length > 0;
   const totalCount = results?.length || 0;
 
-  // Track offsets for each section
-  const [offsets, setOffsets] = useState({
-    llm_cold: 0,
-    llm_guided: 0,
-    faiss_direct: 0,
-    tm_exact: 0,
-  });
+  // ── Restore offsets + reviewedCount from AppContext on mount / doc switch ──
+  const activeDoc = documents[activeDocIndex] || null;
+  const savedOffsets = activeDoc?.reviewOffsets;
+  const savedReviewedCount = activeDoc?.reviewedCount;
+
+  const [offsets, setOffsets] = useState(() =>
+    savedOffsets || { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 }
+  );
+  const [reviewedCount, setReviewedCount] = useState(() => savedReviewedCount ?? 0);
 
   const [activeSection, setActiveSection] = useState("llm_cold");
   const [sidebarTab, setSidebarTab] = useState("match_types");
@@ -430,6 +431,13 @@ function ReviewPage() {
 
   const initialState = results && results.length > 0 ? "done" : "idle";
   const [translationState, setTranslationState] = useState(initialState);
+
+  // ── Sync offsets + reviewedCount from AppContext whenever active doc changes ──
+  useEffect(() => {
+    const doc = documents[activeDocIndex];
+    setOffsets(doc?.reviewOffsets || { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 });
+    setReviewedCount(doc?.reviewedCount ?? 0);
+  }, [activeDocIndex, docId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (results && results.length > 0) {
@@ -594,6 +602,13 @@ function ReviewPage() {
   const allReviewed =
     hasResults &&
     ORDERED_MATCH_TYPES.every((mt) => offsets[mt] >= groupedResults[mt].length);
+
+  // ── Mark doc as approved in AppContext when all sections are reviewed ──────
+  useEffect(() => {
+    if (allReviewed && docId && documents.find(d => d.docId === docId)?.status === "translated") {
+      updateDoc(docId, { status: "approved" });
+    }
+  }, [allReviewed, docId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">

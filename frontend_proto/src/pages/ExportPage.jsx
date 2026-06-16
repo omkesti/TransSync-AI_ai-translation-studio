@@ -82,7 +82,9 @@ function ExportPage() {
   } = useAppContext();
 
   const multiDoc = documents.length > 1;
-  const docsWithResults = documents.filter(d => d.results && d.results.length > 0);
+  // Only show approved documents on the export page
+  const approvedDocs = documents.filter(d => d.status === "approved" && d.results && d.results.length > 0);
+  const docsWithResults = approvedDocs;
   const effectiveTargetLang = docTargetLang || targetLang;
 
   // A doc is fully approved when status === "approved"
@@ -97,13 +99,19 @@ function ExportPage() {
   const PREVIEW_PER_PAGE = 10;
 
   // ── Derived stats ──────────────────────────────────────────────────────────
-  const tmHits   = useMemo(() => results.filter(r => ["tm_exact", "faiss_direct"].includes(r.match_type)).length, [results]);
-  const llmCount = useMemo(() => results.filter(r => ["llm_guided", "llm_cold"].includes(r.match_type)).length, [results]);
-  const tmRate   = results.length > 0 ? Math.round((tmHits / results.length) * 100) : 0;
+  // Use the active approved doc for preview; fall back to first approved doc
+  const previewDoc = activeDocApproved
+    ? documents[activeDocIndex]
+    : approvedDocs[0] || null;
+  const previewResults = previewDoc?.results || results;
+
+  const tmHits   = useMemo(() => previewResults.filter(r => ["tm_exact", "faiss_direct"].includes(r.match_type)).length, [previewResults]);
+  const llmCount = useMemo(() => previewResults.filter(r => ["llm_guided", "llm_cold"].includes(r.match_type)).length, [previewResults]);
+  const tmRate   = previewResults.length > 0 ? Math.round((tmHits / previewResults.length) * 100) : 0;
 
   // ── Preview pagination ─────────────────────────────────────────────────────
-  const totalPreviewPages = Math.max(1, Math.ceil(results.length / PREVIEW_PER_PAGE));
-  const previewRows = results.slice((previewPage - 1) * PREVIEW_PER_PAGE, previewPage * PREVIEW_PER_PAGE);
+  const totalPreviewPages = Math.max(1, Math.ceil(previewResults.length / PREVIEW_PER_PAGE));
+  const previewRows = previewResults.slice((previewPage - 1) * PREVIEW_PER_PAGE, previewPage * PREVIEW_PER_PAGE);
 
   // ── Export handler ─────────────────────────────────────────────────────────
   const handleDownload = async () => {
@@ -184,7 +192,7 @@ function ExportPage() {
   };
 
   // ── Empty state ────────────────────────────────────────────────────────────
-  if (results.length === 0 && docsWithResults.length === 0) {
+  if (approvedDocs.length === 0) {
     return (
       <div className="h-screen bg-[#0a0a0a] text-white font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
         <Sidebar active="export" />
@@ -192,9 +200,9 @@ function ExportPage() {
           <div className="w-20 h-20 rounded-full bg-[#1a1a1a] border border-[#262626] flex items-center justify-center mb-8">
             <FileDown size={32} className="text-[#555555]" />
           </div>
-          <h2 className="font-display font-bold text-3xl tracking-tight mb-3 text-center">No Translation Data</h2>
+          <h2 className="font-display font-bold text-3xl tracking-tight mb-3 text-center">No Approved Documents</h2>
           <p className="text-[#8c8c8b] text-[15px] mb-10 text-center max-w-sm leading-relaxed">
-            Complete a translation workflow first before downloading your document.
+            Complete the review workflow and approve all translation batches before downloading.
           </p>
           <Link
             to="/upload"
@@ -327,7 +335,7 @@ function ExportPage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 relative z-10">
               <StatCard
                 label="Total Sentences"
-                value={results.length.toLocaleString()}
+                value={previewResults.length.toLocaleString()}
                 sub="translated & reviewed"
                 accent="#c5fe00"
               />
@@ -371,7 +379,7 @@ function ExportPage() {
                       {filename ? `translated_${filename.replace(/\.[^/.]+$/, "")}_${effectiveTargetLang}.docx` : `translated_document_${effectiveTargetLang}.docx`}
                     </p>
                     <p className="text-[#555555] text-[11px] mb-8">
-                      {results.length} sentences · {effectiveTargetLang?.toUpperCase()} · DOCX format
+                      {previewResults.length} sentences · {effectiveTargetLang?.toUpperCase()} · DOCX format
                     </p>
 
                     {/* Error */}
@@ -416,10 +424,10 @@ function ExportPage() {
                   <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-6">Pipeline Breakdown</h4>
                   <div className="space-y-4">
                     {[
-                      { label: "TM Exact",     count: results.filter(r => r.match_type === "tm_exact").length,    color: "#c5fe00" },
-                      { label: "FAISS Direct",  count: results.filter(r => r.match_type === "faiss_direct").length, color: "#00c5fe" },
-                      { label: "LLM Guided",    count: results.filter(r => r.match_type === "llm_guided").length,  color: "#c500fe" },
-                      { label: "LLM Cold",      count: results.filter(r => r.match_type === "llm_cold").length,    color: "#8c8c8b" },
+                      { label: "TM Exact",     count: previewResults.filter(r => r.match_type === "tm_exact").length,    color: "#c5fe00" },
+                      { label: "FAISS Direct",  count: previewResults.filter(r => r.match_type === "faiss_direct").length, color: "#00c5fe" },
+                      { label: "LLM Guided",    count: previewResults.filter(r => r.match_type === "llm_guided").length,  color: "#c500fe" },
+                      { label: "LLM Cold",      count: previewResults.filter(r => r.match_type === "llm_cold").length,    color: "#8c8c8b" },
                     ].map(({ label, count, color }) => (
                       <div key={label}>
                         <div className="flex justify-between text-[11px] font-medium mb-1.5">
@@ -430,7 +438,7 @@ function ExportPage() {
                           <div
                             className="h-full rounded-full transition-all duration-700"
                             style={{
-                              width: results.length > 0 ? `${(count / results.length) * 100}%` : "0%",
+                              width: previewResults.length > 0 ? `${(count / previewResults.length) * 100}%` : "0%",
                               backgroundColor: color,
                             }}
                           />
@@ -448,7 +456,7 @@ function ExportPage() {
                 <div className="px-8 py-6 border-b border-[#1a1a1a] flex items-center justify-between">
                   <div>
                     <h3 className="font-display font-bold text-lg tracking-tight">Translation Preview</h3>
-                    <p className="text-[#555555] text-[11px] mt-0.5">{results.length} sentences total</p>
+                    <p className="text-[#555555] text-[11px] mt-0.5">{previewResults.length} sentences total</p>
                   </div>
                   <div className="flex items-center gap-2 text-[#555555] text-[11px] font-bold">
                     <Languages size={14} />
