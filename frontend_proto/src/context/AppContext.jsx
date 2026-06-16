@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState, useEffect } from "react";
 
 const AppContext = createContext(null);
 
@@ -12,6 +12,8 @@ const AppContext = createContext(null);
  *     rawText:   "full extracted text…",
  *     sentences: ["sentence 1", …],
  *     results:   [{ source, translation, match_type }, …],
+ *     validationResult: { status: "ok", errors: [], sentence_count: 0 },
+ *     targetLang: "fr",
  *     status:    "uploaded" | "validated" | "translated" | "approved" | "error",
  *     error:     null | "message",
  *   },
@@ -20,10 +22,67 @@ const AppContext = createContext(null);
  */
 
 export function AppProvider({ children }) {
-  const [documents, setDocuments] = useState([]);
-  const [activeDocIndex, setActiveDocIndex] = useState(0);
-  const [sourceLang, setSourceLang] = useState("en");
-  const [targetLang, setTargetLang] = useState("");
+  const [documents, setDocuments] = useState(() => {
+    try {
+      const saved = localStorage.getItem("ts_documents");
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.warn("Failed to load documents from localStorage", e);
+      return [];
+    }
+  });
+  
+  const [activeDocIndex, setActiveDocIndex] = useState(() => {
+    try {
+      const saved = localStorage.getItem("ts_activeDocIndex");
+      return saved ? parseInt(saved, 10) : 0;
+    } catch (e) {
+      return 0;
+    }
+  });
+
+  const [sourceLang, setSourceLang] = useState(() => {
+    try {
+      return localStorage.getItem("ts_sourceLang") || "en";
+    } catch (e) {
+      return "en";
+    }
+  });
+
+  const [targetLang, setTargetLang] = useState(() => {
+    try {
+      return localStorage.getItem("ts_targetLang") || "";
+    } catch (e) {
+      return "";
+    }
+  });
+
+  // ── Sync to localStorage ──────────────────────────────────────────────────
+  useEffect(() => {
+    try {
+      localStorage.setItem("ts_documents", JSON.stringify(documents));
+    } catch (e) {
+      console.warn("Failed to save documents to localStorage", e);
+    }
+  }, [documents]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("ts_activeDocIndex", activeDocIndex.toString());
+    } catch (e) {}
+  }, [activeDocIndex]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("ts_sourceLang", sourceLang);
+    } catch (e) {}
+  }, [sourceLang]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("ts_targetLang", targetLang);
+    } catch (e) {}
+  }, [targetLang]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -37,8 +96,12 @@ export function AppProvider({ children }) {
         rawText:   d.rawText   || "",
         sentences: d.sentences || [],
         results:   d.results   || [],
+        validationResult: d.validationResult || null,
         status:    d.status    || "uploaded",
         error:     d.error     || null,
+        targetLang: d.targetLang || "",
+        reviewOffsets: d.reviewOffsets || { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 },
+        reviewedCount: d.reviewedCount ?? 0,
       })),
     ]);
   }, []);
@@ -54,6 +117,12 @@ export function AppProvider({ children }) {
   const resetFlow = useCallback(() => {
     setDocuments([]);
     setActiveDocIndex(0);
+    try {
+      localStorage.removeItem("ts_documents");
+      localStorage.removeItem("ts_activeDocIndex");
+      localStorage.removeItem("ts_sourceLang");
+      localStorage.removeItem("ts_targetLang");
+    } catch (e) {}
   }, []);
 
   // ── Active document shorthand (backward compat for single-doc pages) ───
@@ -65,6 +134,8 @@ export function AppProvider({ children }) {
   const rawText   = activeDoc?.rawText   ?? "";
   const sentences = activeDoc?.sentences ?? [];
   const results   = activeDoc?.results   ?? [];
+  const validationResult = activeDoc?.validationResult ?? null;
+  const docTargetLang = activeDoc?.targetLang ?? "";
   const filename  = activeDoc?.filename  ?? "";
 
   // Legacy single-doc setters that delegate to updateDoc
@@ -82,6 +153,14 @@ export function AppProvider({ children }) {
 
   const setResults = useCallback((v) => {
     if (activeDoc) updateDoc(activeDoc.docId, { results: v });
+  }, [activeDoc, updateDoc]);
+
+  const setValidationResult = useCallback((v) => {
+    if (activeDoc) updateDoc(activeDoc.docId, { validationResult: v });
+  }, [activeDoc, updateDoc]);
+
+  const setDocTargetLang = useCallback((v) => {
+    if (activeDoc) updateDoc(activeDoc.docId, { targetLang: v });
   }, [activeDoc, updateDoc]);
 
   const setFilename = useCallback((v) => {
@@ -109,8 +188,12 @@ export function AppProvider({ children }) {
       setSentences,
       results,
       setResults,
+      validationResult,
+      setValidationResult,
       filename,
       setFilename,
+      docTargetLang,
+      setDocTargetLang,
 
       // Global settings
       sourceLang,
@@ -123,7 +206,8 @@ export function AppProvider({ children }) {
     [
       documents, activeDocIndex, addDocuments, updateDoc,
       docId, setDocId, rawText, setRawText, sentences, setSentences,
-      results, setResults, filename, setFilename,
+      results, setResults, validationResult, setValidationResult, filename, setFilename,
+      docTargetLang, setDocTargetLang,
       sourceLang, targetLang, resetFlow,
     ],
   );

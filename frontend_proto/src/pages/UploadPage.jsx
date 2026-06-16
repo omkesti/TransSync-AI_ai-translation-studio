@@ -96,6 +96,7 @@ function UploadPage() {
           rawText:  response.raw_text || "",
           filename: response.filename || file.name || "document",
           status:   "uploaded",
+          targetLang: targetLang,
         });
       } catch (uploadError) {
         errors.push(`${file.name}: ${uploadError.message || "Upload failed."}`);

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { approveTranslations, translateSentences } from "../services/api";
 import { useAppContext } from "../context/AppContext";
@@ -31,11 +31,16 @@ const SKIP_MATCH_TYPES = new Set(["tm_exact", "faiss_direct"]);
 const matchLabel = (matchType) => {
   if (!matchType) return "Pending";
   switch (matchType) {
-    case "tm_exact":     return "TM Exact";
-    case "faiss_direct": return "FAISS Direct";
-    case "llm_guided":   return "LLM Guided";
-    case "llm_cold":     return "LLM Cold";
-    default:             return matchType.replace("_", " ").toUpperCase();
+    case "tm_exact":
+      return "TM Exact";
+    case "faiss_direct":
+      return "FAISS Direct";
+    case "llm_guided":
+      return "LLM Guided";
+    case "llm_cold":
+      return "LLM Cold";
+    default:
+      return matchType.replace("_", " ").toUpperCase();
   }
 };
 
@@ -53,7 +58,12 @@ const matchBadgeCls = (matchType) => {
   }
 };
 
-const ORDERED_MATCH_TYPES = ["llm_cold", "llm_guided", "faiss_direct", "tm_exact"];
+const ORDERED_MATCH_TYPES = [
+  "llm_cold",
+  "llm_guided",
+  "faiss_direct",
+  "tm_exact",
+];
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
@@ -66,35 +76,66 @@ function Sidebar() {
             <Sparkles strokeWidth={2.5} size={22} />
           </div>
           <div className="flex flex-col">
-            <span className="font-display text-[#c5fe00] font-black text-sm tracking-tight leading-none mb-1">TransSync</span>
-            <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</span>
+            <span className="font-display text-[#c5fe00] font-black text-sm tracking-tight leading-none mb-1">
+              TransSync
+            </span>
+            <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">
+              AI Studio
+            </span>
           </div>
         </div>
 
         <nav className="space-y-1">
-          <Link to="/dashboard" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+          >
             <LayoutDashboard size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Dashboard</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest">
+              Dashboard
+            </span>
           </Link>
-          <Link to="/upload" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+          <Link
+            to="/upload"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+          >
             <FileUp size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Upload</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest">
+              Upload
+            </span>
           </Link>
-          <Link to="/validation" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+          <Link
+            to="/validation"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+          >
             <CheckCircle2 size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Validation</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest">
+              Validation
+            </span>
           </Link>
           <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
             <MessageSquare size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Review</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest">
+              Review
+            </span>
           </div>
-          <Link to="/glossary" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+          <Link
+            to="/glossary"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+          >
             <Book size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Glossary</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest">
+              Glossary
+            </span>
           </Link>
-          <Link to="/export" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+          <Link
+            to="/export"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+          >
             <Download size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Export</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest">
+              Export
+            </span>
           </Link>
         </nav>
       </div>
@@ -108,16 +149,28 @@ function Sidebar() {
 
 // ── Review Section Component ──────────────────────────────────────────────────
 
-function ReviewSection({ matchType, items, offset, onApprove, onDiscard, isApproving, sourceLang, targetLang }) {
+function ReviewSection({
+  matchType,
+  items,
+  offset,
+  onApprove,
+  onDiscard,
+  isApproving,
+  sourceLang,
+  targetLang,
+}) {
   if (!items || items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-center bg-[#111111] border border-[#262626] rounded-[24px]">
         <div className="w-16 h-16 rounded-full bg-[#1a1a1a] border border-[#262626] flex items-center justify-center mb-6">
           <Languages size={28} className="text-[#555555]" />
         </div>
-        <h2 className="font-display font-bold text-xl tracking-tight mb-2 text-[#8c8c8b]">No {matchLabel(matchType)} Matches</h2>
+        <h2 className="font-display font-bold text-xl tracking-tight mb-2 text-[#8c8c8b]">
+          No {matchLabel(matchType)} Matches
+        </h2>
         <p className="text-[#555555] text-[13px] max-w-sm">
-          There are no sentences that matched this translation layer in the current document.
+          There are no sentences that matched this translation layer in the
+          current document.
         </p>
       </div>
     );
@@ -130,7 +183,9 @@ function ReviewSection({ matchType, items, offset, onApprove, onDiscard, isAppro
     return (
       <div className="bg-[#111111] border border-[#262626] rounded-[24px] p-6 text-center mb-6">
         <CheckCircle size={24} className="mx-auto mb-2 text-[#555555]" />
-        <p className="text-[11px] uppercase tracking-widest font-bold text-[#8c8c8b]">All {matchLabel(matchType)} reviewed</p>
+        <p className="text-[11px] uppercase tracking-widest font-bold text-[#8c8c8b]">
+          All {matchLabel(matchType)} reviewed
+        </p>
       </div>
     );
   }
@@ -138,13 +193,17 @@ function ReviewSection({ matchType, items, offset, onApprove, onDiscard, isAppro
   const batch = items.slice(offset, offset + CHUNK_SIZE);
   const currentBatchNum = Math.floor(offset / CHUNK_SIZE) + 1;
   const totalBatches = Math.ceil(items.length / CHUNK_SIZE);
-  const skippedInBatch = batch.filter(item => SKIP_MATCH_TYPES.has(item.match_type)).length;
+  const skippedInBatch = batch.filter((item) =>
+    SKIP_MATCH_TYPES.has(item.match_type),
+  ).length;
 
   return (
     <div className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden mb-6">
       <div className="px-8 py-5 border-b border-[#262626] flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 shadow-[inset_0_0_10px_rgba(197,254,0,0.05)] ${matchBadgeCls(matchType)}`}>
+          <span
+            className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 shadow-[inset_0_0_10px_rgba(197,254,0,0.05)] ${matchBadgeCls(matchType)}`}
+          >
             {matchLabel(matchType)}
           </span>
           <span className="text-[#8c8c8b] text-[10px] font-bold uppercase tracking-[0.2em]">
@@ -165,19 +224,25 @@ function ReviewSection({ matchType, items, offset, onApprove, onDiscard, isAppro
 
       <div className="divide-y divide-[#262626]">
         {batch.map((item, index) => {
-          const conf = item.score !== undefined && item.score !== null
-            ? Math.max(0, Math.round(100 - (item.score * 100)))
-            : null;
+          const conf =
+            item.score !== undefined && item.score !== null
+              ? Math.max(0, Math.round(100 - item.score * 100))
+              : null;
 
           return (
-            <div key={`${item.source}-${index}`} className="grid grid-cols-1 md:grid-cols-2">
+            <div
+              key={`${item.source}-${index}`}
+              className="grid grid-cols-1 md:grid-cols-2"
+            >
               <div className="p-6 border-r border-[#262626]">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
                     Source — {sourceLang?.toUpperCase() || "EN"}
                   </span>
                 </div>
-                <p className="text-[#a0a09f] text-[15px] leading-[1.6] font-sans">{item.source}</p>
+                <p className="text-[#a0a09f] text-[15px] leading-[1.6] font-sans">
+                  {item.source}
+                </p>
               </div>
 
               <div className="p-6">
@@ -187,12 +252,16 @@ function ReviewSection({ matchType, items, offset, onApprove, onDiscard, isAppro
                   </span>
 
                   {conf !== null && item.match_type !== "llm_cold" && (
-                    <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2 py-1 ${matchBadgeCls(matchType)} bg-opacity-20`}>
+                    <span
+                      className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2 py-1 ${matchBadgeCls(matchType)} bg-opacity-20`}
+                    >
                       {conf}% Confidence
                     </span>
                   )}
                 </div>
-                <p className="text-[#ffffff] text-[15px] leading-[1.6] font-sans">{item.translation}</p>
+                <p className="text-[#ffffff] text-[15px] leading-[1.6] font-sans">
+                  {item.translation}
+                </p>
               </div>
             </div>
           );
@@ -214,7 +283,9 @@ function ReviewSection({ matchType, items, offset, onApprove, onDiscard, isAppro
           disabled={isApproving}
         >
           {isApproving ? (
-            <><Loader2 size={14} className="animate-spin" /> Approving…</>
+            <>
+              <Loader2 size={14} className="animate-spin" /> Approving…
+            </>
           ) : (
             "Approve & Next"
           )}
@@ -227,24 +298,34 @@ function ReviewSection({ matchType, items, offset, onApprove, onDiscard, isAppro
 // ── Main Component ────────────────────────────────────────────────────────────
 
 function ReviewPage() {
-  const [translationState, setTranslationState] = useState("idle");
   const [isApproving, setIsApproving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [reviewedCount, setReviewedCount] = useState(0);
 
-  const { sentences, results, setResults, sourceLang, targetLang, documents, activeDocIndex, setActiveDocIndex, updateDoc } = useAppContext();
+  const {
+    docId,
+    sentences,
+    results,
+    setResults,
+    sourceLang,
+    docTargetLang,
+    targetLang,
+    documents,
+    activeDocIndex,
+    setActiveDocIndex,
+    updateDoc,
+  } = useAppContext();
   const multiDoc = documents.length > 1;
-
-  const initialState = results && results.length > 0 ? "done" : "idle";
-  const [state] = useState(initialState);
-  const effectiveState = translationState === "idle" && state === "done" ? "done" : translationState;
 
   const hasResults = results && results.length > 0;
   const totalCount = results?.length || 0;
 
   // Track offsets for each section
   const [offsets, setOffsets] = useState({
-    llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0
+    llm_cold: 0,
+    llm_guided: 0,
+    faiss_direct: 0,
+    tm_exact: 0,
   });
 
   const [activeSection, setActiveSection] = useState("llm_cold");
@@ -252,9 +333,14 @@ function ReviewPage() {
 
   // Group results by match_type
   const groupedResults = useMemo(() => {
-    const groups = { llm_cold: [], llm_guided: [], faiss_direct: [], tm_exact: [] };
+    const groups = {
+      llm_cold: [],
+      llm_guided: [],
+      faiss_direct: [],
+      tm_exact: [],
+    };
     if (!results) return groups;
-    results.forEach(r => {
+    results.forEach((r) => {
       if (groups[r.match_type]) {
         groups[r.match_type].push(r);
       } else {
@@ -264,14 +350,46 @@ function ReviewPage() {
     return groups;
   }, [results]);
 
+  const initialState = results && results.length > 0 ? "done" : "idle";
+  const [translationState, setTranslationState] = useState(initialState);
+
+  useEffect(() => {
+    if (results && results.length > 0) {
+      setTranslationState("done");
+      const firstPopulated =
+        ORDERED_MATCH_TYPES.find((mt) => groupedResults[mt]?.length > 0) ||
+        "llm_cold";
+      setActiveSection(firstPopulated);
+    } else {
+      setTranslationState("idle");
+    }
+  }, [results, docId, groupedResults]);
+
   const handleStartTranslation = async () => {
-    if (!sentences || sentences.length === 0) {
-      setErrorMessage("No validated sentences found. Please validate the document first.");
+    const pendingDocs = documents.filter(
+      (d) => d.status === "validated" && d.sentences?.length > 0,
+    );
+    const isMultiMode = documents.length > 1;
+
+    if (!isMultiMode && (!sentences || sentences.length === 0)) {
+      setErrorMessage(
+        "No validated sentences found. Please validate the document first.",
+      );
       setTranslationState("error");
       return;
     }
-    if (!targetLang) {
-      setErrorMessage("Target language is missing. Please select a language on the upload page.");
+
+    if (isMultiMode && pendingDocs.length === 0) {
+      setErrorMessage("No documents are ready for translation.");
+      setTranslationState("error");
+      return;
+    }
+
+    const effectiveLang = docTargetLang || targetLang;
+    if (!effectiveLang) {
+      setErrorMessage(
+        "Target language is missing. Please select a language on the upload page.",
+      );
       setTranslationState("error");
       return;
     }
@@ -280,10 +398,53 @@ function ReviewPage() {
     setErrorMessage("");
 
     try {
-      const response = await translateSentences(sentences, sourceLang, targetLang);
-      setResults(response.results || []);
+      if (isMultiMode) {
+        let currentDocResponse = null;
+        for (let i = 0; i < documents.length; i++) {
+          const doc = documents[i];
+          if (
+            doc.status !== "validated" ||
+            !doc.sentences ||
+            doc.sentences.length === 0
+          )
+            continue;
+
+          const response = await translateSentences(
+            doc.sentences,
+            sourceLang,
+            doc.targetLang || targetLang,
+          );
+          updateDoc(doc.docId, {
+            results: response.results || [],
+            status: "translated",
+            reviewOffsets: { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 },
+            reviewedCount: 0,
+          });
+
+          if (doc.docId === docId) {
+            currentDocResponse = response;
+          }
+        }
+
+        if (currentDocResponse) {
+          setResults(currentDocResponse.results || []);
+        }
+      } else {
+        const response = await translateSentences(
+          sentences,
+          sourceLang,
+          docTargetLang || targetLang,
+        );
+        setResults(response.results || []);
+        updateDoc(docId, {
+          results: response.results || [],
+          status: "translated",
+          reviewOffsets: { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 },
+          reviewedCount: 0,
+        });
+      }
+
       setOffsets({ llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 });
-      setActiveSection("llm_cold");
       setReviewedCount(0);
       setTranslationState("done");
     } catch (error) {
@@ -293,7 +454,8 @@ function ReviewPage() {
   };
 
   const pendingCount = Math.max(0, totalCount - reviewedCount);
-  const progressPercent = totalCount > 0 ? Math.round((reviewedCount / totalCount) * 100) : 0;
+  const progressPercent =
+    totalCount > 0 ? Math.round((reviewedCount / totalCount) * 100) : 0;
 
   const handleApproveBatch = async (batch, matchType) => {
     if (!batch.length || isApproving) return;
@@ -305,20 +467,23 @@ function ReviewPage() {
       const payload = batch
         .filter((item) => !SKIP_MATCH_TYPES.has(item.match_type))
         .map((item) => ({
-          source_text:     item.source,
+          source_text: item.source,
           translated_text: item.translation,
-          target_lang:     targetLang,
-          match_type:      item.match_type,
-          action:          "approved",
-          faiss_index:     item.faiss_index ?? null,
+          target_lang: docTargetLang,
+          match_type: item.match_type,
+          action: "approved",
+          faiss_index: item.faiss_index ?? null,
         }));
 
       if (payload.length > 0) {
         await approveTranslations(payload);
       }
-      
-      setReviewedCount(prev => prev + batch.length);
-      setOffsets(prev => ({ ...prev, [matchType]: prev[matchType] + batch.length }));
+
+      const newReviewedCount = reviewedCount + batch.length;
+      const newOffsets = { ...offsets, [matchType]: offsets[matchType] + batch.length };
+      setReviewedCount(newReviewedCount);
+      setOffsets(newOffsets);
+      updateDoc(docId, { reviewOffsets: newOffsets, reviewedCount: newReviewedCount });
     } catch (error) {
       setErrorMessage(error.message || "Approval failed.");
     } finally {
@@ -328,17 +493,22 @@ function ReviewPage() {
 
   const handleDiscardBatch = (batch, matchType) => {
     if (!batch.length || isApproving) return;
-    setReviewedCount(prev => prev + batch.length);
-    setOffsets(prev => ({ ...prev, [matchType]: prev[matchType] + batch.length }));
+    const newReviewedCount = reviewedCount + batch.length;
+    const newOffsets = { ...offsets, [matchType]: offsets[matchType] + batch.length };
+    setReviewedCount(newReviewedCount);
+    setOffsets(newOffsets);
+    updateDoc(docId, { reviewOffsets: newOffsets, reviewedCount: newReviewedCount });
   };
 
-  const isIdle    = effectiveState === "idle";
+  const isIdle = translationState === "idle";
   const isRunning = translationState === "running";
-  const isDone    = effectiveState === "done" || hasResults;
-  const isError   = translationState === "error";
+  const isDone = translationState === "done" || hasResults;
+  const isError = translationState === "error";
 
   // Check if ALL sections are fully reviewed
-  const allReviewed = hasResults && ORDERED_MATCH_TYPES.every(mt => offsets[mt] >= groupedResults[mt].length);
+  const allReviewed =
+    hasResults &&
+    ORDERED_MATCH_TYPES.every((mt) => offsets[mt] >= groupedResults[mt].length);
 
   return (
     <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
@@ -349,99 +519,99 @@ function ReviewPage() {
         <header className="h-[80px] w-full border-b border-[#262626] bg-[#0a0a0a] flex items-center justify-between px-8 shrink-0 z-40">
           <div className="flex items-center gap-4">
             <Link to="/" className="inline-block">
-              <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] leading-none">TransSync</span>
+              <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] leading-none">
+                TransSync
+              </span>
             </Link>
             <div className="w-px h-6 bg-[#262626]"></div>
             <div className="flex items-center gap-2">
-              <span className="text-[#555555] font-bold text-[10px] uppercase tracking-widest">Target:</span>
+              <span className="text-[#555555] font-bold text-[10px] uppercase tracking-widest">
+                Target:
+              </span>
               <span className="text-[#ffffff] text-[13px] font-bold">
-                {targetLang ? `${languageLabel(targetLang)} (${targetLang})` : "—"}
+                {docTargetLang
+                  ? `${languageLabel(docTargetLang)} (${docTargetLang})`
+                  : "—"}
               </span>
             </div>
           </div>
 
           {/* Live Sync Badge */}
-          {isDone && (
+          {translationState === "done" && (
             <div className="hidden lg:flex items-center gap-3 bg-[#1a1a1a] border border-[#262626] px-4 py-2 rounded-full absolute left-1/2 -translate-x-1/2">
               <div className="w-2.5 h-2.5 bg-[#c5fe00] rounded-full animate-pulse"></div>
               <span className="text-[#a0a09f] font-bold text-[9px] uppercase tracking-widest leading-none">
-                Live Sync<br />Active
+                Live Sync
+                <br />
+                Active
               </span>
             </div>
           )}
 
           <div className="flex items-center gap-6">
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors"><Bell size={18} /></button>
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors"><HelpCircle size={18} /></button>
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors"><Settings size={18} /></button>
+            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
+              <Bell size={18} />
+            </button>
+            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
+              <HelpCircle size={18} />
+            </button>
+            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
+              <Settings size={18} />
+            </button>
             <button className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#262626] overflow-hidden ml-2">
-              <img src="https://i.pravatar.cc/150?img=11" alt="User Avatar" className="w-full h-full object-cover" />
+              <img
+                src="https://i.pravatar.cc/150?img=11"
+                alt="User Avatar"
+                className="w-full h-full object-cover"
+              />
             </button>
           </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 flex overflow-hidden w-full pb-[100px]">
+        <div className="flex-1 flex overflow-hidden w-full pb-[88px]">
           <main className="flex-1 overflow-y-auto layout-scrollbar bg-[#0a0a0a]">
             <div className="p-8 max-w-5xl mx-auto space-y-6">
-
               {/* ── Multi-doc tabs ── */}
               {multiDoc && (
                 <div className="flex flex-wrap gap-2 mb-2">
                   {documents.map((doc, i) => (
                     <button
                       key={doc.docId}
-                      onClick={() => { 
-                        setActiveDocIndex(i); 
-                        setTranslationState("idle"); 
-                        setOffsets({ llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 }); 
-                        setActiveSection("llm_cold");
-                        setReviewedCount(0); 
-                        setErrorMessage(""); 
+                      onClick={() => {
+                        const targetDoc = documents[i];
+                        setActiveDocIndex(i);
+                        setOffsets(
+                          targetDoc?.reviewOffsets || {
+                            llm_cold: 0,
+                            llm_guided: 0,
+                            faiss_direct: 0,
+                            tm_exact: 0,
+                          }
+                        );
+                        setReviewedCount(targetDoc?.reviewedCount ?? 0);
+                        setErrorMessage("");
                       }}
                       className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-colors ${
                         i === activeDocIndex
                           ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16]"
                           : doc.status === "approved"
-                          ? "bg-[#111111] text-[#8c8c8b] border-[#2a2e16]"
-                          : doc.status === "translated"
-                          ? "bg-[#111111] text-[#a0a09f] border-[#262626]"
-                          : doc.status === "error"
-                          ? "bg-[#1a0a0a] text-[#ff6b6b] border-[#4a1010]"
-                          : "bg-[#111111] text-[#555555] border-[#262626] hover:text-[#8c8c8b]"
+                            ? "bg-[#111111] text-[#8c8c8b] border-[#2a2e16]"
+                            : doc.status === "translated"
+                              ? "bg-[#111111] text-[#a0a09f] border-[#262626]"
+                              : doc.status === "error"
+                                ? "bg-[#1a0a0a] text-[#ff6b6b] border-[#4a1010]"
+                                : "bg-[#111111] text-[#555555] border-[#262626] hover:text-[#8c8c8b]"
                       }`}
                     >
-                      {doc.filename.length > 20 ? doc.filename.slice(0, 18) + "…" : doc.filename}
+                      {doc.filename.length > 20
+                        ? doc.filename.slice(0, 18) + "…"
+                        : doc.filename}
                       {doc.status === "approved" && " ✓"}
                       {doc.status === "error" && " ✗"}
                     </button>
                   ))}
                 </div>
-              )}
-
-              {/* ── Translate All button ── */}
-              {documents.filter(d => d.status === "validated").length > 0 && (
-                <button
-                  onClick={async () => {
-                    setTranslationState("running");
-                    for (let i = 0; i < documents.length; i++) {
-                      const doc = documents[i];
-                      if (doc.status !== "validated" || !doc.sentences || doc.sentences.length === 0) continue;
-                      try {
-                        const response = await translateSentences(doc.sentences, sourceLang, targetLang);
-                        updateDoc(doc.docId, { results: response.results || [], status: "translated" });
-                      } catch (err) {
-                        updateDoc(doc.docId, { status: "error", error: err.message || "Translation failed" });
-                      }
-                    }
-                    setTranslationState("done");
-                    setErrorMessage("");
-                  }}
-                  disabled={translationState === "running"}
-                  className="border border-[#2a2e16] text-[#c5fe00] hover:bg-[#1a1c10] rounded-full px-6 py-3 font-bold text-[10px] uppercase tracking-widest transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  <Zap size={14} /> Translate All ({documents.filter(d => d.status === "validated").length} pending)
-                </button>
               )}
 
               {/* Error Banner */}
@@ -458,15 +628,17 @@ function ReviewPage() {
               )}
 
               {/* ── IDLE STATE ── */}
-              {isIdle && !isError && (
+              {translationState === "idle" && !isError && (
                 <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
                   <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
                     <Languages size={32} className="text-[#c5fe00]" />
                   </div>
-                  <h2 className="font-display font-bold text-3xl tracking-tight mb-3">Ready to Translate</h2>
+                  <h2 className="font-display font-bold text-3xl tracking-tight mb-3">
+                    Ready to Translate
+                  </h2>
                   <p className="text-[#8c8c8b] text-[15px] mb-2 max-w-md leading-relaxed">
                     {sentences && sentences.length > 0
-                      ? `${sentences.length} validated sentence${sentences.length > 1 ? "s" : ""} ready for translation into ${targetLang ? languageLabel(targetLang) : "your target language"}.`
+                      ? `${sentences.length} validated sentence${sentences.length > 1 ? "s" : ""} ready for translation into ${docTargetLang ? languageLabel(docTargetLang) : "your target language"}.`
                       : "No validated sentences found. Please go back and validate your document first."}
                   </p>
                   {sentences && sentences.length > 0 && (
@@ -479,8 +651,15 @@ function ReviewPage() {
                       onClick={handleStartTranslation}
                       className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
                     >
-                      <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
-                      Start Translation
+                      <Zap
+                        size={16}
+                        strokeWidth={3}
+                        className="fill-[#0a0a0a]"
+                      />
+                      {documents.filter((d) => d.status === "validated")
+                        .length > 1
+                        ? `Translate All ${documents.filter((d) => d.status === "validated").length} Documents`
+                        : "Start Translation"}
                     </button>
                   ) : (
                     <Link
@@ -494,30 +673,43 @@ function ReviewPage() {
               )}
 
               {/* ── RUNNING STATE ── */}
-              {isRunning && (
+              {translationState === "running" && (
                 <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
                   <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
-                    <Loader2 size={32} className="text-[#c5fe00] animate-spin" />
+                    <Loader2
+                      size={32}
+                      className="text-[#c5fe00] animate-spin"
+                    />
                   </div>
-                  <h2 className="font-display font-bold text-3xl tracking-tight mb-3">Translating…</h2>
+                  <h2 className="font-display font-bold text-3xl tracking-tight mb-3">
+                    Translating…
+                  </h2>
                   <p className="text-[#8c8c8b] text-[15px] max-w-md leading-relaxed">
-                    Running {sentences?.length || 0} sentences through TM lookup, FAISS search, and the Groq LLM. This may take 10–30 seconds.
+                    Running {sentences?.length || 0} sentences through TM
+                    lookup, FAISS search, and the Groq LLM. This may take 10–30
+                    seconds.
                   </p>
                   <div className="mt-8 flex gap-[4px]">
-                    {[0, 1, 2].map(i => (
-                      <div key={i} className="w-2 h-2 bg-[#c5fe00] rounded-full animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="w-2 h-2 bg-[#c5fe00] rounded-full animate-bounce"
+                        style={{ animationDelay: `${i * 150}ms` }}
+                      />
                     ))}
                   </div>
                 </div>
               )}
 
               {/* ── DONE STATE — ALL REVIEWED ── */}
-              {isDone && !isRunning && allReviewed && (
+              {translationState === "done" && !isRunning && allReviewed && (
                 <div className="flex flex-col items-center justify-center min-h-[300px] text-center">
                   <div className="w-16 h-16 rounded-full bg-[#1a2010] border border-[#2a2e16] flex items-center justify-center mb-6">
                     <CheckCircle size={28} className="text-[#c5fe00]" />
                   </div>
-                  <h2 className="font-display font-bold text-2xl tracking-tight mb-2">All Sections Reviewed</h2>
+                  <h2 className="font-display font-bold text-2xl tracking-tight mb-2">
+                    All Sections Reviewed
+                  </h2>
                   <p className="text-[#8c8c8b] text-[14px] mb-8">
                     {hasResults
                       ? `${reviewedCount} sentences reviewed. Approved translations have been saved.`
@@ -540,8 +732,8 @@ function ReviewPage() {
                 </div>
               )}
 
-              {/* ── DONE STATE — SECTIONS ── */}
-              {isDone && !isRunning && !allReviewed && (
+              {/* ── DONE STATE (Review UI) ── */}
+              {translationState === "done" && hasResults && !allReviewed && (
                 <div className="space-y-8">
                   <ReviewSection
                     matchType={activeSection}
@@ -551,24 +743,23 @@ function ReviewPage() {
                     onDiscard={handleDiscardBatch}
                     isApproving={isApproving}
                     sourceLang={sourceLang}
-                    targetLang={targetLang}
+                    targetLang={docTargetLang}
                   />
                 </div>
               )}
-
             </div>
           </main>
 
           {/* Right Context Panel */}
           <aside className="w-[360px] border-l border-[#262626] bg-[#0e0e0e] shrink-0 flex flex-col overflow-y-auto layout-scrollbar">
             <div className="flex items-center gap-6 border-b border-[#262626] px-8 pt-8">
-              <button 
+              <button
                 onClick={() => setSidebarTab("match_types")}
                 className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "match_types" ? "text-[#c5fe00] border-[#c5fe00]" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
               >
                 Match Types
               </button>
-              <button 
+              <button
                 onClick={() => setSidebarTab("context")}
                 className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "context" ? "text-[#c5fe00] border-[#c5fe00]" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
               >
@@ -579,11 +770,15 @@ function ReviewPage() {
             <div className="p-8 space-y-10">
               {sidebarTab === "context" && (
                 <div>
-                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Draft Settings</h4>
+                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
+                    Draft Settings
+                  </h4>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-[13px]">
                       <span className="text-[#8c8c8b]">Tone of Voice</span>
-                      <span className="text-[#c5fe00] font-bold">Sophisticated</span>
+                      <span className="text-[#c5fe00] font-bold">
+                        Sophisticated
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-[13px]">
                       <span className="text-[#8c8c8b]">Formality</span>
@@ -597,33 +792,57 @@ function ReviewPage() {
 
               {sidebarTab === "match_types" && (
                 <div>
-                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Match Types</h4>
+                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
+                    Match Types
+                  </h4>
                   <div className="space-y-3">
                     {[
-                      { type: "llm_cold",    desc: "LLM cold translation with no reference." },
-                      { type: "llm_guided",  desc: "LLM translation guided by a reference pair." },
-                      { type: "faiss_direct", desc: "FAISS similarity ≥ 0.95." },
-                      { type: "tm_exact",    desc: "Exact match from Translation Memory." },
+                      {
+                        type: "llm_cold",
+                        desc: "LLM cold translation with no reference.",
+                      },
+                      {
+                        type: "llm_guided",
+                        desc: "LLM translation guided by a reference pair.",
+                      },
+                      {
+                        type: "faiss_direct",
+                        desc: "FAISS similarity ≥ 0.95.",
+                      },
+                      {
+                        type: "tm_exact",
+                        desc: "Exact match from Translation Memory.",
+                      },
                     ].map(({ type, desc }) => {
-                      const count = groupedResults ? (groupedResults[type]?.length || 0) : 0;
+                      const count = groupedResults
+                        ? groupedResults[type]?.length || 0
+                        : 0;
                       const isActive = activeSection === type;
                       return (
-                        <button 
+                        <button
                           key={type}
                           onClick={() => setActiveSection(type)}
                           className={`w-full text-left bg-[#111111] border rounded-[16px] p-4 transition-colors ${
-                            isActive ? 'border-[#c5fe00]' : 'border-[#1a1a1a] hover:border-[#333333]'
+                            isActive
+                              ? "border-[#c5fe00]"
+                              : "border-[#1a1a1a] hover:border-[#333333]"
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
-                            <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2 py-1 inline-block ${matchBadgeCls(type)}`}>
+                            <span
+                              className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2 py-1 inline-block ${matchBadgeCls(type)}`}
+                            >
                               {matchLabel(type)}
                             </span>
-                            <span className={`text-[10px] font-bold ${isActive ? 'text-[#ffffff]' : 'text-[#555555]'}`}>
+                            <span
+                              className={`text-[10px] font-bold ${isActive ? "text-[#ffffff]" : "text-[#555555]"}`}
+                            >
                               {count} pending
                             </span>
                           </div>
-                          <p className="text-[#555555] text-[11px] leading-relaxed">{desc}</p>
+                          <p className="text-[#555555] text-[11px] leading-relaxed">
+                            {desc}
+                          </p>
                         </button>
                       );
                     })}
@@ -635,7 +854,7 @@ function ReviewPage() {
         </div>
 
         {/* Footer Action Bar — only shown when reviewing */}
-        {isDone && !isRunning && (
+        {translationState === "done" && !isRunning && (
           <div className="absolute w-full bottom-0 h-[88px] border-t border-[#262626] bg-[#0a0a0a]/90 backdrop-blur-md flex items-center justify-between px-8 z-50">
             {/* Progress */}
             <div className="flex items-center gap-12">
@@ -645,23 +864,30 @@ function ReviewPage() {
                   <span className="text-[#ffffff]">{progressPercent}%</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-[#262626] overflow-hidden">
-                  <div className="h-full bg-[#c5fe00] rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+                  <div
+                    className="h-full bg-[#c5fe00] rounded-full transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-8 text-[#a0a09f] text-[11px] font-bold tracking-[0.1em] uppercase">
               <div className="flex items-center gap-2">
-                <CheckCircle size={14} className="text-[#c5fe00]" /> {reviewedCount} Reviewed
+                <CheckCircle size={14} className="text-[#c5fe00]" />{" "}
+                {reviewedCount} Reviewed
               </div>
               <div className="flex items-center gap-2">
-                <MoreHorizontal size={14} className="text-[#8c8c8b]" /> {pendingCount} Pending
+                <MoreHorizontal size={14} className="text-[#8c8c8b]" />{" "}
+                {pendingCount} Pending
               </div>
             </div>
 
             {/* Actions are now managed per-section, so we keep this space clean or put something else here */}
             <div className="flex items-center gap-6">
-               <span className="text-[#555555] text-[10px] uppercase tracking-widest font-bold">Approve items in the sections above</span>
+              <span className="text-[#555555] text-[10px] uppercase tracking-widest font-bold">
+                Approve items in the sections above
+              </span>
             </div>
           </div>
         )}
@@ -674,7 +900,9 @@ function ReviewPage() {
                 <Sparkles size={14} />
               </div>
               <p className="text-[#8c8c8b] text-[12px] font-medium">
-                {isRunning ? "Translation in progress…" : "Click Start Translation when ready."}
+                {isRunning
+                  ? "Translation in progress…"
+                  : "Click Start Translation when ready."}
               </p>
             </div>
             <button
@@ -682,14 +910,19 @@ function ReviewPage() {
               disabled={isRunning || !sentences?.length}
               className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isRunning
-                ? <><Loader2 size={14} className="animate-spin" /> Translating…</>
-                : <><Zap size={14} strokeWidth={3} className="fill-[#0a0a0a]" /> Start Translation</>
-              }
+              {isRunning ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Translating…
+                </>
+              ) : (
+                <>
+                  <Zap size={14} strokeWidth={3} className="fill-[#0a0a0a]" />{" "}
+                  Start Translation
+                </>
+              )}
             </button>
           </div>
         )}
-
       </div>
     </div>
   );

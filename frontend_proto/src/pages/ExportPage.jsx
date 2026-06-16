@@ -70,6 +70,7 @@ function ExportPage() {
   const {
     results,
     sourceLang,
+    docTargetLang,
     targetLang,
     filename,
     docId,
@@ -82,6 +83,7 @@ function ExportPage() {
 
   const multiDoc = documents.length > 1;
   const docsWithResults = documents.filter(d => d.results && d.results.length > 0);
+  const effectiveTargetLang = docTargetLang || targetLang;
 
   // "idle" | "exporting" | "done" | "error"
   const [exportState, setExportState] = useState("idle");
@@ -110,7 +112,7 @@ function ExportPage() {
         doc_id:      docId || "unknown",
         filename:    filename || "document",
         source_lang: sourceLang || "en",
-        target_lang: targetLang || "xx",
+        target_lang: effectiveTargetLang || "xx",
         raw_text:    rawText || "",
         translations: results.map(r => ({
           source:      r.source,
@@ -141,7 +143,7 @@ function ExportPage() {
           doc_id:      doc.docId || "unknown",
           filename:    doc.filename || "document",
           source_lang: sourceLang || "en",
-          target_lang: targetLang || "xx",
+          target_lang: doc.targetLang || targetLang || "xx",
           raw_text:    doc.rawText || "",
           translations: (doc.results || []).map(r => ({
             source:      r.source,
@@ -164,7 +166,7 @@ function ExportPage() {
         doc_id:      doc.docId || "unknown",
         filename:    doc.filename || "document",
         source_lang: sourceLang || "en",
-        target_lang: targetLang || "xx",
+        target_lang: doc.targetLang || targetLang || "xx",
         raw_text:    doc.rawText || "",
         translations: (doc.results || []).map(r => ({
           source:      r.source,
@@ -213,7 +215,7 @@ function ExportPage() {
             <Link to="/" className="font-display font-bold text-xl tracking-tight text-[#c5fe00] leading-none">TransSync</Link>
             <div className="w-px h-6 bg-[#262626]" />
             <span className="text-[#8c8c8b] text-[13px] font-medium">
-              {filename || "Document"} → <span className="text-white font-bold">{targetLang?.toUpperCase() || "—"}</span>
+              {filename || "Document"} → <span className="text-white font-bold">{effectiveTargetLang?.toUpperCase() || "—"}</span>
             </span>
           </div>
           <div className="flex items-center gap-6">
@@ -337,7 +339,7 @@ function ExportPage() {
               />
               <StatCard
                 label="Language Pair"
-                value={`${(sourceLang || "en").toUpperCase()} → ${(targetLang || "—").toUpperCase()}`}
+                value={`${(sourceLang || "en").toUpperCase()} → ${(effectiveTargetLang || "—").toUpperCase()}`}
                 sub={filename || "document"}
               />
             </div>
@@ -360,10 +362,10 @@ function ExportPage() {
 
                     <h3 className="font-display font-bold text-xl tracking-tight mb-2">Translated DOCX</h3>
                     <p className="text-[#555555] text-[12px] font-medium mb-1">
-                      {filename ? `translated_${filename.replace(/\.[^/.]+$/, "")}_${targetLang}.docx` : `translated_document_${targetLang}.docx`}
+                      {filename ? `translated_${filename.replace(/\.[^/.]+$/, "")}_${effectiveTargetLang}.docx` : `translated_document_${effectiveTargetLang}.docx`}
                     </p>
                     <p className="text-[#555555] text-[11px] mb-8">
-                      {results.length} sentences · {targetLang?.toUpperCase()} · DOCX format
+                      {results.length} sentences · {effectiveTargetLang?.toUpperCase()} · DOCX format
                     </p>
 
                     {/* Error */}
@@ -437,7 +439,7 @@ function ExportPage() {
                   </div>
                   <div className="flex items-center gap-2 text-[#555555] text-[11px] font-bold">
                     <Languages size={14} />
-                    <span>{(sourceLang || "EN").toUpperCase()} → {(targetLang || "—").toUpperCase()}</span>
+                    <span>{(sourceLang || "EN").toUpperCase()} → {(effectiveTargetLang || "—").toUpperCase()}</span>
                   </div>
                 </div>
 

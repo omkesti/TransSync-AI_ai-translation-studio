@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { validateText } from "../services/api";
 import { useAppContext } from "../context/AppContext";
@@ -153,36 +153,67 @@ function SuccessBanner({ sentenceCount }) {
 function ValidationPage() {
   const navigate = useNavigate();
 
-  // "idle" | "running" | "done" | "error"
-  const [validationState, setValidationState] = useState("idle");
-  const [validationResult, setValidationResult] = useState(null); // full API response
+  const { docId, rawText, setSentences, documents, activeDocIndex, setActiveDocIndex, updateDoc, validationResult, setValidationResult } = useAppContext();
+  
+  const activeDoc = documents[activeDocIndex];
+  const activeDocStatus = activeDoc?.status || "uploaded";
+  const isAnyValidating = documents.some(d => d.status === "validating");
+  
   const [errorMessage, setErrorMessage] = useState("");
 
-  const { docId, rawText, setSentences, documents, activeDocIndex, setActiveDocIndex, updateDoc } = useAppContext();
+  let validationState = "idle";
+  if (isAnyValidating || activeDocStatus === "validating") {
+    validationState = "running";
+  } else if (errorMessage || activeDocStatus === "error") {
+    validationState = "error";
+  } else if (validationResult || activeDocStatus === "validated" || activeDocStatus === "translated" || activeDocStatus === "approved") {
+    validationState = "done";
+  }
+
+  const displayError = errorMessage || activeDoc?.error || "Validation failed.";
+  
   const multiDoc = documents.length > 1;
   const validatedCount = documents.filter(d => d.status === "validated" || d.status === "translated" || d.status === "approved").length;
 
+  const pendingDocsCount = documents.filter(d => d.status === "uploaded" || d.status === "error").length;
+
   // ── Validation trigger ──────────────────────────────────────────────────────
 
-  const handleStartValidation = async () => {
+  const handleStartValidation = async (validateAll = false) => {
     if (!docId || !rawText) {
       setErrorMessage("No document loaded. Please upload a document first.");
-      setValidationState("error");
       return;
     }
 
-    setValidationState("running");
     setErrorMessage("");
-    setValidationResult(null);
+
+    const pendingDocs = documents.filter(d => d.status === "uploaded" || d.status === "error");
+    const isMultiMode = validateAll && pendingDocs.length > 1;
 
     try {
-      const result = await validateText(rawText, docId);
-      setValidationResult(result);
-      setSentences(result.sentences || []);
-      setValidationState("done");
+      if (isMultiMode) {
+        pendingDocs.forEach(doc => updateDoc(doc.docId, { status: "validating", error: null, validationResult: null }));
+        
+        for (let i = 0; i < pendingDocs.length; i++) {
+          const doc = pendingDocs[i];
+          const result = await validateText(doc.rawText, doc.docId);
+          if (result.status === "ok") {
+            updateDoc(doc.docId, { sentences: result.sentences || [], status: "validated", validationResult: result, error: null });
+          } else {
+            updateDoc(doc.docId, { status: "error", error: (result.errors || []).join(", "), validationResult: result });
+          }
+        }
+      } else {
+        updateDoc(docId, { status: "validating", error: null, validationResult: null });
+        const result = await validateText(rawText, docId);
+        if (result.status === "ok") {
+          updateDoc(docId, { sentences: result.sentences || [], status: "validated", validationResult: result, error: null });
+        } else {
+          updateDoc(docId, { status: "error", error: (result.errors || []).join(", "), validationResult: result });
+        }
+      }
     } catch (err) {
       setErrorMessage(err.message || "Validation failed. Please try again.");
-      setValidationState("error");
     }
   };
 
@@ -323,7 +354,7 @@ function ValidationPage() {
                   {documents.map((doc, i) => (
                     <button
                       key={doc.docId}
-                      onClick={() => { setActiveDocIndex(i); setValidationState("idle"); setValidationResult(null); setErrorMessage(""); }}
+                      onClick={() => { setActiveDocIndex(i); setErrorMessage(""); }}
                       className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-colors ${
                         i === activeDocIndex
                           ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16]"
@@ -342,35 +373,8 @@ function ValidationPage() {
                 </div>
               )}
 
-              {/* ── Validate All button ── */}
-              {documents.filter(d => d.status === "uploaded").length > 0 && validationState !== "running" && (
-                <button
-                  onClick={async () => {
-                    setValidationState("running");
-                    for (let i = 0; i < documents.length; i++) {
-                      const doc = documents[i];
-                      if (doc.status !== "uploaded") continue;
-                      try {
-                        const result = await validateText(doc.rawText, doc.docId);
-                        if (result.status === "ok") {
-                          updateDoc(doc.docId, { sentences: result.sentences || [], status: "validated" });
-                        } else {
-                          updateDoc(doc.docId, { status: "error", error: (result.errors || []).join(", ") });
-                        }
-                      } catch (err) {
-                        updateDoc(doc.docId, { status: "error", error: err.message || "Validation failed" });
-                      }
-                    }
-                    setValidationState("done");
-                    setValidationResult({ status: "ok", sentence_count: 0 });
-                    setErrorMessage("");
-                  }}
-                  className="mb-6 border border-[#2a2e16] text-[#c5fe00] hover:bg-[#1a1c10] rounded-full px-6 py-3 font-bold text-[10px] uppercase tracking-widest transition-colors flex items-center gap-2"
-                >
-                  <ShieldCheck size={14} /> Validate All ({documents.filter(d => d.status === "uploaded").length} pending)
-                </button>
-              )}
-                <p className="text-[#a0a09f] text-[15px] leading-relaxed max-w-2xl font-sans">
+              {/* ── Document List & Description ── */}
+                <p className="text-[#a0a09f] text-[15px] leading-relaxed max-w-2xl font-sans mt-4">
                   {validationState === "idle"
                     ? "Click 'Start Validation' to run the NLP quality check on your uploaded document."
                     : validationState === "running"
@@ -384,11 +388,11 @@ function ValidationPage() {
               <div className="space-y-8">
 
                 {/* ── Network error banner ── */}
-                {validationState === "error" && errorMessage && (
+                {validationState === "error" && displayError && (
                   <div className="bg-[#2a1313] border border-[#ff4d4d] rounded-[24px] p-6 flex items-center justify-between">
-                    <span className="text-[#ff4d4d] text-sm">{errorMessage}</span>
+                    <span className="text-[#ff4d4d] text-sm">{displayError}</span>
                     <button
-                      onClick={() => setValidationState("idle")}
+                      onClick={() => { setErrorMessage(""); updateDoc(docId, { status: "uploaded", error: null }); }}
                       className="text-[#ff4d4d] hover:text-white text-[11px] font-bold uppercase tracking-widest border border-[#4a1010] px-3 py-1.5 rounded-full transition-colors ml-4 shrink-0"
                     >
                       Retry
@@ -397,7 +401,7 @@ function ValidationPage() {
                 )}
 
                 {/* ── IDLE STATE ── */}
-                {validationState === "idle" && !errorMessage && (
+                {validationState === "idle" && !displayError && (
                   <div className="flex flex-col items-center justify-center min-h-[320px] text-center bg-[#111111] border border-[#1a1a1a] rounded-[32px] p-12">
                     <div className="w-16 h-16 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8">
                       <ShieldCheck size={28} className="text-[#c5fe00]" />
@@ -411,13 +415,26 @@ function ValidationPage() {
                         : "Please upload a document first before running validation."}
                     </p>
                     {docId ? (
-                      <button
-                        onClick={handleStartValidation}
-                        className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform transition-all"
-                      >
-                        <ShieldCheck size={16} strokeWidth={2.5} />
-                        Start Validation
-                      </button>
+                      <div className="flex flex-row gap-4 items-center">
+                        {multiDoc && pendingDocsCount > 1 && (
+                          <button
+                            onClick={() => handleStartValidation(true)}
+                            className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
+                          >
+                            <Zap size={16} className="fill-current" />
+                            Validate All {pendingDocsCount} Docs
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleStartValidation(false)}
+                          className={multiDoc && pendingDocsCount > 1
+                            ? "bg-transparent border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-white rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                            : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"}
+                        >
+                          <ShieldCheck size={16} />
+                          {multiDoc && pendingDocsCount > 1 ? "Validate Current Doc" : "Start Validation"}
+                        </button>
+                      </div>
                     ) : (
                       <Link
                         to="/upload"
