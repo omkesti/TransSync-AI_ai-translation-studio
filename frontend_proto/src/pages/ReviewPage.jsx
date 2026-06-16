@@ -393,6 +393,11 @@ function ReviewPage() {
     updateDoc,
   } = useAppContext();
   const multiDoc = documents.length > 1;
+  // Only docs that have been validated (or further) are relevant in Review
+  const reviewableDocs = documents.filter(d =>
+    ["validated", "translating", "translated", "approved"].includes(d.status)
+  );
+  const showDocTabs = reviewableDocs.length > 1;
 
   const hasResults = results && results.length > 0;
   const totalCount = results?.length || 0;
@@ -664,48 +669,38 @@ function ReviewPage() {
         <div className="flex-1 flex overflow-hidden w-full pb-[88px]">
           <main className="flex-1 overflow-y-auto layout-scrollbar bg-[#0a0a0a]">
             <div className="p-8 max-w-5xl mx-auto space-y-6">
-              {/* ── Multi-doc tabs ── */}
-              {multiDoc && (
+              {/* ── Multi-doc tabs — only validated/translated/approved docs ── */}
+              {showDocTabs && (
                 <div className="flex flex-wrap gap-2 mb-2">
-                  {documents.map((doc, i) => (
-                    <button
-                      key={doc.docId}
-                      onClick={() => {
-                        const targetDoc = documents[i];
-                        setActiveDocIndex(i);
-                        setOffsets(
-                          targetDoc?.reviewOffsets || {
-                            llm_cold: 0,
-                            llm_guided: 0,
-                            faiss_direct: 0,
-                            tm_exact: 0,
-                          }
-                        );
-                        setReviewedCount(targetDoc?.reviewedCount ?? 0);
-                        setErrorMessage("");
-                      }}
-                      className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-colors ${
-                        i === activeDocIndex
-                          ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16]"
-                          : doc.status === "approved"
-                            ? "bg-[#111111] text-[#8c8c8b] border-[#2a2e16]"
-                            : doc.status === "translated"
-                              ? "bg-[#111111] text-[#a0a09f] border-[#262626]"
-                              : doc.status === "translating"
-                                ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16] opacity-60 animate-pulse"
-                                : doc.status === "error"
-                                  ? "bg-[#1a0a0a] text-[#ff6b6b] border-[#4a1010]"
+                  {reviewableDocs.map((doc) => {
+                    const i = documents.indexOf(doc);
+                    return (
+                      <button
+                        key={doc.docId}
+                        onClick={() => {
+                          setActiveDocIndex(i);
+                          setErrorMessage("");
+                        }}
+                        className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-colors ${
+                          i === activeDocIndex
+                            ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16]"
+                            : doc.status === "approved"
+                              ? "bg-[#111111] text-[#8c8c8b] border-[#2a2e16]"
+                              : doc.status === "translated"
+                                ? "bg-[#111111] text-[#a0a09f] border-[#262626]"
+                                : doc.status === "translating"
+                                  ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16] opacity-60 animate-pulse"
                                   : "bg-[#111111] text-[#555555] border-[#262626] hover:text-[#8c8c8b]"
-                      }`}
-                    >
-                      {doc.filename.length > 20
-                        ? doc.filename.slice(0, 18) + "…"
-                        : doc.filename}
-                      {doc.status === "approved" && " ✓"}
-                      {doc.status === "translating" && " ⟳"}
-                      {doc.status === "error" && " ✗"}
-                    </button>
-                  ))}
+                        }`}
+                      >
+                        {doc.filename.length > 20
+                          ? doc.filename.slice(0, 18) + "…"
+                          : doc.filename}
+                        {doc.status === "approved" && " ✓"}
+                        {doc.status === "translating" && " ⟳"}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
@@ -743,25 +738,25 @@ function ReviewPage() {
                   )}
                   {sentences && sentences.length > 0 ? (
                     <div className="flex flex-col sm:flex-row gap-4 items-center">
-                      {multiDoc && documents.filter((d) => d.status === "validated").length > 1 && (
+                      {reviewableDocs.filter((d) => d.status === "validated").length > 1 && (
                         <button
                           onClick={() => handleStartTranslation(true)}
                           className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
                         >
                           <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
-                          {`Translate All ${documents.filter((d) => d.status === "validated").length} Docs`}
+                          {`Translate All ${reviewableDocs.filter((d) => d.status === "validated").length} Docs`}
                         </button>
                       )}
                       <button
                         onClick={() => handleStartTranslation(false)}
                         className={
-                          multiDoc && documents.filter((d) => d.status === "validated").length > 1
+                          reviewableDocs.filter((d) => d.status === "validated").length > 1
                             ? "border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-[#ffffff] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest transition-colors"
                             : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
                         }
                       >
-                        <Zap size={16} strokeWidth={3} className={multiDoc && documents.filter((d) => d.status === "validated").length > 1 ? "" : "fill-[#0a0a0a]"} />
-                        {multiDoc && documents.filter((d) => d.status === "validated").length > 1 ? "Translate Current Doc" : "Start Translation"}
+                        <Zap size={16} strokeWidth={3} className={reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "" : "fill-[#0a0a0a]"} />
+                        {reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "Translate Current Doc" : "Start Translation"}
                       </button>
                     </div>
                   ) : (
