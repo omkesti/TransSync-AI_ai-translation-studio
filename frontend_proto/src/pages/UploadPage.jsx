@@ -85,10 +85,11 @@ function UploadPage() {
       try {
         const response = await uploadDocument(file);
         uploadedDocs.push({
-          docId:    response.doc_id || "",
-          rawText:  response.raw_text || "",
-          filename: response.filename || file.name || "document",
-          status:   "uploaded",
+          docId:           response.doc_id || "",
+          rawText:         response.raw_text || "",
+          filename:        response.filename || file.name || "document",
+          status:          "uploaded",
+          extractionUnits: response.extraction_units || [],
         });
       } catch (uploadError) {
         errors.push(`${file.name}: ${uploadError.message || "Upload failed."}`);

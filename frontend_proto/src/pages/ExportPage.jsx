@@ -121,11 +121,12 @@ function ExportPage() {
 
     try {
       await exportDocument({
-        doc_id:      docId || "unknown",
-        filename:    filename || "document",
-        source_lang: sourceLang || "en",
-        target_lang: effectiveTargetLang || "xx",
-        raw_text:    rawText || "",
+        doc_id:           docId || "unknown",
+        filename:         filename || "document",
+        source_lang:      sourceLang || "en",
+        target_lang:      effectiveTargetLang || "xx",
+        raw_text:         rawText || "",
+        extraction_units: documents[activeDocIndex]?.extractionUnits || [],
         translations: results.map(r => ({
           source:      r.source,
           translation: r.translation,
@@ -152,11 +153,12 @@ function ExportPage() {
     try {
       await exportBatch(
         docsWithResults.map(doc => ({
-          doc_id:      doc.docId || "unknown",
-          filename:    doc.filename || "document",
-          source_lang: sourceLang || "en",
-          target_lang: doc.targetLang || targetLang || "xx",
-          raw_text:    doc.rawText || "",
+          doc_id:           doc.docId || "unknown",
+          filename:         doc.filename || "document",
+          source_lang:      sourceLang || "en",
+          target_lang:      doc.targetLang || targetLang || "xx",
+          raw_text:         doc.rawText || "",
+          extraction_units: doc.extractionUnits || [],
           translations: (doc.results || []).map(r => ({
             source:      r.source,
             translation: r.translation,
@@ -175,11 +177,12 @@ function ExportPage() {
   const handleSingleDownload = async (doc) => {
     try {
       await exportDocument({
-        doc_id:      doc.docId || "unknown",
-        filename:    doc.filename || "document",
-        source_lang: sourceLang || "en",
-        target_lang: doc.targetLang || targetLang || "xx",
-        raw_text:    doc.rawText || "",
+        doc_id:           doc.docId || "unknown",
+        filename:         doc.filename || "document",
+        source_lang:      sourceLang || "en",
+        target_lang:      doc.targetLang || targetLang || "xx",
+        raw_text:         doc.rawText || "",
+        extraction_units: doc.extractionUnits || [],
         translations: (doc.results || []).map(r => ({
           source:      r.source,
           translation: r.translation,

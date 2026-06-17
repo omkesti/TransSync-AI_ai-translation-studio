@@ -102,6 +102,7 @@ export function AppProvider({ children }) {
         targetLang: d.targetLang || "",
         reviewOffsets: d.reviewOffsets || { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 },
         reviewedCount: d.reviewedCount ?? 0,
+        extractionUnits: d.extractionUnits || [],
       })),
     ]);
   }, []);

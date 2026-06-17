@@ -20,7 +20,7 @@ import uuid
 import shutil
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
-from backend.services.document_parser import parse_document
+from backend.services.document_parser import parse_document, extract_docx_units, extraction_units_to_dicts
 from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
 router = APIRouter()
@@ -87,15 +87,27 @@ async def upload_document(
         os.remove(save_path)
         raise HTTPException(status_code=500, detail=f"Text extraction failed: {str(e)}")
 
-    # ── 4. Cleanup temp file (text is now in memory) ─────────────────────────
+    # ── 4. Extract structured units for DOCX (ID-based reconstruction) ───────
+    extraction_units = []
+    if ext == ".docx":
+        try:
+            units = extract_docx_units(save_path)
+            extraction_units = extraction_units_to_dicts(units)
+        except Exception as e:
+            # Non-fatal: extraction_units failure should never block upload
+            print(f"[upload] extraction_units failed (non-fatal): {e}")
+            extraction_units = []
+
+    # ── 5. Cleanup temp file (text is now in memory) ─────────────────────────
     # Remove after extraction — we don't persist raw files server-side for now.
     # If you need to keep files (e.g. for re-processing), comment this out.
     os.remove(save_path)
 
-    # ── 5. Return extracted text ─────────────────────────────────────────────
+    # ── 6. Return extracted text ─────────────────────────────────────────────
     return JSONResponse(content={
-        "filename":   original_name,
-        "doc_id":     doc_id,
-        "raw_text":   raw_text,
-        "char_count": len(raw_text),
+        "filename":         original_name,
+        "doc_id":           doc_id,
+        "raw_text":         raw_text,
+        "char_count":       len(raw_text),
+        "extraction_units": extraction_units,
     })
