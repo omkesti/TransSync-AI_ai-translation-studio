@@ -27,6 +27,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 from backend.services.supabase_client import fetch_all_memory, bulk_insert_translations
+from backend.utils.language_codes import normalize_lang_code
 from ai.tm_indexing import index_approved_rows
 from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
@@ -247,18 +248,36 @@ async def approve_translations(body: ApproveRequest, current_user: CurrentUser =
             message=f"No translations to save. {len(rejected)} rejected (not stored).",
         )
 
+    # ── Guard: never store TM rows with an empty/invalid target language ──────
+    # A blank target_lang silently breaks the language-scoped FAISS resolution
+    # (faiss_search filters by target_lang), so such a row would never resolve
+    # and only pollutes the index. Normalize and reject up front.
+    normalized_langs: list[str] = []
+    for s in to_save:
+        normalized = normalize_lang_code(s.target_lang)
+        if not normalized:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"target_lang is missing or invalid for source text "
+                    f"'{s.source_text[:60]}'. Cannot store a translation without a "
+                    f"target language."
+                ),
+            )
+        normalized_langs.append(normalized)
+
     # ── Build rows ────────────────────────────────────────────────────────────
     rows = [
         {
             "source_text":     s.source_text,
             "translated_text": s.translated_text,
-            "target_lang":     s.target_lang,
+            "target_lang":     lang,
             "match_type":      s.match_type,
             "faiss_index":     s.faiss_index,  # None for new LLM translations
             "source_lang":     "en",
             "org_id":          current_user.org_id,
         }
-        for s in to_save
+        for s, lang in zip(to_save, normalized_langs)
     ]
 
     # ── FAISS indexing (before Supabase write) ────────────────────────────────

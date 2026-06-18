@@ -9,6 +9,7 @@ from ai.llm_client import (
     cold_llm_search,
     cold_llm_batch,
 )
+from ai.back_translation import verify_back_translations
 
 test_obj: dict = {
     "sentences": [
@@ -35,7 +36,16 @@ test_obj: dict = {
 
 
 def _build_result(sentence: str, translation: str, match_type: str, score: float | None = None) -> dict:
-    return {"source": sentence, "translation": translation, "match_type": match_type, "score": score}
+    return {
+        "source": sentence,
+        "translation": translation,
+        "match_type": match_type,
+        "score": score,
+        # Back-translation QA fields — populated later for llm_guided / llm_cold
+        # tiers only (see ai/back_translation.py). Default to "not checked".
+        "back_translation_score": None,
+        "back_translation_failed": False,
+    }
 
 
 def _find_glossary_matches(sentence: str, glossary_hints: dict) -> dict:
@@ -244,6 +254,11 @@ async def translate_pipeline(obj: dict) -> list[dict]:
     for idx, item in enumerate(results):
         if item is None:
             results[idx] = _build_result(sentences[idx], f"[Translation failed for: {sentences[idx]}]", "error")
+
+    # ── Back-translation verification (QA annotation) ───────────────────────────
+    # Runs ONLY on llm_guided / llm_cold tiers via an independent validator model.
+    # Best-effort: any failure leaves sentences un-annotated, never blocks.
+    await verify_back_translations(results, obj.get("source_lang"))
 
     return results
 

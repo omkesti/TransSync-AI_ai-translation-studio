@@ -66,6 +66,11 @@ class TranslationResult(BaseModel):
     translation: str
     match_type:  str   # "tm_exact" | "faiss_direct" | "llm_guided" | "llm_cold"
     score:       float | None = None
+    # Back-translation QA annotation (llm_guided / llm_cold only). Computed by an
+    # independent validator model; informational signal for the reviewer, not a
+    # blocker. score is None when the check was skipped or did not apply.
+    back_translation_score:  float | None = None
+    back_translation_failed: bool = False
 
 
 class TranslateResponse(BaseModel):

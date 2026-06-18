@@ -79,6 +79,52 @@ def _chat_completion(messages: list[dict], *, max_tokens: int, temperature: floa
         return None
 
 
+def back_translate(text: str, source_lang: str) -> str | None:
+    """
+    Back-translate `text` into `source_lang` using Groq's Llama 3.3 70B DIRECTLY.
+
+    Separation of duties: this NEVER routes through Gemini (the forward-pass
+    generator). The validator model must be independent of the model that
+    produced the translation, so back-translation always uses the Groq Llama
+    model regardless of which model did the forward translation.
+
+    Returns the back-translated string, or None if Groq is unavailable or the
+    call fails — callers treat None as "skip verification for this sentence".
+    """
+    if not text or not source_lang:
+        return None
+
+    groq_client = _get_groq_client()
+    if groq_client is None:
+        print("[back_translate] No GROQ_API_KEY configured — verification skipped.")
+        return None
+
+    prompt = f"""Translate the following text into {source_lang}.
+
+Rules:
+- Output ONLY the translated text — nothing else
+- No explanations, notes, quotes, or alternatives
+- Preserve the meaning exactly
+
+Text: {text}"""
+
+    try:
+        response = groq_client.chat.completions.create(
+            model=FALLBACK_MODEL_NAME,
+            messages=[
+                {"role": "system", "content": "You are a professional translator."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=512,
+            temperature=0.0,
+        )
+        content = response.choices[0].message.content if response.choices else None
+        return content.strip() if content else None
+    except Exception as e:
+        print(f"[back_translate] Groq error: {e} — verification skipped.")
+        return None
+
+
 def _build_glossary_block(hints: dict) -> str:
     """
     Builds a formatted 'Mandatory Terminology' constraint block for LLM prompts.

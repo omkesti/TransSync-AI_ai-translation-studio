@@ -24,6 +24,7 @@ import {
   Download,
   Globe,
   ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
 
 // ── Match-type helpers ────────────────────────────────────────────────────────
@@ -264,6 +265,23 @@ function ReviewSection({
                 <p className="text-[#ffffff] text-[15px] leading-[1.6] font-sans">
                   {item.translation}
                 </p>
+
+                {/* Back-translation QA warning — informational signal only */}
+                {item.back_translation_failed && (
+                  <div
+                    title="The back-translation diverged from the original source meaning. Please review this sentence carefully."
+                    className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#4a2310] bg-[#2a130a] px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-[#ff8800]"
+                  >
+                    <AlertTriangle size={11} />
+                    Possibly inaccurate — back-translation diverged
+                    {item.back_translation_score !== null &&
+                      item.back_translation_score !== undefined && (
+                        <span className="text-[#a0a09f] normal-case tracking-normal">
+                          ({Math.round(item.back_translation_score * 100)}% match)
+                        </span>
+                      )}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -521,13 +539,17 @@ function ReviewPage() {
 
           updateDoc(doc.docId, { status: "translating" });
 
+          const effLang = doc.targetLang || targetLang;
           const response = await translateSentences(
             doc.sentences,
             sourceLang,
-            doc.targetLang || targetLang,
+            effLang,
           );
           updateDoc(doc.docId, {
             results: response.results || [],
+            // Persist the language the doc was actually translated into, so it
+            // travels with the results/translations into Review & Approval.
+            targetLang: effLang,
             status: "translated",
             reviewOffsets: { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 },
             reviewedCount: 0,
@@ -542,14 +564,18 @@ function ReviewPage() {
           setResults(currentDocResponse.results || []);
         }
       } else {
+        const effLang = docTargetLang || targetLang;
         const response = await translateSentences(
           sentences,
           sourceLang,
-          docTargetLang || targetLang,
+          effLang,
         );
         setResults(response.results || []);
         updateDoc(docId, {
           results: response.results || [],
+          // Persist the language the doc was actually translated into, so it
+          // travels with the results/translations into Review & Approval.
+          targetLang: effLang,
           status: "translated",
           reviewOffsets: { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 },
           reviewedCount: 0,
@@ -576,12 +602,23 @@ function ReviewPage() {
     setErrorMessage("");
 
     try {
+      // Fall back to the global targetLang if the per-doc value is somehow
+      // unset, so approvals are never saved with an empty target language.
+      const effLang = docTargetLang || targetLang;
+      if (!effLang) {
+        setErrorMessage(
+          "Target language is missing — cannot approve. Please select a target language first.",
+        );
+        setIsApproving(false);
+        return;
+      }
+
       const payload = batch
         .filter((item) => !SKIP_MATCH_TYPES.has(item.match_type))
         .map((item) => ({
           source_text: item.source,
           translated_text: item.translation,
-          target_lang: docTargetLang,
+          target_lang: effLang,
           match_type: item.match_type,
           action: "approved",
           faiss_index: item.faiss_index ?? null,
