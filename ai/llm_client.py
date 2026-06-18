@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── Gemini 2.5 Flash via Google's OpenAI-compatible API ───────────────────────
+# ── Primary: Gemini 2.5 Flash via Google's OpenAI-compatible API ──────────────
 # Docs: https://ai.google.dev/gemini-api/docs/openai
 # The OpenAI client works because Google mirrors the OpenAI API contract.
 client = OpenAI(
@@ -15,6 +15,68 @@ client = OpenAI(
 )
 
 MODEL_NAME = "gemini-2.5-flash"
+
+# ── Fallback: Llama 3.3 70B via Groq ──────────────────────────────────────────
+# When Gemini errors (e.g. rate limits on large documents), we transparently
+# retry the same request against Groq's Llama 3.3 70B. The Groq SDK mirrors the
+# OpenAI chat-completions contract, so the call site is identical.
+# The client is built lazily so a missing GROQ_API_KEY never breaks import —
+# the fallback is simply skipped if no key is configured.
+FALLBACK_MODEL_NAME = "llama-3.3-70b-versatile"
+
+_groq_client = None
+
+
+def _get_groq_client():
+    """Lazily construct the Groq client. Returns None if no API key is set."""
+    global _groq_client
+    if _groq_client is not None:
+        return _groq_client
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        return None
+    from groq import Groq
+    _groq_client = Groq(api_key=api_key)
+    return _groq_client
+
+
+def _chat_completion(messages: list[dict], *, max_tokens: int, temperature: float, label: str):
+    """
+    Run a chat completion against Gemini, falling back to Groq's Llama 3.3 70B
+    on any error (rate limit, timeout, server error, etc.).
+
+    Returns the assistant message content string, or None if both providers
+    fail (or the fallback is unavailable). `label` is used only for logging.
+    """
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        content = response.choices[0].message.content if response.choices else None
+        return content.strip() if content else None
+    except Exception as primary_error:
+        print(f"[{label}] Gemini error: {primary_error} — falling back to {FALLBACK_MODEL_NAME}")
+
+    groq_client = _get_groq_client()
+    if groq_client is None:
+        print(f"[{label}] No GROQ_API_KEY configured — fallback unavailable.")
+        return None
+
+    try:
+        response = groq_client.chat.completions.create(
+            model=FALLBACK_MODEL_NAME,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        content = response.choices[0].message.content if response.choices else None
+        return content.strip() if content else None
+    except Exception as fallback_error:
+        print(f"[{label}] Groq fallback error: {fallback_error}")
+        return None
 
 
 def _build_glossary_block(hints: dict) -> str:
@@ -104,21 +166,15 @@ Rules:
 Sentence: "{sentence}"
 """
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": system_content},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=512,
-            temperature=0.3,
-        )
-    except Exception as e:
-        print(f"[llm_guided_search] Error: {e}")
-        return None
-
-    answer = response.choices[0].message.content.strip() if response.choices else None
+    answer = _chat_completion(
+        [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": prompt},
+        ],
+        max_tokens=512,
+        temperature=0.3,
+        label="llm_guided_search",
+    )
     if not answer:
         return None
     return {"source": sentence, "translation": answer}
@@ -149,21 +205,15 @@ Sentence: {sentence}
 
 Translation:"""
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": system_content},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=512,
-            temperature=0.3,
-        )
-    except Exception as e:
-        print(f"[cold_llm_search] Error: {e}")
-        return None
-
-    answer = response.choices[0].message.content.strip() if response.choices else None
+    answer = _chat_completion(
+        [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": prompt},
+        ],
+        max_tokens=512,
+        temperature=0.3,
+        label="cold_llm_search",
+    )
     if not answer:
         return None
     return {"source": sentence, "translation": answer}
@@ -201,21 +251,15 @@ Items:
 {json.dumps(items, ensure_ascii=False)}
 """
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": system_content},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=8192,
-            temperature=0.2,
-        )
-    except Exception as e:
-        print(f"[llm_guided_batch] Error: {e}")
-        return []
-
-    answer = response.choices[0].message.content.strip() if response.choices else None
+    answer = _chat_completion(
+        [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": prompt},
+        ],
+        max_tokens=8192,
+        temperature=0.2,
+        label="llm_guided_batch",
+    )
     return _parse_batch_response(answer)
 
 
@@ -248,19 +292,13 @@ Items:
 {json.dumps(items, ensure_ascii=False)}
 """
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": system_content},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=8192,
-            temperature=0.2,
-        )
-    except Exception as e:
-        print(f"[cold_llm_batch] Error: {e}")
-        return []
-
-    answer = response.choices[0].message.content.strip() if response.choices else None
+    answer = _chat_completion(
+        [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": prompt},
+        ],
+        max_tokens=8192,
+        temperature=0.2,
+        label="cold_llm_batch",
+    )
     return _parse_batch_response(answer)

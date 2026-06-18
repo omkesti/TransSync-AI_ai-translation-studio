@@ -126,6 +126,7 @@ function ExportPage() {
         source_lang: sourceLang || "en",
         target_lang: effectiveTargetLang || "xx",
         raw_text:    rawText || "",
+        original_docx_b64: documents[activeDocIndex]?.originalDocxB64 || null,
         translations: results.map(r => ({
           source:      r.source,
           translation: r.translation,
@@ -157,6 +158,7 @@ function ExportPage() {
           source_lang: sourceLang || "en",
           target_lang: doc.targetLang || targetLang || "xx",
           raw_text:    doc.rawText || "",
+          original_docx_b64: doc.originalDocxB64 || null,
           translations: (doc.results || []).map(r => ({
             source:      r.source,
             translation: r.translation,
@@ -180,6 +182,7 @@ function ExportPage() {
         source_lang: sourceLang || "en",
         target_lang: doc.targetLang || targetLang || "xx",
         raw_text:    doc.rawText || "",
+        original_docx_b64: doc.originalDocxB64 || null,
         translations: (doc.results || []).map(r => ({
           source:      r.source,
           translation: r.translation,

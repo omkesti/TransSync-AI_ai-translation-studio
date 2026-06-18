@@ -9,27 +9,40 @@ def clean_raw_text(raw_text: str) -> str:
     text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
     # Join hyphenated line breaks: "con-\ntext" -> "context".
     text = re.sub(r"-\s*\n\s*", "", text)
-    # Join wrapped lines inside paragraphs.
+    # Join wrapped lines inside a paragraph: "...word\nword..." -> "...word word...".
     text = re.sub(r"(?<=\w)\n(?=\w)", " ", text)
-    # Collapse multiple newlines.
-    text = re.sub(r"\n{2,}", "\n", text)
 
-    lines = []
-    for line in text.split("\n"):
-        stripped = line.strip()
-        if not stripped:
-            continue
-        if _looks_like_page_number(stripped):
-            continue
-        if _looks_like_caption(stripped):
-            continue
-        if _is_mostly_noise(stripped):
-            continue
-        lines.append(stripped)
+    # Split on HARD paragraph breaks (blank line / 2+ newlines). These are the
+    # separators the parsers insert between DOCX paragraphs and table cells, and
+    # between PDF pages. Preserving them prevents headings and table cells with
+    # no terminal punctuation from being merged into the following paragraph
+    # during sentence segmentation (which would make them un-reconstructable).
+    blocks = re.split(r"\n{2,}", text)
 
-    cleaned = "\n".join(lines)
-    cleaned = re.sub(r"\s+", " ", cleaned).strip()
-    return cleaned
+    cleaned_blocks = []
+    for block in blocks:
+        kept = []
+        for line in block.split("\n"):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if _looks_like_page_number(stripped):
+                continue
+            if _looks_like_caption(stripped):
+                continue
+            if _is_mostly_noise(stripped):
+                continue
+            kept.append(stripped)
+        if not kept:
+            continue
+        # Collapse the surviving lines of this block into a single paragraph.
+        paragraph = re.sub(r"\s+", " ", " ".join(kept)).strip()
+        if paragraph:
+            cleaned_blocks.append(paragraph)
+
+    # One paragraph per line. The sentencizer treats each line as a hard
+    # boundary so sentences never span paragraph/cell boundaries.
+    return "\n".join(cleaned_blocks)
 
 
 def filter_sentences(sentences: list[str]) -> list[str]:

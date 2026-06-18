@@ -16,7 +16,12 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from backend.services.docx_builder import DocExportData, reconstruct_docx, make_output_filename
+from backend.services.docx_builder import (
+    DocExportData,
+    reconstruct_docx,
+    build_translated_docx,
+    make_output_filename,
+)
 from backend.auth.jwt_bearer import CurrentUser, get_current_user
 
 router = APIRouter()
@@ -56,8 +61,17 @@ async def export_batch(body: BatchExportRequest, current_user: CurrentUser = Dep
 
     with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for doc_data in body.documents:
-            # Build the DOCX in memory
-            docx_buf = reconstruct_docx(doc_data)
+            # Build the DOCX in memory. DOCX-sourced docs (original_docx_b64
+            # present) get format-preserving OOXML injection; PDF-sourced docs
+            # fall back to from-scratch reconstruction. A bad b64 for one doc
+            # must not sink the whole batch — fall back gracefully.
+            if doc_data.original_docx_b64:
+                try:
+                    docx_buf = build_translated_docx(doc_data)
+                except ValueError:
+                    docx_buf = reconstruct_docx(doc_data)
+            else:
+                docx_buf = reconstruct_docx(doc_data)
 
             # Generate a unique filename
             name = make_output_filename(doc_data.filename, doc_data.target_lang)

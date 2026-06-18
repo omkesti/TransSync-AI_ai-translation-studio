@@ -60,7 +60,12 @@ export function AppProvider({ children }) {
   // ── Sync to localStorage ──────────────────────────────────────────────────
   useEffect(() => {
     try {
-      localStorage.setItem("ts_documents", JSON.stringify(documents));
+      // Strip originalDocxB64 before persisting — the base64 of an uploaded
+      // .docx can be several MB and would blow the ~5MB localStorage quota.
+      // It is retained in memory only (lost on reload, which is acceptable:
+      // the user would re-upload anyway).
+      const persistable = documents.map(({ originalDocxB64, ...rest }) => rest);
+      localStorage.setItem("ts_documents", JSON.stringify(persistable));
     } catch (e) {
       console.warn("Failed to save documents to localStorage", e);
     }
@@ -94,6 +99,7 @@ export function AppProvider({ children }) {
         docId:     d.docId     || "",
         filename:  d.filename  || "document",
         rawText:   d.rawText   || "",
+        originalDocxB64: d.originalDocxB64 || null,
         sentences: d.sentences || [],
         results:   d.results   || [],
         validationResult: d.validationResult || null,

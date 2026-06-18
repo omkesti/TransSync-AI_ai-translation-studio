@@ -65,6 +65,21 @@ function UploadPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Read a File into a bare base64 string (no data: URL prefix).
+  // Used to retain the original .docx so the export step can perform
+  // format-preserving OOXML run-level injection on the server.
+  const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || "");
+        const comma = result.indexOf(",");
+        resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = () => reject(reader.error || new Error("File read failed"));
+      reader.readAsDataURL(file);
+    });
+
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
       setError("Please select at least one file to upload.");
@@ -84,10 +99,25 @@ function UploadPage() {
 
       try {
         const response = await uploadDocument(file);
+
+        // Retain the original .docx (base64) so export can preserve formatting
+        // via OOXML run-level injection. PDFs are read-only — no retention.
+        let originalDocxB64 = null;
+        const isDocx = /\.docx$/i.test(file.name || response.filename || "");
+        if (isDocx) {
+          try {
+            originalDocxB64 = await fileToBase64(file);
+          } catch (encodeError) {
+            // Non-fatal: export will fall back to plain reconstruction.
+            console.warn("Could not encode original .docx for format-preserving export", encodeError);
+          }
+        }
+
         uploadedDocs.push({
           docId:    response.doc_id || "",
           rawText:  response.raw_text || "",
           filename: response.filename || file.name || "document",
+          originalDocxB64,
           status:   "uploaded",
         });
       } catch (uploadError) {

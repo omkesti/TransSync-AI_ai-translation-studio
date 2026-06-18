@@ -13,17 +13,22 @@ Responsibility:
     the original document structure with translated content in place.
 """
 
+import base64
 import io
 import re
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from pydantic import BaseModel
 from docx import Document
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+
+from backend.services.document_parser import inject_translation_into_paragraph
 
 
 # ── Shared schemas ────────────────────────────────────────────────────────────
@@ -32,12 +37,33 @@ class TranslationItem(BaseModel):
     source:      str
     translation: str
     match_type:  Optional[str] = None
+    # Optional unit id for ID-based reconstruction (unused by the OOXML path,
+    # which matches by paragraph text). Kept for forward compatibility.
+    id:          Optional[str] = None
+
+
+class ExtractionUnitSchema(BaseModel):
+    """
+    One addressable unit of a parsed document (a paragraph or table cell).
+    Carries the text plus enough positional/formatting context to align a
+    translation back onto the original node. Currently informational — the
+    OOXML injection path matches by paragraph text, not by unit id.
+    """
+    text:       str
+    formatting: Dict[str, Any] = {}
+    position:   Dict[str, Any] = {}
 
 
 class DocExportData(BaseModel):
     """
     All the data needed to reconstruct one translated document.
     Both the single-export and batch-export routes build instances of this.
+
+    Two export strategies are supported, selected by which fields are present:
+      - original_docx_b64 set  → OOXML run-level injection (format-preserving).
+                                  Used when the source upload was a .docx.
+      - original_docx_b64 unset → legacy from-scratch reconstruction (raw_text).
+                                  Used when the source upload was a PDF.
     """
     doc_id:      str
     filename:    str = "document"
@@ -45,6 +71,10 @@ class DocExportData(BaseModel):
     target_lang: str
     raw_text:    str = ""
     translations: List[TranslationItem]
+    # Base64 of the ORIGINAL .docx bytes — enables format-preserving export.
+    original_docx_b64: Optional[str] = None
+    # Optional structured extraction payload (reserved for ID-based path).
+    extraction_data:   Optional[dict] = None
 
 
 # ── Heading detection heuristic ───────────────────────────────────────────────
@@ -183,3 +213,114 @@ def make_output_filename(filename: str, target_lang: str) -> str:
     """Derives a clean output filename like translated_report_fr.docx"""
     base = filename.rsplit(".", 1)[0] if "." in filename else filename
     return f"translated_{base}_{target_lang}.docx"
+
+
+# ── OOXML format-preserving export (DOCX path) ────────────────────────────────
+#
+# build_translated_docx() opens the ORIGINAL .docx and injects translations
+# directly into existing runs via inject_translation_into_paragraph(). Nothing
+# is rebuilt, so tables, images, styles, headers/footers and inline formatting
+# all survive untouched. Paragraphs with no matching translation are left as-is.
+
+
+def _iter_all_paragraphs(doc: Document) -> Iterator[Paragraph]:
+    """
+    Yield every paragraph in document order: body paragraphs first, then every
+    paragraph inside every table cell, recursing through nested tables.
+    """
+    yield from doc.paragraphs
+
+    def _recurse_table(table: Table) -> Iterator[Paragraph]:
+        for row in table.rows:
+            for cell in row.cells:
+                for para in cell.paragraphs:
+                    yield para
+                for nested in cell.tables:
+                    yield from _recurse_table(nested)
+
+    for table in doc.tables:
+        yield from _recurse_table(table)
+
+
+def _resolve_paragraph_translation(
+    text: str,
+    exact_map: Dict[str, str],
+    fuzzy_items: List[tuple],
+) -> Optional[str]:
+    """
+    Compute the translated text for one original paragraph.
+
+    1. Whole-paragraph exact match (the common case — one paragraph is one
+       translation unit).
+    2. Otherwise substitute each source sentence with its translation inside
+       the paragraph, tolerating whitespace differences. This handles
+       paragraphs the NLP layer split into several sentences.
+
+    Returns the new text, or None if nothing matched (caller leaves the
+    paragraph untouched, preserving it perfectly).
+    """
+    key = text.strip()
+    if key in exact_map:
+        return exact_map[key]
+
+    result = text
+    changed = False
+    for source, translation in fuzzy_items:
+        pattern = build_fuzzy_pattern(source)
+        # Replace via a function so backslashes/group refs in the translation
+        # are treated as literal text, not regex replacement syntax.
+        new_result = pattern.sub(lambda _m: translation, result, count=1)
+        if new_result != result:
+            result = new_result
+            changed = True
+
+    return result if changed else None
+
+
+def build_translated_docx(data: DocExportData) -> io.BytesIO:
+    """
+    Format-preserving DOCX export via OOXML run-level injection.
+
+    Opens the original document from `data.original_docx_b64`, walks every
+    paragraph (body + table cells, nested tables included), and injects the
+    matching translation into each paragraph's runs while preserving all
+    formatting. Returns a BytesIO positioned at 0.
+
+    Raises ValueError if `original_docx_b64` is missing or not decodable.
+    """
+    if not data.original_docx_b64:
+        raise ValueError(
+            "build_translated_docx requires original_docx_b64 "
+            "(the base64-encoded original .docx)."
+        )
+
+    try:
+        raw_bytes = base64.b64decode(data.original_docx_b64)
+    except Exception as e:  # noqa: BLE001 — surface as a clean ValueError
+        raise ValueError(f"original_docx_b64 is not valid base64: {e}")
+
+    doc = Document(io.BytesIO(raw_bytes))
+
+    # Build lookup tables once. exact_map keeps the FIRST translation seen for a
+    # given source so duplicate sources stay deterministic.
+    exact_map: Dict[str, str] = {}
+    fuzzy_items: List[tuple] = []
+    for item in data.translations:
+        source = (item.source or "").strip()
+        if not source or not item.translation:
+            continue
+        exact_map.setdefault(source, item.translation)
+        fuzzy_items.append((source, item.translation))
+
+    for para in _iter_all_paragraphs(doc):
+        original = para.text
+        if not original.strip():
+            continue
+        translated = _resolve_paragraph_translation(original, exact_map, fuzzy_items)
+        if translated is not None and translated != original:
+            inject_translation_into_paragraph(para, translated)
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    return buf
