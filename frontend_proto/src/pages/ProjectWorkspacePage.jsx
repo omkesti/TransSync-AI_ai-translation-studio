@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import {
   getProject, fetchGlossary, addGlossaryTerm, deleteDocument as apiDeleteDocument,
+  deleteProject as apiDeleteProject,
 } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
@@ -300,13 +301,17 @@ function StatsTab({ stats }) {
 function ProjectWorkspacePage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { accessToken } = useAuth();
+  const { accessToken, role } = useAuth();
   const { loadProjectDocuments, setActiveDocIndex, documents: ctxDocuments, setTargetLang } = useAppContext();
 
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("documents");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const isOwner = role === "owner";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -348,6 +353,19 @@ function ProjectWorkspacePage() {
       await load();
     } catch (e) {
       setError(e.message || "Failed to delete document.");
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    setDeleting(true);
+    setError("");
+    try {
+      await apiDeleteProject(projectId);
+      navigate("/dashboard");
+    } catch (e) {
+      setError(e.message || "Failed to delete project.");
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -415,10 +433,19 @@ function ProjectWorkspacePage() {
                     </span>
                   </div>
                 </div>
-                <button onClick={handleUpload}
-                  className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-6 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]">
-                  <FileUp size={14} /> Upload Documents
-                </button>
+                <div className="flex items-center gap-3">
+                  {isOwner && (
+                    <button onClick={() => setConfirmDelete(true)}
+                      title="Delete project"
+                      className="border border-[#3a1414] text-[#ff6b6b] hover:bg-[#1a0a0a] hover:border-[#4a1010] rounded-full px-5 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all">
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  )}
+                  <button onClick={handleUpload}
+                    className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-6 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]">
+                    <FileUp size={14} /> Upload Documents
+                  </button>
+                </div>
               </div>
 
               {/* Tabs */}
@@ -451,6 +478,38 @@ function ProjectWorkspacePage() {
           )}
         </div>
       </div>
+
+      {/* Delete confirmation (owner only) */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6"
+          onClick={() => !deleting && setConfirmDelete(false)}>
+          <div className="bg-[#131313] border border-[#262626] rounded-[24px] p-8 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-[#1a0a0a] border border-[#3a1414] flex items-center justify-center">
+                <Trash2 size={18} className="text-[#ff6b6b]" />
+              </div>
+              <h3 className="font-display font-bold text-xl tracking-tight">Delete project?</h3>
+            </div>
+            <p className="text-[#8c8c8b] text-sm leading-relaxed mb-6">
+              This permanently deletes <span className="text-white font-semibold">{project?.name}</span> and
+              all of its documents. Approved translation memory is kept and stays reusable across your
+              organization. This cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button onClick={() => setConfirmDelete(false)} disabled={deleting}
+                className="text-[#8c8c8b] hover:text-white text-[11px] font-bold uppercase tracking-widest px-5 py-3 rounded-full disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={handleDeleteProject} disabled={deleting}
+                className="bg-[#ff6b6b] hover:bg-[#ff5252] text-[#0a0a0a] rounded-full px-6 py-3 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all disabled:opacity-60">
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                {deleting ? "Deleting…" : "Delete project"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

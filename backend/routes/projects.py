@@ -7,6 +7,7 @@ Routes (all mounted under /api):
     GET    /api/projects/{project_id}            — one project with documents + progress stats
     PATCH  /api/projects/{project_id}            — update metadata (name, status, deadline, …)
     PATCH  /api/projects/{project_id}/archive    — archive a project
+    DELETE /api/projects/{project_id}            — permanently delete a project (owner only)
     POST   /api/projects/{project_id}/documents  — create a document inside the project
     POST   /api/projects/{project_id}/members    — add a member (per-project role override)
     DELETE /api/projects/{project_id}/members/{user_id}  — remove a member
@@ -31,12 +32,14 @@ from backend.services.supabase_client import (
     fetch_projects,
     fetch_project,
     update_project,
+    delete_project,
     fetch_project_members,
     add_project_member,
     remove_project_member,
     fetch_documents,
     fetch_document_summaries_for_org,
     create_document,
+    delete_original_docx,
 )
 from backend.utils.language_codes import normalize_lang_code
 
@@ -46,6 +49,8 @@ router = APIRouter()
 _PROJECT_WRITE_ROLES = ("owner", "admin", "translator")
 # Roles allowed to manage members / archive (org administrators).
 _PROJECT_ADMIN_ROLES = ("owner", "admin")
+# Permanent deletion is destructive and irreversible — owners only.
+_PROJECT_DELETE_ROLES = ("owner",)
 
 _VALID_STATUSES = {"Draft", "Active", "In Review", "Completed", "Archived"}
 _VALID_DOMAINS = {"Legal", "Medical", "Technical", "Marketing", "General"}
@@ -254,6 +259,41 @@ async def archive_project(project_id: str, current_user: CurrentUser = Depends(g
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to archive project: {str(e)}")
     return updated
+
+
+@router.delete("/projects/{project_id}", status_code=204)
+async def remove_project(project_id: str, current_user: CurrentUser = Depends(get_current_user)):
+    """
+    Permanently delete a project and everything scoped to it. Owner-only —
+    archiving is the non-destructive alternative for everyone else.
+
+    The DB cascade removes the project's documents and members and detaches its
+    TM/glossary rows (kept as org-scoped memory). We additionally clean up the
+    two stores the database can't reach: each document's original .docx in
+    Storage and the project's FAISS index. Those cleanups are best-effort and run
+    after the row is gone, so a stale file can never block the delete.
+    """
+    require_role(current_user, *_PROJECT_DELETE_ROLES)
+    _require_project(project_id, current_user)
+
+    # Capture stored-original paths before the cascade removes the document rows.
+    docs = fetch_documents(project_id)
+
+    try:
+        deleted = delete_project(project_id, current_user.org_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete project: {str(e)}")
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    # Best-effort cleanup of out-of-database artifacts (never raises).
+    for d in docs:
+        delete_original_docx(d.get("original_docx_path"))
+    try:
+        from ai.vector_store import delete_project_index
+        delete_project_index(str(project_id))
+    except Exception as e:
+        print(f"[projects] delete_project_index failed (non-fatal): {e}")
 
 
 @router.post("/projects/{project_id}/documents", status_code=201)

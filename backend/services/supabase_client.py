@@ -485,6 +485,28 @@ def update_project(project_id: str, org_id: str, patch: dict) -> dict:
     return rows[0] if rows else {}
 
 
+def delete_project(project_id: str, org_id: str) -> bool:
+    """
+    Delete a project, scoped to org_id. Returns True if a row was deleted.
+
+    The database FKs cascade the destructive part: deleting the project row also
+    removes its documents and project_members (ON DELETE CASCADE), and detaches
+    its translation_memory / glossary rows (ON DELETE SET NULL — those become
+    org-scoped and are preserved as reusable memory). What the DB cannot reach is
+    the per-document original .docx held in Supabase Storage, so callers should
+    clean those up separately (see the route).
+    """
+    client = get_client()
+    response = (
+        client.table("projects")
+        .delete()
+        .eq("id", project_id)
+        .eq("org_id", org_id)
+        .execute()
+    )
+    return len(response.data or []) > 0
+
+
 # ── Project members ─────────────────────────────────────────────────────────────
 # Table: project_members (id, project_id, user_id, role, joined_at)
 

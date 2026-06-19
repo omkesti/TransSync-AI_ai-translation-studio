@@ -379,6 +379,16 @@ export async function archiveProject(projectId) {
   return handleResponse(response);
 }
 
+/** DELETE /api/projects/{id} — permanently delete a project (owner only). */
+export async function deleteProject(projectId) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+    method: "DELETE",
+    headers: { ...authHeaders },
+  });
+  return handleResponse(response);
+}
+
 /** POST /api/projects/{id}/members — add a per-project member role override. */
 export async function addProjectMember(projectId, member) {
   const authHeaders = await getAuthHeaders();

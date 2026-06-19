@@ -137,6 +137,26 @@ def create_project_index(project_id: str) -> str:
     return _path_for_scope(project_id)
 
 
+def delete_project_index(project_id: str) -> None:
+    """
+    Remove a project's FAISS index from memory and disk. Best-effort: a failure
+    never raises (project deletion must not be blocked by a stale index file).
+
+    Called by DELETE /api/projects/{id} after the project row is removed. The TM
+    rows themselves become org-scoped (project_id set to NULL by the DB FK), so
+    their vectors are no longer reachable through this index anyway.
+    """
+    if not project_id:
+        return
+    _indexes.pop(_scope_key(project_id), None)
+    path = _path_for_scope(project_id)
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except OSError as e:
+        print(f"[faiss] delete_project_index failed (non-fatal): {e}")
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _normalize_lang(lang: str) -> str:
