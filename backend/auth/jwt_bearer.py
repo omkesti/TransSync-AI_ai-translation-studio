@@ -86,6 +86,7 @@ class CurrentUser(BaseModel):
     org_id:  str
     role:    str
     email:   str
+    display_name: str = "User"
 
 
 # ── Role helpers ──────────────────────────────────────────────────────────────
@@ -153,7 +154,10 @@ async def get_current_user(
         client = get_client()
         response = (
             client.table("memberships")
-            .select("org_id, role")
+            # select("*") rather than naming columns so a missing display_name
+            # column (migration 002 not yet applied) degrades to the default
+            # rather than raising on every authenticated request.
+            .select("*")
             .eq("user_id", user_id)
             .limit(1)
             .execute()
@@ -173,10 +177,12 @@ async def get_current_user(
     membership = response.data[0]
     org_id = str(membership["org_id"])
     role = membership["role"]
+    display_name = membership.get("display_name") or "User"
 
     return CurrentUser(
         user_id=user_id,
         org_id=org_id,
         role=role,
         email=email,
+        display_name=display_name,
     )

@@ -4,6 +4,7 @@ import { approveTranslations, translateSentences } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import { languageLabel, TARGET_LANGUAGES } from "../constants/languages";
 import UserProfileBlock from "../components/UserProfileBlock";
+import NavAvatar from "../components/NavAvatar";
 import {
   Bell,
   Settings,
@@ -743,13 +744,7 @@ function ReviewPage() {
             <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
               <Settings size={18} />
             </button>
-            <button className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#262626] overflow-hidden ml-2">
-              <img
-                src="https://i.pravatar.cc/150?img=11"
-                alt="User Avatar"
-                className="w-full h-full object-cover"
-              />
-            </button>
+            <NavAvatar />
           </div>
         </header>
 

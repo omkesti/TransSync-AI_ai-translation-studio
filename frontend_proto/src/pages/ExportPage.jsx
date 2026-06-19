@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { exportDocument, exportBatch } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import UserProfileBlock from "../components/UserProfileBlock";
+import NavAvatar from "../components/NavAvatar";
 import {
   Bell,
   Settings,
@@ -237,9 +238,7 @@ function ExportPage() {
             <button className="text-[#8c8c8b] hover:text-white transition-colors"><Bell size={18} /></button>
             <button className="text-[#8c8c8b] hover:text-white transition-colors"><HelpCircle size={18} /></button>
             <button className="text-[#8c8c8b] hover:text-white transition-colors"><Settings size={18} /></button>
-            <button className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#262626] overflow-hidden ml-2">
-              <img src="https://i.pravatar.cc/150?img=11" alt="avatar" className="w-full h-full object-cover" />
-            </button>
+            <NavAvatar />
           </div>
         </nav>
 

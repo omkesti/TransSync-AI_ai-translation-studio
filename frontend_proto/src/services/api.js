@@ -146,6 +146,35 @@ export async function approveTranslations(reviewed) {
   return handleResponse(response);
 }
 
+// ── Profile ─────────────────────────────────────────────────────────────────
+
+/**
+ * PATCH /api/auth/profile — update the current user's display name.
+ * @param {string} displayName
+ * @returns {Promise<{ display_name: string }>}
+ */
+export async function updateProfile(displayName) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+    method: "PATCH",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify({ display_name: displayName }),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * GET /api/auth/my-documents — documents the current user has translated,
+ * grouped by (document, target_lang), newest activity first.
+ */
+export async function fetchMyDocuments() {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/auth/my-documents`, {
+    headers: { ...authHeaders },
+  });
+  return handleResponse(response);
+}
+
 // ── Dashboard ───────────────────────────────────────────────────────────────
 
 export async function fetchDashboardStats() {

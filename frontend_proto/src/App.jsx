@@ -12,6 +12,7 @@ import ValidationPage from './pages/ValidationPage';
 import ReviewPage from './pages/ReviewPage';
 import GlossaryPage from './pages/GlossaryPage';
 import ExportPage from './pages/ExportPage';
+import ProfilePage from './pages/ProfilePage';
 
 /**
  * RedirectIfAuth — redirects authenticated users away from /login and /
@@ -51,6 +52,7 @@ function App() {
         <Route path="/review"     element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
         <Route path="/glossary"   element={<ProtectedRoute><GlossaryPage /></ProtectedRoute>} />
         <Route path="/export"     element={<ProtectedRoute><ExportPage /></ProtectedRoute>} />
+        <Route path="/profile"    element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

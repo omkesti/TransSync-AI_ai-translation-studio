@@ -1,14 +1,17 @@
 /**
  * UserProfileBlock.jsx
  * ────────────────────
- * Reusable user profile block for page sidebars.
- * Shows: initials avatar, email, role badge, sign-out button.
+ * Sidebar user block. Shows the shared avatar, display name and role (no
+ * email). Clicking it opens a dropdown with:
+ *   - Profile  → navigates to the Profile page
+ *   - Log out  → signs the user out
  */
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut } from 'lucide-react';
+import { LogOut, User, ChevronUp } from 'lucide-react';
+import Avatar from './Avatar';
 
 const ROLE_COLORS = {
   owner:      'bg-amber-500/20 text-amber-400',
@@ -19,16 +22,34 @@ const ROLE_COLORS = {
 };
 
 export default function UserProfileBlock() {
-  const { user, role, org, signOut } = useAuth();
+  const { user, role, org, displayName, signOut } = useAuth();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Close the dropdown on outside click / Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
 
   if (!user) return null;
 
-  const email = user.email || '';
-  const initials = email.charAt(0).toUpperCase();
   const roleColor = ROLE_COLORS[role] || ROLE_COLORS.viewer;
 
   const handleSignOut = async () => {
+    setOpen(false);
     try {
       await signOut();
       navigate('/login');
@@ -38,7 +59,7 @@ export default function UserProfileBlock() {
   };
 
   return (
-    <div className="border-t border-[#2a2a2a] pt-4 mt-4">
+    <div ref={ref} className="border-t border-[#2a2a2a] pt-4 mt-4 relative">
       {/* Org name */}
       {org?.name && (
         <p className="text-[#555] text-[10px] uppercase tracking-widest font-bold mb-3 truncate">
@@ -46,29 +67,46 @@ export default function UserProfileBlock() {
         </p>
       )}
 
-      <div className="flex items-center gap-3">
-        {/* Initials avatar */}
-        <div className="w-9 h-9 rounded-full bg-primary-container/20 flex items-center justify-center flex-shrink-0">
-          <span className="text-primary-container text-sm font-bold">{initials}</span>
+      {/* Dropdown menu (opens upward, above the trigger) */}
+      {open && (
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#151515] border border-[#2a2a2a] rounded-xl shadow-xl overflow-hidden z-30">
+          <button
+            onClick={() => { setOpen(false); navigate('/profile'); }}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#cfcfcf] hover:bg-[#1f1f1f] hover:text-white transition-colors"
+          >
+            <User size={16} />
+            Profile
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#cfcfcf] hover:bg-[#1f1f1f] hover:text-red-400 transition-colors border-t border-[#2a2a2a]"
+          >
+            <LogOut size={16} />
+            Log out
+          </button>
         </div>
+      )}
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-sm truncate">{email}</p>
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center gap-3 rounded-xl px-1.5 py-1.5 transition-colors ${open ? 'bg-[#1a1a1a]' : 'hover:bg-[#161616]'}`}
+        title="Account"
+      >
+        <Avatar name={displayName} email={user.email} size={36} />
+
+        <div className="flex-1 min-w-0 text-left">
+          <p className="text-white text-sm truncate">{displayName || 'User'}</p>
           <span className={`inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full mt-0.5 ${roleColor}`}>
             {role || 'member'}
           </span>
         </div>
 
-        {/* Sign-out button */}
-        <button
-          onClick={handleSignOut}
-          className="p-2 rounded-lg hover:bg-[#2a2a2a] transition-colors text-[#666] hover:text-red-400 flex-shrink-0"
-          title="Sign out"
-        >
-          <LogOut size={16} />
-        </button>
-      </div>
+        <ChevronUp
+          size={16}
+          className={`text-[#666] flex-shrink-0 transition-transform ${open ? '' : 'rotate-180'}`}
+        />
+      </button>
     </div>
   );
 }

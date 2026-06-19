@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { fetchDashboardStats } from '../services/api';
 import UserProfileBlock from '../components/UserProfileBlock';
+import NavAvatar from '../components/NavAvatar';
 import { useAuth } from '../context/AuthContext';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -170,9 +171,7 @@ function DashboardPage() {
           <button className="hover:text-[#ffffff] transition-colors"><Bell size={18} /></button>
           <button className="hover:text-[#ffffff] transition-colors"><HelpCircle size={18} /></button>
           <button className="hover:text-[#ffffff] transition-colors"><Settings size={18} /></button>
-          <button className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#262626] overflow-hidden ml-2">
-            <img src="https://i.pravatar.cc/150?img=11" alt="User Avatar" className="w-full h-full object-cover" />
-          </button>
+          <NavAvatar />
         </div>
       </nav>
 

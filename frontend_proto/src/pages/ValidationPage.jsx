@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { validateText } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import UserProfileBlock from "../components/UserProfileBlock";
+import NavAvatar from "../components/NavAvatar";
 import {
   Bell,
   LayoutDashboard,
@@ -322,9 +323,7 @@ function ValidationPage() {
               <button className="w-10 h-10 rounded-full bg-[#151515] border border-[#262626] flex items-center justify-center text-[#8c8c8b] hover:text-white hover:bg-[#222222] transition-all">
                 <Bell size={18} />
               </button>
-              <button className="w-10 h-10 rounded-full bg-[#151515] border border-[#262626] flex items-center justify-center overflow-hidden">
-                <img src="https://i.pravatar.cc/150?img=11" alt="User Avatar" className="w-full h-full object-cover" />
-              </button>
+              <NavAvatar />
             </div>
           </div>
         </header>

@@ -173,6 +173,7 @@ def log_pipeline_events(rows: list[dict]) -> None:
         formatted = [
             {
                 "org_id":          r["org_id"],
+                "user_id":         r.get("user_id"),
                 "source_text":     r.get("source_text", ""),
                 "translated_text": r.get("translated_text", ""),
                 "source_lang":     r.get("source_lang", "en"),
@@ -203,6 +204,47 @@ def fetch_pipeline_events(org_id: str) -> list[dict]:
         .execute()
     )
     return response.data
+
+
+def fetch_user_pipeline_events(org_id: str, user_id: str) -> list[dict]:
+    """
+    Returns pipeline_events rows for ONE user within an org, newest first.
+
+    Powers the Profile page's "documents you have translated" view. Scoped by
+    org_id as well as user_id so it never leaks events across organizations.
+    Rows written before migration 002 (user_id NULL) are naturally excluded.
+    """
+    client = get_client()
+    response = (
+        client.table("pipeline_events")
+        .select("*")
+        .eq("org_id", org_id)
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return response.data
+
+
+# ── Profile (memberships.display_name) ────────────────────────────────────────
+
+def update_display_name(user_id: str, org_id: str, display_name: str) -> dict:
+    """
+    Updates the user's display_name on their membership row, scoped to org.
+
+    Called by: PATCH /api/auth/profile. Returns the updated membership row
+    (or {} if no row matched).
+    """
+    client = get_client()
+    response = (
+        client.table("memberships")
+        .update({"display_name": display_name})
+        .eq("user_id", user_id)
+        .eq("org_id", org_id)
+        .execute()
+    )
+    rows = response.data
+    return rows[0] if rows else {}
 
 
 # ── Glossary ──────────────────────────────────────────────────────────────────

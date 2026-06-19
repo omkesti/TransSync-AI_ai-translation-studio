@@ -20,6 +20,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [org, setOrg] = useState(null);       // { id, name, slug }
   const [role, setRole] = useState(null);      // "owner" | "admin" | "translator" | "reviewer" | "viewer"
+  const [displayName, setDisplayName] = useState('User'); // editable on the Profile page
   const [loading, setLoading] = useState(true);
 
   // ── Fetch org + role from backend ────────────────────────────────────────
@@ -42,12 +43,20 @@ export function AuthProvider({ children }) {
       const data = await response.json();
       setRole(data.role);
       setOrg(data.organizations || { id: data.org_id, name: 'Unknown', slug: '' });
+      setDisplayName(data.display_name || 'User');
     } catch (err) {
       console.error('[auth] Failed to fetch membership:', err);
       setOrg(null);
       setRole(null);
     }
   }, []);
+
+  // Re-fetch membership (role/org/display_name) — e.g. after a profile edit.
+  const refreshProfile = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    if (token) await fetchMembership(token);
+  }, [fetchMembership]);
 
   // ── Listen to auth state changes ─────────────────────────────────────────
   useEffect(() => {
@@ -74,6 +83,7 @@ export function AuthProvider({ children }) {
         } else {
           setOrg(null);
           setRole(null);
+          setDisplayName('User');
         }
 
         setLoading(false);
@@ -109,6 +119,7 @@ export function AuthProvider({ children }) {
     setSession(null);
     setOrg(null);
     setRole(null);
+    setDisplayName('User');
   }, []);
 
   const resetPassword = useCallback(async (email) => {
@@ -125,14 +136,16 @@ export function AuthProvider({ children }) {
       session,
       org,
       role,
+      displayName,
       loading,
       accessToken,
       signIn,
       signUp,
       signOut,
       resetPassword,
+      refreshProfile,
     }),
-    [user, session, org, role, loading, accessToken, signIn, signUp, signOut, resetPassword]
+    [user, session, org, role, displayName, loading, accessToken, signIn, signUp, signOut, resetPassword, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

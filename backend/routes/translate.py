@@ -170,6 +170,7 @@ async def translate_document(body: TranslateRequest, current_user: CurrentUser =
     log_pipeline_events([
         {
             "org_id":          current_user.org_id,
+            "user_id":         current_user.user_id,
             "source_text":     r.get("source", ""),
             "translated_text": r.get("translation", ""),
             "source_lang":     body.source_lang,

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { uploadDocument } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import UserProfileBlock from "../components/UserProfileBlock";
+import NavAvatar from "../components/NavAvatar";
 import {
   Bell,
   Settings,
@@ -272,13 +273,7 @@ function UploadPage() {
             <button className="hover:text-[#ffffff] transition-colors">
               <Settings size={18} />
             </button>
-            <button className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#262626] overflow-hidden ml-2 ring-2 ring-transparent transition-all">
-              <img
-                src="https://i.pravatar.cc/150?img=11"
-                alt="User Avatar"
-                className="w-full h-full object-cover"
-              />
-            </button>
+            <NavAvatar />
           </div>
         </nav>
 
