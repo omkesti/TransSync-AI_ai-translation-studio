@@ -27,12 +27,12 @@ export default function Avatar({ name, email, size = 36, className = '' }) {
   const initials = initialsFor(name, email);
   return (
     <div
-      className={`rounded-full bg-primary-container/20 flex items-center justify-center flex-shrink-0 ${className}`}
+      className={`rounded-full bg-[var(--tk-accent-surface)] flex items-center justify-center flex-shrink-0 ${className}`}
       style={{ width: size, height: size }}
       aria-label={name || email || 'User avatar'}
     >
       <span
-        className="text-primary-container font-bold leading-none"
+        className="text-[var(--tk-accent-text)] font-bold leading-none"
         style={{ fontSize: Math.round(size * 0.4) }}
       >
         {initials}

@@ -29,6 +29,8 @@ import {
 import { TARGET_LANGUAGES } from '../constants/languages';
 import UserProfileBlock from '../components/UserProfileBlock';
 import NavAvatar from '../components/NavAvatar';
+import Logo from '../components/Logo';
+import SettingsMenu from '../components/SettingsMenu';
 import { useAuth } from '../context/AuthContext';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -80,22 +82,22 @@ function AddTermModal({ onClose, onSave }) {
     }
   };
 
-  const inputCls = "w-full bg-[#1a1a1a] border border-[#262626] focus:border-[#c5fe00] focus:outline-none rounded-[12px] px-4 py-3 text-[14px] text-white placeholder:text-[#555555] transition-colors";
-  const labelCls = "text-[#555555] font-bold text-[9px] uppercase tracking-widest mb-2 block";
+  const inputCls = "w-full bg-[var(--tk-surface3)] border border-[var(--tk-border)] focus:border-[#c5fe00] focus:outline-none rounded-[12px] px-4 py-3 text-[14px] text-[var(--tk-text)] placeholder:text-[var(--tk-text-faint)] transition-colors";
+  const labelCls = "text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest mb-2 block";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#111111] border border-[#262626] rounded-[32px] p-8 w-full max-w-md shadow-[0_0_60px_rgba(0,0,0,0.8)] relative">
+      <div className="bg-[var(--tk-surface1)] border border-[var(--tk-border)] rounded-[32px] p-8 w-full max-w-md shadow-[0_0_60px_rgba(0,0,0,0.8)] relative">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-display font-bold text-[20px] tracking-tight">Add New Term</h2>
-          <button onClick={onClose} className="text-[#555555] hover:text-white transition-colors">
+          <button onClick={onClose} className="text-[var(--tk-text-faint)] hover:text-[var(--tk-text)] transition-colors">
             <X size={20} />
           </button>
         </div>
 
         {error && (
-          <div className="bg-[#1a0a0a] border border-[#4a1010] rounded-[12px] px-4 py-3 text-[#ff6b6b] text-[13px] mb-6">
+          <div className="bg-[var(--tk-danger-surface)] border border-[var(--tk-danger-border)] rounded-[12px] px-4 py-3 text-[#ff6b6b] text-[13px] mb-6">
             {error}
           </div>
         )}
@@ -155,14 +157,14 @@ function AddTermModal({ onClose, onSave }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#333333] rounded-full py-3 font-bold text-[12px] uppercase tracking-widest transition-colors"
+              className="flex-1 border border-[var(--tk-border)] text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:border-[var(--tk-border3)] rounded-full py-3 font-bold text-[12px] uppercase tracking-widest transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full py-3 font-bold text-[12px] uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 bg-[#c5fe00] hover:bg-[#b9ef00] text-[var(--tk-on-accent)] rounded-full py-3 font-bold text-[12px] uppercase tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} strokeWidth={2.5} />}
               {saving ? 'Saving…' : 'Add Term'}
@@ -259,54 +261,52 @@ function GlossaryPage() {
   const pendingCount  = terms.filter(t => t.status === 'PENDING').length;
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="h-screen bg-[var(--tk-bg)] text-[var(--tk-text)] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[var(--tk-on-accent)]">
 
       {showModal && <AddTermModal onClose={() => setShowModal(false)} onSave={handleSaved} />}
 
       {/* Left Sidebar */}
-      <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
+      <aside className="w-[260px] border-r border-[var(--tk-border)] border-opacity-50 flex flex-col shrink-0 bg-[var(--tk-bg)] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
         <div className="p-6 pb-2 flex-1 flex flex-col">
 
           {/* Logo / Branding */}
           <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 rounded-full bg-[#c5fe00] text-[#0a0a0a] flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,254,0,0.2)]">
-              <FlaskConical strokeWidth={2.5} size={22} />
-            </div>
+            <Logo variant="icon" className="w-10 h-10" />
             <div className="flex flex-col">
-              <span className="font-display text-[#c5fe00] font-black text-sm tracking-tight leading-none mb-1">TransSync</span>
-              <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</span>
+              <span className="font-display text-[var(--tk-accent-text)] font-black text-sm tracking-tight leading-none mb-1">TransSync</span>
+              <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</span>
             </div>
           </div>
 
           {/* Menu Items */}
           <nav className="space-y-1">
-            <Link to="/dashboard" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+            <Link to="/dashboard" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
               <LayoutDashboard size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Dashboard</span>
             </Link>
 
-            <Link to="/upload" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+            <Link to="/upload" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
               <FileUp size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Upload</span>
             </Link>
 
-            <Link to="/validation" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+            <Link to="/validation" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
               <CheckCircle2 size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Validation</span>
             </Link>
 
-            <Link to="/review" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+            <Link to="/review" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
               <MessageSquare size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Review</span>
             </Link>
 
             {/* Active Item */}
-            <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] cursor-pointer shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
+            <div className="flex items-center gap-4 bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border border-[var(--tk-accent-border)] px-4 py-3 rounded-[12px] cursor-pointer shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
               <Book size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Glossary</span>
             </div>
 
-            <Link to="/export" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+            <Link to="/export" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
               <Download size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Export</span>
             </Link>
@@ -320,7 +320,7 @@ function GlossaryPage() {
       </aside>
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col relative w-full h-full overflow-hidden bg-[#0e0e0e]">
+      <div className="flex-1 flex flex-col relative w-full h-full overflow-hidden bg-[var(--tk-bg2)]">
 
         {/* Top Nav */}
         <nav className="h-[80px] w-full flex items-center justify-between px-8 bg-transparent z-40 relative">
@@ -328,26 +328,26 @@ function GlossaryPage() {
           <div className="w-1/3"></div>
 
           {/* Centered Search */}
-          <div className="w-[400px] bg-[#1a1a1a] border border-[#262626] focus-within:border-[#c5fe00] transition-colors rounded-full flex items-center px-4 py-2.5 gap-3">
-            <Search size={16} className="text-[#555555] shrink-0" />
+          <div className="w-[400px] bg-[var(--tk-surface3)] border border-[var(--tk-border)] focus-within:border-[#c5fe00] transition-colors rounded-full flex items-center px-4 py-2.5 gap-3">
+            <Search size={16} className="text-[var(--tk-text-faint)] shrink-0" />
             <input
               type="text"
               placeholder="Search glossary terms..."
               value={search}
               onChange={handleSearchChange}
-              className="bg-transparent border-none text-[#ffffff] focus:outline-none w-full text-[13px] placeholder:text-[#555555]"
+              className="bg-transparent border-none text-[var(--tk-text)] focus:outline-none w-full text-[13px] placeholder:text-[var(--tk-text-faint)]"
             />
             {search && (
-              <button onClick={() => { setSearch(''); loadTerms(''); }} className="text-[#555555] hover:text-white transition-colors">
+              <button onClick={() => { setSearch(''); loadTerms(''); }} className="text-[var(--tk-text-faint)] hover:text-[var(--tk-text)] transition-colors">
                 <X size={14} />
               </button>
             )}
           </div>
 
           <div className="w-1/3 flex justify-end items-center gap-6">
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors"><Bell size={18} /></button>
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors"><HelpCircle size={18} /></button>
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors"><Settings size={18} /></button>
+            <button className="text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] transition-colors"><Bell size={18} /></button>
+            <button className="text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] transition-colors"><HelpCircle size={18} /></button>
+            <SettingsMenu />
             <NavAvatar />
           </div>
         </nav>
@@ -363,11 +363,11 @@ function GlossaryPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 relative z-10 gap-6">
               <div>
                 <h1 className="font-display font-black text-5xl tracking-tight mb-3">glossary <br className="hidden md:block"/>management</h1>
-                <p className="text-[#8c8c8b] text-[15px] font-sans">Lock in your domain terminology — verified terms are enforced in every translation.</p>
+                <p className="text-[var(--tk-text-muted)] text-[15px] font-sans">Lock in your domain terminology — verified terms are enforced in every translation.</p>
               </div>
               <button
                 onClick={() => setShowModal(true)}
-                className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-6 py-3.5 font-bold flex items-center gap-2 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform transition-all whitespace-nowrap"
+                className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[var(--tk-on-accent)] rounded-full px-6 py-3.5 font-bold flex items-center gap-2 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform transition-all whitespace-nowrap"
               >
                 <Plus size={16} strokeWidth={2.5} /> Add New Term
               </button>
@@ -375,7 +375,7 @@ function GlossaryPage() {
 
             {/* Error Banner */}
             {error && (
-              <div className="bg-[#1a0a0a] border border-[#4a1010] rounded-[16px] px-6 py-4 mb-8 relative z-10">
+              <div className="bg-[var(--tk-danger-surface)] border border-[var(--tk-danger-border)] rounded-[16px] px-6 py-4 mb-8 relative z-10">
                 <span className="text-[#ff6b6b] text-sm">{error}</span>
               </div>
             )}
@@ -384,14 +384,14 @@ function GlossaryPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
 
               {/* Data Table */}
-              <div className="lg:col-span-8 bg-[#111111] border border-[#1a1a1a] rounded-[32px] p-8 min-h-[600px] flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+              <div className="lg:col-span-8 bg-[var(--tk-surface1)] border border-[var(--tk-surface3)] rounded-[32px] p-8 min-h-[600px] flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)]">
 
                 {/* Table Headers */}
-                <div className="grid grid-cols-4 gap-4 px-6 pb-6 border-b border-[#262626]">
-                  <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest col-span-1">Source (EN)</span>
-                  <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest col-span-1">Translation</span>
-                  <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest col-span-1">Category</span>
-                  <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest col-span-1">Status</span>
+                <div className="grid grid-cols-4 gap-4 px-6 pb-6 border-b border-[var(--tk-border)]">
+                  <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest col-span-1">Source (EN)</span>
+                  <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest col-span-1">Translation</span>
+                  <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest col-span-1">Category</span>
+                  <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest col-span-1">Status</span>
                 </div>
 
                 {/* Table Body */}
@@ -399,23 +399,23 @@ function GlossaryPage() {
                   {loading ? (
                     // Skeleton rows
                     [1,2,3,4,5].map(i => (
-                      <div key={i} className="grid grid-cols-4 items-center gap-4 px-6 py-8 border-b border-[#1a1a1a] animate-pulse">
-                        <div className="h-4 w-28 bg-[#1e1e1e] rounded col-span-1"></div>
-                        <div className="h-4 w-24 bg-[#1a1a1a] rounded col-span-1"></div>
-                        <div className="h-5 w-16 bg-[#1a1a1a] rounded-full col-span-1"></div>
-                        <div className="h-4 w-16 bg-[#1a1a1a] rounded col-span-1"></div>
+                      <div key={i} className="grid grid-cols-4 items-center gap-4 px-6 py-8 border-b border-[var(--tk-surface3)] animate-pulse">
+                        <div className="h-4 w-28 bg-[var(--tk-surface4)] rounded col-span-1"></div>
+                        <div className="h-4 w-24 bg-[var(--tk-surface3)] rounded col-span-1"></div>
+                        <div className="h-5 w-16 bg-[var(--tk-surface3)] rounded-full col-span-1"></div>
+                        <div className="h-4 w-16 bg-[var(--tk-surface3)] rounded col-span-1"></div>
                       </div>
                     ))
                   ) : paginated.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
-                      <Book size={32} className="text-[#333333] mb-4" />
-                      <p className="text-[#555555] text-[15px] mb-2">
+                      <Book size={32} className="text-[var(--tk-border3)] mb-4" />
+                      <p className="text-[var(--tk-text-faint)] text-[15px] mb-2">
                         {search ? `No terms matching "${search}"` : 'No glossary terms yet.'}
                       </p>
                       {!search && (
                         <button
                           onClick={() => setShowModal(true)}
-                          className="text-[#c5fe00] text-[11px] font-bold uppercase tracking-widest hover:underline mt-1"
+                          className="text-[var(--tk-accent-text)] text-[11px] font-bold uppercase tracking-widest hover:underline mt-1"
                         >
                           Add the first term →
                         </button>
@@ -423,22 +423,22 @@ function GlossaryPage() {
                     </div>
                   ) : (
                     paginated.map((term) => (
-                      <div key={term.id} className="grid grid-cols-4 items-center gap-4 px-6 py-6 border-b border-[#1a1a1a] hover:bg-[#151515] transition-colors group">
+                      <div key={term.id} className="grid grid-cols-4 items-center gap-4 px-6 py-6 border-b border-[var(--tk-surface3)] hover:bg-[var(--tk-surface2)] transition-colors group">
 
                         {/* Col 1: Source */}
                         <div className="col-span-1">
-                          <span className="text-white font-bold text-[14px] tracking-wide">{term.source_term}</span>
-                          <p className="text-[#555555] text-[10px] font-bold uppercase tracking-widest mt-0.5">{term.target_lang}</p>
+                          <span className="text-[var(--tk-text)] font-bold text-[14px] tracking-wide">{term.source_term}</span>
+                          <p className="text-[var(--tk-text-faint)] text-[10px] font-bold uppercase tracking-widest mt-0.5">{term.target_lang}</p>
                         </div>
 
                         {/* Col 2: Translation */}
                         <div className="col-span-1 pr-4">
-                          <span className="text-[#a0a09f] text-[14px]">{term.target_term}</span>
+                          <span className="text-[var(--tk-text-muted2)] text-[14px]">{term.target_term}</span>
                         </div>
 
                         {/* Col 3: Category */}
                         <div className="col-span-1">
-                          <span className="bg-[#1a1a1a] border border-[#262626] text-[#8c8c8b] text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-block">
+                          <span className="bg-[var(--tk-surface3)] border border-[var(--tk-border)] text-[var(--tk-text-muted)] text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-block">
                             {term.category || '—'}
                           </span>
                         </div>
@@ -452,9 +452,9 @@ function GlossaryPage() {
                             className="flex items-center gap-2 transition-opacity hover:opacity-70 disabled:opacity-40"
                           >
                             {togglingId === term.id ? (
-                              <Loader2 size={14} className="animate-spin text-[#555555]" />
+                              <Loader2 size={14} className="animate-spin text-[var(--tk-text-faint)]" />
                             ) : term.status === 'VERIFIED' ? (
-                              <div className="flex items-center gap-2 text-[#c5fe00]">
+                              <div className="flex items-center gap-2 text-[var(--tk-accent-text)]">
                                 <CheckCircle size={14} />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">Verified</span>
                               </div>
@@ -471,7 +471,7 @@ function GlossaryPage() {
                             onClick={() => handleDelete(term.id)}
                             disabled={deletingId === term.id}
                             title="Delete term"
-                            className="opacity-0 group-hover:opacity-100 text-[#555555] hover:text-[#ff6b6b] transition-all ml-2 disabled:opacity-40"
+                            className="opacity-0 group-hover:opacity-100 text-[var(--tk-text-faint)] hover:text-[#ff6b6b] transition-all ml-2 disabled:opacity-40"
                           >
                             {deletingId === term.id
                               ? <Loader2 size={14} className="animate-spin" />
@@ -494,8 +494,8 @@ function GlossaryPage() {
                         onClick={() => setPage(p)}
                         className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
                           p === page
-                            ? 'bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]'
-                            : 'text-[#8c8c8b] hover:text-white'
+                            ? 'bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border border-[var(--tk-accent-border)] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]'
+                            : 'text-[var(--tk-text-muted)] hover:text-[var(--tk-text)]'
                         }`}
                       >
                         {p}
@@ -510,12 +510,12 @@ function GlossaryPage() {
               <div className="lg:col-span-4 flex flex-col gap-6">
 
                 {/* Stats Card */}
-                <div className="bg-[#15170d] border border-[#2a2e16] rounded-[32px] p-8 shadow-[0_20px_40px_rgba(197,254,0,0.02)]">
-                  <h4 className="text-[#c5fe00] font-bold text-[10px] uppercase tracking-widest mb-6">Linguistic Asset Insights</h4>
+                <div className="bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] rounded-[32px] p-8 shadow-[0_20px_40px_rgba(197,254,0,0.02)]">
+                  <h4 className="text-[var(--tk-accent-text)] font-bold text-[10px] uppercase tracking-widest mb-6">Linguistic Asset Insights</h4>
 
                   <div className="flex justify-between items-end mb-8">
-                    <span className="text-[#a0a09f] text-[13px] font-medium">Total Terms</span>
-                    <span className="font-display font-black text-3xl text-[#c5fe00]">
+                    <span className="text-[var(--tk-text-muted2)] text-[13px] font-medium">Total Terms</span>
+                    <span className="font-display font-black text-3xl text-[var(--tk-accent-text)]">
                       {loading ? '…' : terms.length.toLocaleString()}
                     </span>
                   </div>
@@ -523,30 +523,30 @@ function GlossaryPage() {
                   {/* Mini bar chart placeholder — could be replaced with real monthly data */}
                   <div className="h-28 flex items-end gap-[2px] md:gap-1.5 mb-2 px-1">
                     {['35%', '50%', '45%', '70%', '85%', '90%', '80%', '95%'].map((height, i) => (
-                      <div key={i} className="flex-1 bg-[#262b14] hover:bg-[#32381c] rounded-t-sm transition-colors" style={{ height }}></div>
+                      <div key={i} className="flex-1 bg-[var(--tk-accent-border)] hover:bg-[var(--tk-accent-border)] rounded-t-sm transition-colors" style={{ height }}></div>
                     ))}
                   </div>
-                  <div className="flex justify-between text-[#555555] text-[9px] font-bold uppercase tracking-widest mb-8 px-1">
+                  <div className="flex justify-between text-[var(--tk-text-faint)] text-[9px] font-bold uppercase tracking-widest mb-8 px-1">
                     <span>Jan</span><span>Jun</span><span>Dec</span>
                   </div>
 
                   <div className="space-y-3">
-                    <div className="bg-[#11130a] border border-[#1a1c10] rounded-[20px] p-4 flex items-center justify-between">
+                    <div className="bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-surface)] rounded-[20px] p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#c5fe00]"></div>
-                        <span className="text-[#8c8c8b] text-[12px] font-medium">Verified Terms</span>
+                        <span className="text-[var(--tk-text-muted)] text-[12px] font-medium">Verified Terms</span>
                       </div>
-                      <span className="font-bold text-[16px] text-white tracking-widest">
+                      <span className="font-bold text-[16px] text-[var(--tk-text)] tracking-widest">
                         {loading ? '…' : verifiedCount}
                       </span>
                     </div>
 
-                    <div className="bg-[#111111] border border-[#1a1a1a] rounded-[20px] p-4 flex items-center justify-between">
+                    <div className="bg-[var(--tk-surface1)] border border-[var(--tk-surface3)] rounded-[20px] p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#ffd166]"></div>
-                        <span className="text-[#8c8c8b] text-[12px] font-medium">Pending Review</span>
+                        <span className="text-[var(--tk-text-muted)] text-[12px] font-medium">Pending Review</span>
                       </div>
-                      <span className="font-bold text-[16px] text-white tracking-widest">
+                      <span className="font-bold text-[16px] text-[var(--tk-text)] tracking-widest">
                         {loading ? '…' : pendingCount}
                       </span>
                     </div>
@@ -555,14 +555,14 @@ function GlossaryPage() {
 
                 {/* Sub Metrics */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#151515] border border-[#1a1a1a] rounded-[24px] p-6">
-                    <span className="text-[#555555] font-bold text-[8px] uppercase tracking-widest mb-2 block">Total Terms</span>
+                  <div className="bg-[var(--tk-surface2)] border border-[var(--tk-surface3)] rounded-[24px] p-6">
+                    <span className="text-[var(--tk-text-faint)] font-bold text-[8px] uppercase tracking-widest mb-2 block">Total Terms</span>
                     <span className="font-display font-black text-2xl tracking-tight">
                       {loading ? '…' : terms.length.toLocaleString()}
                     </span>
                   </div>
-                  <div className="bg-[#151515] border border-[#1a1a1a] rounded-[24px] p-6">
-                    <span className="text-[#555555] font-bold text-[8px] uppercase tracking-widest mb-2 block">Verify Rate</span>
+                  <div className="bg-[var(--tk-surface2)] border border-[var(--tk-surface3)] rounded-[24px] p-6">
+                    <span className="text-[var(--tk-text-faint)] font-bold text-[8px] uppercase tracking-widest mb-2 block">Verify Rate</span>
                     <span className="font-display font-black text-2xl tracking-tight flex items-end gap-1">
                       {loading || terms.length === 0
                         ? '—'
@@ -573,12 +573,12 @@ function GlossaryPage() {
                 </div>
 
                 {/* Map decoration */}
-                <div className="bg-[#0c0c0c] border border-[#1a1a1a] rounded-[32px] overflow-hidden relative h-[220px] group">
+                <div className="bg-[var(--tk-bg)] border border-[var(--tk-surface3)] rounded-[32px] overflow-hidden relative h-[220px] group">
                   <img src="/map.png" alt="Global Sync Status Web Nodes" className="w-full h-full object-cover opacity-60 mix-blend-screen scale-110 group-hover:scale-100 transition-transform duration-[2s]" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[var(--tk-bg)] via-transparent to-transparent"></div>
                   <div className="absolute bottom-6 left-6 z-10">
-                    <span className="text-[#c5fe00] font-bold text-[10px] uppercase tracking-widest mb-1 shadow-[0_2px_4px_rgba(0,0,0,1)] block">Global Sync Status</span>
-                    <span className="text-[#a0a09f] text-[10px] font-medium shadow-[0_2px_4px_rgba(0,0,0,1)]">All nodes operational</span>
+                    <span className="text-[var(--tk-accent-text)] font-bold text-[10px] uppercase tracking-widest mb-1 shadow-[0_2px_4px_rgba(0,0,0,1)] block">Global Sync Status</span>
+                    <span className="text-[var(--tk-text-muted2)] text-[10px] font-medium shadow-[0_2px_4px_rgba(0,0,0,1)]">All nodes operational</span>
                   </div>
                 </div>
 

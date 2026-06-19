@@ -23,7 +23,7 @@ function RedirectIfAuth({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0e0e0e] flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--tk-bg2)] flex items-center justify-center">
         <div className="w-10 h-10 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
       </div>
     );

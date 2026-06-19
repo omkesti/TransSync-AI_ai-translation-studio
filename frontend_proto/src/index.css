@@ -23,6 +23,65 @@
   --color-outline-variant: #484847;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Theme tokens (light / dark)
+   ─────────────────────────────────────────────────────────────────────────
+   The authenticated app uses these `--tk-*` variables instead of hardcoded
+   hexes so it can flip between light and dark. ThemeContext toggles the
+   `light` / `dark` class on <html>. Default (`:root`) is dark, so anything
+   not yet migrated — and the always-dark landing page — keeps the dark look.
+   Brand accents (#c5fe00 etc.) are deliberately left as literals: they read
+   well on both themes. */
+:root,
+.dark {
+  --tk-bg:             #0a0a0a;
+  --tk-bg2:            #0e0e0e;
+  --tk-surface1:       #131313;
+  --tk-surface2:       #151515;
+  --tk-surface3:       #1a1a1a;
+  --tk-surface4:       #1e1e1e;
+  --tk-surface5:       #222222;
+  --tk-border:         #262626;
+  --tk-border2:        #2a2a2a;
+  --tk-border3:        #333333;
+  --tk-text:           #ffffff;
+  --tk-text-muted:     #8c8c8b;
+  --tk-text-muted2:    #a0a09f;
+  --tk-text-faint:     #555555;
+  --tk-accent-surface: #1a1c10;
+  --tk-accent-border:  #2a2e16;
+  --tk-danger-surface: #1a0a0a;
+  --tk-danger-border:  #4a1010;
+  /* Brand accent used as TEXT (needs to darken on light). The accent as a
+     background/button stays literal #c5fe00 in both themes. */
+  --tk-accent-text:    #c5fe00;
+  /* Dark text that sits on a lime accent surface — dark in both themes. */
+  --tk-on-accent:      #0a0a0a;
+}
+
+.light {
+  --tk-bg:             #f4f5f7;
+  --tk-bg2:            #eceef1;
+  --tk-surface1:       #ffffff;
+  --tk-surface2:       #ffffff;
+  --tk-surface3:       #eef0f3;
+  --tk-surface4:       #e6e8ec;
+  --tk-surface5:       #dfe2e7;
+  --tk-border:         #e3e6ea;
+  --tk-border2:        #d6dade;
+  --tk-border3:        #c8cdd3;
+  --tk-text:           #14181f;
+  --tk-text-muted:     #5b6573;
+  --tk-text-muted2:    #6c7480;
+  --tk-text-faint:     #9aa1ac;
+  --tk-accent-surface: #eef8c4;
+  --tk-accent-border:  #d4e88f;
+  --tk-danger-surface: #fdecec;
+  --tk-danger-border:  #f3c2c2;
+  --tk-accent-text:    #5c7c00;
+  --tk-on-accent:      #0a0a0a;
+}
+
 @layer base {
   body {
     background-color: var(--color-background);

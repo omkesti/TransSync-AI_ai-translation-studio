@@ -21,6 +21,8 @@ import {
 import { fetchDashboardStats } from '../services/api';
 import UserProfileBlock from '../components/UserProfileBlock';
 import NavAvatar from '../components/NavAvatar';
+import Logo from '../components/Logo';
+import SettingsMenu from '../components/SettingsMenu';
 import { useAuth } from '../context/AuthContext';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -51,21 +53,21 @@ const TIER_META = [
   { key: 'tm_exact',     label: 'TM',     color: '#c5fe00' },
   { key: 'faiss_direct', label: 'FAISS',  color: '#00c5fe' },
   { key: 'llm_guided',   label: 'Guided', color: '#c500fe' },
-  { key: 'llm_cold',     label: 'Cold',   color: '#8c8c8b' },
+  { key: 'llm_cold',     label: 'Cold',   color: 'var(--tk-text-muted)' },
 ];
 
 function matchTypeBadgeStyle(mt) {
   switch (mt) {
     case 'tm_exact':
-      return 'bg-[#1a2010] text-[#c5fe00] border border-[#2a2e16]';
+      return 'bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border border-[var(--tk-accent-border)]';
     case 'faiss_direct':
       return 'bg-[#101820] text-[#00c5fe] border border-[#162030]';
     case 'llm_guided':
       return 'bg-[#1a1020] text-[#c500fe] border border-[#2a1630]';
     case 'llm_cold':
-      return 'bg-[#262626] text-[#8c8c8b]';
+      return 'bg-[var(--tk-border)] text-[var(--tk-text-muted)]';
     default:
-      return 'bg-[#262626] text-[#8c8c8b]';
+      return 'bg-[var(--tk-border)] text-[var(--tk-text-muted)]';
   }
 }
 
@@ -73,34 +75,34 @@ function matchTypeBadgeStyle(mt) {
 
 function SkeletonCard() {
   return (
-    <div className="bg-[#131313] border border-[#262626] border-opacity-50 rounded-[28px] p-8 animate-pulse">
-      <div className="h-3 w-24 bg-[#262626] rounded mb-6"></div>
-      <div className="h-12 w-32 bg-[#1e1e1e] rounded"></div>
+    <div className="bg-[var(--tk-surface1)] border border-[var(--tk-border)] border-opacity-50 rounded-[28px] p-8 animate-pulse">
+      <div className="h-3 w-24 bg-[var(--tk-border)] rounded mb-6"></div>
+      <div className="h-12 w-32 bg-[var(--tk-surface4)] rounded"></div>
     </div>
   );
 }
 
 function SkeletonInsight() {
   return (
-    <div className="bg-[#151515] border border-[#262626] border-opacity-70 rounded-[24px] p-6 space-y-3 animate-pulse">
+    <div className="bg-[var(--tk-surface2)] border border-[var(--tk-border)] border-opacity-70 rounded-[24px] p-6 space-y-3 animate-pulse">
       <div className="flex items-center gap-3">
-        <div className="w-4 h-4 rounded bg-[#262626]"></div>
-        <div className="h-3 w-36 bg-[#262626] rounded"></div>
+        <div className="w-4 h-4 rounded bg-[var(--tk-border)]"></div>
+        <div className="h-3 w-36 bg-[var(--tk-border)] rounded"></div>
       </div>
-      <div className="h-3 w-full bg-[#1e1e1e] rounded"></div>
-      <div className="h-3 w-3/4 bg-[#1e1e1e] rounded"></div>
+      <div className="h-3 w-full bg-[var(--tk-surface4)] rounded"></div>
+      <div className="h-3 w-3/4 bg-[var(--tk-surface4)] rounded"></div>
     </div>
   );
 }
 
 function SkeletonDocRow() {
   return (
-    <tr className="border-b border-[#262626] animate-pulse">
-      <td className="py-6 px-8"><div className="h-3 w-48 bg-[#1e1e1e] rounded"></div></td>
-      <td className="py-6 px-8"><div className="h-5 w-12 bg-[#1e1e1e] rounded-full"></div></td>
-      <td className="py-6 px-8"><div className="h-2 w-28 bg-[#1e1e1e] rounded-full"></div></td>
-      <td className="py-6 px-8"><div className="h-3 w-10 bg-[#1e1e1e] rounded"></div></td>
-      <td className="py-6 px-8 text-right"><div className="h-3 w-16 bg-[#1e1e1e] rounded ml-auto"></div></td>
+    <tr className="border-b border-[var(--tk-border)] animate-pulse">
+      <td className="py-6 px-8"><div className="h-3 w-48 bg-[var(--tk-surface4)] rounded"></div></td>
+      <td className="py-6 px-8"><div className="h-5 w-12 bg-[var(--tk-surface4)] rounded-full"></div></td>
+      <td className="py-6 px-8"><div className="h-2 w-28 bg-[var(--tk-surface4)] rounded-full"></div></td>
+      <td className="py-6 px-8"><div className="h-3 w-10 bg-[var(--tk-surface4)] rounded"></div></td>
+      <td className="py-6 px-8 text-right"><div className="h-3 w-16 bg-[var(--tk-surface4)] rounded ml-auto"></div></td>
     </tr>
   );
 }
@@ -141,36 +143,37 @@ function DashboardPage() {
   const languages = stats?.languages ?? [];
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex flex-col overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="h-screen bg-[var(--tk-bg)] text-[var(--tk-text)] font-sans flex flex-col overflow-hidden selection:bg-[#c5fe00] selection:text-[var(--tk-on-accent)]">
 
       {/* Top Navigation */}
-      <nav className="h-[72px] border-b border-[#262626] border-opacity-50 flex items-center justify-between px-8 bg-[#0a0a0a] shrink-0 z-20">
+      <nav className="h-[72px] border-b border-[var(--tk-border)] border-opacity-50 flex items-center justify-between px-8 bg-[var(--tk-bg)] shrink-0 z-20">
         <div className="flex items-center gap-16">
-          <Link to="/" className="inline-block">
-            <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] block leading-none">
-              TransSync <span className="text-[#ffffff]">AI</span>
+          <Link to="/" className="inline-flex items-center gap-2.5">
+            <Logo variant="icon" className="h-8 w-8" />
+            <span className="font-display font-bold text-xl tracking-tight text-[var(--tk-accent-text)] block leading-none">
+              TransSync <span className="text-[var(--tk-text)]">AI</span>
             </span>
           </Link>
 
           <ul className="hidden md:flex items-center gap-8 text-[13px] font-semibold">
-            <li className="text-[#c5fe00] cursor-pointer">Dashboard</li>
-            <li className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors cursor-pointer">Projects</li>
-            <li className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors cursor-pointer">Analytics</li>
+            <li className="text-[var(--tk-accent-text)] cursor-pointer">Dashboard</li>
+            <li className="text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] transition-colors cursor-pointer">Projects</li>
+            <li className="text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] transition-colors cursor-pointer">Analytics</li>
           </ul>
         </div>
 
-        <div className="flex items-center gap-6 text-[#8c8c8b]">
+        <div className="flex items-center gap-6 text-[var(--tk-text-muted)]">
           {/* Refresh button */}
           <button
             onClick={loadStats}
             title="Refresh stats"
-            className={`hover:text-[#ffffff] transition-colors ${loading ? 'animate-spin text-[#c5fe00]' : ''}`}
+            className={`hover:text-[var(--tk-text)] transition-colors ${loading ? 'animate-spin text-[var(--tk-accent-text)]' : ''}`}
           >
             <RefreshCw size={16} />
           </button>
-          <button className="hover:text-[#ffffff] transition-colors"><Bell size={18} /></button>
-          <button className="hover:text-[#ffffff] transition-colors"><HelpCircle size={18} /></button>
-          <button className="hover:text-[#ffffff] transition-colors"><Settings size={18} /></button>
+          <button className="hover:text-[var(--tk-text)] transition-colors"><Bell size={18} /></button>
+          <button className="hover:text-[var(--tk-text)] transition-colors"><HelpCircle size={18} /></button>
+          <SettingsMenu />
           <NavAvatar />
         </div>
       </nav>
@@ -179,55 +182,53 @@ function DashboardPage() {
       <div className="flex flex-1 overflow-hidden relative">
 
         {/* Left Sidebar */}
-        <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex overflow-y-auto layout-scrollbar">
+        <aside className="w-[260px] border-r border-[var(--tk-border)] border-opacity-50 flex flex-col shrink-0 bg-[var(--tk-bg)] hidden md:flex overflow-y-auto layout-scrollbar">
           <div className="p-6 pb-2">
 
             {/* Workspace Selector */}
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-8 h-8 rounded-full bg-[#c5fe00] text-[#0a0a0a] flex items-center justify-center font-bold text-sm">
-                A
-              </div>
+              <Logo variant="icon" className="w-9 h-9" />
               <div className="flex flex-col">
-                <span className="text-[#c5fe00] font-bold text-[11px] uppercase tracking-widest leading-none mb-1">TransSync</span>
-                <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</span>
+                <span className="text-[var(--tk-accent-text)] font-bold text-[11px] uppercase tracking-widest leading-none mb-1">TransSync</span>
+                <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</span>
               </div>
             </div>
 
             {/* CTA */}
             <Link to="/upload">
-              <button className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full py-3.5 flex items-center justify-center gap-2 font-bold text-sm shadow-[0_0_15px_rgba(197,254,0,0.15)] mb-8">
+              <button className="w-full bg-[#c5fe00] text-[var(--tk-on-accent)] hover:bg-[#b9ef00] transition-colors rounded-full py-3.5 flex items-center justify-center gap-2 font-bold text-sm shadow-[0_0_15px_rgba(197,254,0,0.15)] mb-8">
                 <Plus size={18} strokeWidth={2.5}/> New Project
               </button>
             </Link>
 
             {/* Menu Items */}
             <nav className="space-y-1">
-              <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] cursor-pointer">
+              <div className="flex items-center gap-4 bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border border-[var(--tk-accent-border)] px-4 py-3 rounded-[12px] cursor-pointer">
                 <LayoutDashboard size={18} />
                 <span className="text-[11px] font-bold uppercase tracking-widest">Dashboard</span>
               </div>
 
-              <Link to="/upload" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+              <Link to="/upload" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
                 <FileUp size={18} />
                 <span className="text-[11px] font-bold uppercase tracking-widest">Upload</span>
               </Link>
 
-              <Link to="/validation" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+              <Link to="/validation" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
                 <CheckCircle2 size={18} />
                 <span className="text-[11px] font-bold uppercase tracking-widest">Validation</span>
               </Link>
 
-              <Link to="/review" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+              <Link to="/review" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
                 <MessageSquare size={18} />
                 <span className="text-[11px] font-bold uppercase tracking-widest">Review</span>
               </Link>
 
-              <Link to="/glossary" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+              <Link to="/glossary" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
                 <Book size={18} />
                 <span className="text-[11px] font-bold uppercase tracking-widest">Glossary</span>
               </Link>
 
-              <Link to="/export" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+              <Link to="/export" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
                 <Download size={18} />
                 <span className="text-[11px] font-bold uppercase tracking-widest">Export</span>
               </Link>
@@ -238,10 +239,10 @@ function DashboardPage() {
           <div className="mt-auto p-6 space-y-1">
             {languages.length > 0 && (
               <div className="mb-4 px-4 py-3">
-                <p className="text-[#555555] text-[9px] font-bold uppercase tracking-widest mb-2">Active Languages</p>
+                <p className="text-[var(--tk-text-faint)] text-[9px] font-bold uppercase tracking-widest mb-2">Active Languages</p>
                 <div className="flex flex-wrap gap-1.5">
                   {languages.map(l => (
-                    <span key={l} className="bg-[#1a2010] text-[#c5fe00] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border border-[#2a2e16]">
+                    <span key={l} className="bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border border-[var(--tk-accent-border)]">
                       {l}
                     </span>
                   ))}
@@ -254,14 +255,14 @@ function DashboardPage() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto bg-[#0a0a0a] relative layout-scrollbar">
+        <main className="flex-1 overflow-y-auto bg-[var(--tk-bg)] relative layout-scrollbar">
 
           <div className="p-8 lg:p-12 max-w-7xl mx-auto space-y-12">
 
             {/* Header */}
             <div>
               <h1 className="font-display font-bold text-4xl mb-3 tracking-tight">Overview</h1>
-              <p className="text-[#8c8c8b] text-[15px]">
+              <p className="text-[var(--tk-text-muted)] text-[15px]">
                 Your translation activity at a glance — memory reuse, LLM usage,<br/>
                 and the most recent documents across your organization.
               </p>
@@ -269,9 +270,9 @@ function DashboardPage() {
 
             {/* Error Banner */}
             {error && (
-              <div className="bg-[#1a0a0a] border border-[#4a1010] rounded-[16px] px-6 py-4 flex items-center justify-between">
+              <div className="bg-[var(--tk-danger-surface)] border border-[var(--tk-danger-border)] rounded-[16px] px-6 py-4 flex items-center justify-between">
                 <span className="text-[#ff6b6b] text-sm font-medium">{error}</span>
-                <button onClick={loadStats} className="text-[#ff6b6b] hover:text-white text-[11px] font-bold uppercase tracking-widest border border-[#4a1010] px-3 py-1.5 rounded-full transition-colors">
+                <button onClick={loadStats} className="text-[#ff6b6b] hover:text-[var(--tk-text)] text-[11px] font-bold uppercase tracking-widest border border-[var(--tk-danger-border)] px-3 py-1.5 rounded-full transition-colors">
                   Retry
                 </button>
               </div>
@@ -282,14 +283,14 @@ function DashboardPage() {
 
               {/* Total Translations */}
               {loading ? <SkeletonCard /> : (
-                <div className="bg-[#131313] border border-[#262626] border-opacity-50 rounded-[28px] p-8 relative overflow-hidden">
-                  <p className="text-[#555555] font-bold text-[11px] uppercase tracking-widest mb-6">Total Translations</p>
+                <div className="bg-[var(--tk-surface1)] border border-[var(--tk-border)] border-opacity-50 rounded-[28px] p-8 relative overflow-hidden">
+                  <p className="text-[var(--tk-text-faint)] font-bold text-[11px] uppercase tracking-widest mb-6">Total Translations</p>
                   <div className="flex items-baseline gap-3">
                     <span className="font-display font-bold text-5xl tracking-tight">
                       {total.toLocaleString()}
                     </span>
                     {total > 0 && (
-                      <span className="text-[#c5fe00] font-bold text-sm tracking-widest">Active</span>
+                      <span className="text-[var(--tk-accent-text)] font-bold text-sm tracking-widest">Active</span>
                     )}
                   </div>
                 </div>
@@ -297,27 +298,27 @@ function DashboardPage() {
 
               {/* TM Hits */}
               {loading ? <SkeletonCard /> : (
-                <div className="bg-[#131313] border border-[#262626] border-opacity-50 rounded-[28px] p-8 relative overflow-hidden">
-                  <p className="text-[#555555] font-bold text-[11px] uppercase tracking-widest mb-6">Memory Hits</p>
+                <div className="bg-[var(--tk-surface1)] border border-[var(--tk-border)] border-opacity-50 rounded-[28px] p-8 relative overflow-hidden">
+                  <p className="text-[var(--tk-text-faint)] font-bold text-[11px] uppercase tracking-widest mb-6">Memory Hits</p>
                   <div className="flex items-baseline gap-3">
                     <span className="font-display font-bold text-5xl tracking-tight">{tmHits.toLocaleString()}</span>
                     <div className="flex gap-[3px] items-center h-5">
-                      <Zap size={14} className="text-[#c5fe00]" />
+                      <Zap size={14} className="text-[var(--tk-accent-text)]" />
                     </div>
                   </div>
-                  <p className="text-[#555555] text-[11px] mt-3">TM Exact + FAISS direct lookups</p>
+                  <p className="text-[var(--tk-text-faint)] text-[11px] mt-3">TM Exact + FAISS direct lookups</p>
                 </div>
               )}
 
               {/* LLM Calls */}
               {loading ? <SkeletonCard /> : (
-                <div className="bg-[#131313] border border-[#262626] border-opacity-50 rounded-[28px] p-8 relative overflow-hidden">
-                  <p className="text-[#555555] font-bold text-[11px] uppercase tracking-widest mb-6">LLM Calls</p>
+                <div className="bg-[var(--tk-surface1)] border border-[var(--tk-border)] border-opacity-50 rounded-[28px] p-8 relative overflow-hidden">
+                  <p className="text-[var(--tk-text-faint)] font-bold text-[11px] uppercase tracking-widest mb-6">LLM Calls</p>
                   <div className="flex items-baseline gap-3">
                     <span className="font-display font-bold text-5xl tracking-tight">{llmCalls.toLocaleString()}</span>
-                    <Brain size={16} className="text-[#8c8c8b] mb-1" />
+                    <Brain size={16} className="text-[var(--tk-text-muted)] mb-1" />
                   </div>
-                  <p className="text-[#555555] text-[11px] mt-3">Guided + cold Groq invocations</p>
+                  <p className="text-[var(--tk-text-faint)] text-[11px] mt-3">Guided + cold Groq invocations</p>
                 </div>
               )}
 
@@ -331,33 +332,33 @@ function DashboardPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-display font-bold text-[22px] tracking-tight mb-1">Pipeline Breakdown</h3>
-                    <p className="text-[#8c8c8b] text-[13px]">Translation tier distribution across all processed sentences</p>
+                    <p className="text-[var(--tk-text-muted)] text-[13px]">Translation tier distribution across all processed sentences</p>
                   </div>
-                  <div className="border border-[#262626] bg-[#1a1a1a] px-3 py-1.5 rounded-[8px] text-[#555555] font-bold text-[9px] uppercase tracking-widest">
+                  <div className="border border-[var(--tk-border)] bg-[var(--tk-surface3)] px-3 py-1.5 rounded-[8px] text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest">
                     All Time
                   </div>
                 </div>
 
                 {/* Breakdown Bars */}
-                <div className="bg-[#10130a] border border-[#1a2010] rounded-[24px] p-8 space-y-5">
+                <div className="bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-surface)] rounded-[24px] p-8 space-y-5">
                   {[
                     { key: 'tm_exact',    label: 'TM Exact',    color: '#c5fe00' },
                     { key: 'faiss_direct', label: 'FAISS Direct', color: '#00c5fe' },
                     { key: 'llm_guided',  label: 'LLM Guided',  color: '#c500fe' },
-                    { key: 'llm_cold',    label: 'LLM Cold',    color: '#555555' },
+                    { key: 'llm_cold',    label: 'LLM Cold',    color: 'var(--tk-text-faint)' },
                   ].map(({ key, label, color }) => {
                     const count = bd[key] ?? 0;
                     const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                     return (
                       <div key={key}>
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-[#a0a09f] text-[12px] font-semibold">{label}</span>
+                          <span className="text-[var(--tk-text-muted2)] text-[12px] font-semibold">{label}</span>
                           <div className="flex items-center gap-3">
                             <span className="font-bold text-[13px]">{count.toLocaleString()}</span>
-                            <span className="text-[#555555] text-[11px] w-8 text-right">{pct}%</span>
+                            <span className="text-[var(--tk-text-faint)] text-[11px] w-8 text-right">{pct}%</span>
                           </div>
                         </div>
-                        <div className="h-2 rounded-full bg-[#1a1a1a] overflow-hidden">
+                        <div className="h-2 rounded-full bg-[var(--tk-surface3)] overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-700"
                             style={{ width: `${pct}%`, backgroundColor: color }}
@@ -371,10 +372,10 @@ function DashboardPage() {
                       {[1,2,3,4].map(i => (
                         <div key={i}>
                           <div className="flex justify-between mb-2">
-                            <div className="h-3 w-24 bg-[#1e1e1e] rounded"></div>
-                            <div className="h-3 w-16 bg-[#1e1e1e] rounded"></div>
+                            <div className="h-3 w-24 bg-[var(--tk-surface4)] rounded"></div>
+                            <div className="h-3 w-16 bg-[var(--tk-surface4)] rounded"></div>
                           </div>
-                          <div className="h-2 bg-[#1a1a1a] rounded-full"></div>
+                          <div className="h-2 bg-[var(--tk-surface3)] rounded-full"></div>
                         </div>
                       ))}
                     </div>
@@ -391,26 +392,26 @@ function DashboardPage() {
                     ? [1,2,3].map(i => <SkeletonInsight key={i} />)
                     : recent.slice(0, 3).length > 0
                       ? recent.slice(0, 3).map((r, i) => (
-                          <div key={i} className="bg-[#151515] border border-[#262626] border-opacity-70 rounded-[24px] p-6 space-y-4 hover:border-[#333333] transition-colors cursor-pointer group">
+                          <div key={i} className="bg-[var(--tk-surface2)] border border-[var(--tk-border)] border-opacity-70 rounded-[24px] p-6 space-y-4 hover:border-[var(--tk-border3)] transition-colors cursor-pointer group">
                             <div className="flex items-center gap-3">
-                              <FileText size={16} className="text-[#a0a09f] shrink-0" />
+                              <FileText size={16} className="text-[var(--tk-text-muted2)] shrink-0" />
                               <span className="font-bold text-[13px] truncate">{r.source_text}</span>
                             </div>
-                            <p className="text-[#8c8c8b] text-[13px] italic leading-relaxed line-clamp-2">
+                            <p className="text-[var(--tk-text-muted)] text-[13px] italic leading-relaxed line-clamp-2">
                               "{r.translated_text}"
                             </p>
                             <div className="flex justify-between items-center pt-1">
                               <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full ${matchTypeBadgeStyle(r.match_type)}`}>
                                 {matchTypeLabel(r.match_type)}
                               </span>
-                              <span className="text-[#555555] text-[10px] font-bold tracking-widest uppercase">{timeAgo(r.created_at)}</span>
+                              <span className="text-[var(--tk-text-faint)] text-[10px] font-bold tracking-widest uppercase">{timeAgo(r.created_at)}</span>
                             </div>
                           </div>
                         ))
                       : (
-                        <div className="bg-[#151515] border border-[#262626] border-opacity-70 rounded-[24px] p-6 text-center">
-                          <p className="text-[#555555] text-sm">No translations yet.</p>
-                          <Link to="/upload" className="text-[#c5fe00] text-[11px] font-bold uppercase tracking-widest mt-2 block hover:underline">
+                        <div className="bg-[var(--tk-surface2)] border border-[var(--tk-border)] border-opacity-70 rounded-[24px] p-6 text-center">
+                          <p className="text-[var(--tk-text-faint)] text-sm">No translations yet.</p>
+                          <Link to="/upload" className="text-[var(--tk-accent-text)] text-[11px] font-bold uppercase tracking-widest mt-2 block hover:underline">
                             Upload a document →
                           </Link>
                         </div>
@@ -421,13 +422,13 @@ function DashboardPage() {
             </div>
 
             {/* Bottom Row: Recent Activity — recently translated DOCUMENTS */}
-            <div className="border border-[#262626] border-opacity-80 rounded-[28px] overflow-hidden">
-              <div className="p-8 border-b border-[#262626] flex justify-between items-end">
+            <div className="border border-[var(--tk-border)] border-opacity-80 rounded-[28px] overflow-hidden">
+              <div className="p-8 border-b border-[var(--tk-border)] flex justify-between items-end">
                 <div>
                   <h3 className="font-display font-bold text-[22px] tracking-tight">Recent Activity</h3>
-                  <p className="text-[#8c8c8b] text-[13px] mt-1">Documents translated recently across your organization</p>
+                  <p className="text-[var(--tk-text-muted)] text-[13px] mt-1">Documents translated recently across your organization</p>
                 </div>
-                <Link to="/review" className="text-[#8c8c8b] text-[11px] font-bold tracking-widest uppercase hover:text-white transition-colors">
+                <Link to="/review" className="text-[var(--tk-text-muted)] text-[11px] font-bold tracking-widest uppercase hover:text-[var(--tk-text)] transition-colors">
                   Go to Review →
                 </Link>
               </div>
@@ -436,11 +437,11 @@ function DashboardPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr>
-                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] w-2/5">Document</th>
-                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Lang</th>
-                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] w-1/3">Tier Mix</th>
-                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] text-right">Sentences</th>
-                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] text-right">Last Activity</th>
+                      <th className="py-4 px-8 text-[var(--tk-text-faint)] text-[10px] font-bold tracking-widest uppercase border-b border-[var(--tk-border)] w-2/5">Document</th>
+                      <th className="py-4 px-8 text-[var(--tk-text-faint)] text-[10px] font-bold tracking-widest uppercase border-b border-[var(--tk-border)]">Lang</th>
+                      <th className="py-4 px-8 text-[var(--tk-text-faint)] text-[10px] font-bold tracking-widest uppercase border-b border-[var(--tk-border)] w-1/3">Tier Mix</th>
+                      <th className="py-4 px-8 text-[var(--tk-text-faint)] text-[10px] font-bold tracking-widest uppercase border-b border-[var(--tk-border)] text-right">Sentences</th>
+                      <th className="py-4 px-8 text-[var(--tk-text-faint)] text-[10px] font-bold tracking-widest uppercase border-b border-[var(--tk-border)] text-right">Last Activity</th>
                     </tr>
                   </thead>
                   <tbody className="text-[13px]">
@@ -451,21 +452,21 @@ function DashboardPage() {
                             const count = d.sentence_count || 0;
                             const bdown = d.breakdown || {};
                             return (
-                              <tr key={i} className={`border-b border-[#262626] hover:bg-[#131313] transition-colors ${i === recentDocuments.length - 1 ? 'border-b-0' : ''}`}>
+                              <tr key={i} className={`border-b border-[var(--tk-border)] hover:bg-[var(--tk-surface1)] transition-colors ${i === recentDocuments.length - 1 ? 'border-b-0' : ''}`}>
                                 <td className="py-5 px-8 font-medium max-w-0">
                                   <div className="flex items-center gap-3 min-w-0">
-                                    <FileText size={15} className="text-[#a0a09f] shrink-0" />
-                                    <p className="truncate text-[#ffffff]">{d.source_document}</p>
+                                    <FileText size={15} className="text-[var(--tk-text-muted2)] shrink-0" />
+                                    <p className="truncate text-[var(--tk-text)]">{d.source_document}</p>
                                   </div>
                                 </td>
                                 <td className="py-5 px-8">
-                                  <span className="bg-[#1a1a1a] border border-[#262626] text-[#8c8c8b] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
+                                  <span className="bg-[var(--tk-surface3)] border border-[var(--tk-border)] text-[var(--tk-text-muted)] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
                                     {d.target_lang || '—'}
                                   </span>
                                 </td>
                                 <td className="py-5 px-8">
                                   {/* Stacked tier bar */}
-                                  <div className="flex h-2 w-full max-w-[220px] rounded-full overflow-hidden bg-[#1a1a1a]">
+                                  <div className="flex h-2 w-full max-w-[220px] rounded-full overflow-hidden bg-[var(--tk-surface3)]">
                                     {TIER_META.map(({ key, color }) => {
                                       const c = bdown[key] ?? 0;
                                       const pct = count > 0 ? (c / count) * 100 : 0;
@@ -480,10 +481,10 @@ function DashboardPage() {
                                     })}
                                   </div>
                                 </td>
-                                <td className="py-5 px-8 text-right font-bold text-[#ffffff] whitespace-nowrap">
+                                <td className="py-5 px-8 text-right font-bold text-[var(--tk-text)] whitespace-nowrap">
                                   {count.toLocaleString()}
                                 </td>
-                                <td className="py-5 px-8 text-right text-[#555555] text-[11px] font-bold uppercase tracking-widest whitespace-nowrap">
+                                <td className="py-5 px-8 text-right text-[var(--tk-text-faint)] text-[11px] font-bold uppercase tracking-widest whitespace-nowrap">
                                   {timeAgo(d.last_activity)}
                                 </td>
                               </tr>
@@ -491,7 +492,7 @@ function DashboardPage() {
                           })
                         : (
                           <tr>
-                            <td colSpan={5} className="py-12 text-center text-[#555555] text-sm">
+                            <td colSpan={5} className="py-12 text-center text-[var(--tk-text-faint)] text-sm">
                               No documents translated yet. Upload and translate a document to see activity here.
                             </td>
                           </tr>

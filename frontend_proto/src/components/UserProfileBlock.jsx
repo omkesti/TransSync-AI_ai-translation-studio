@@ -59,27 +59,27 @@ export default function UserProfileBlock() {
   };
 
   return (
-    <div ref={ref} className="border-t border-[#2a2a2a] pt-4 mt-4 relative">
+    <div ref={ref} className="border-t border-[var(--tk-border2)] pt-4 mt-4 relative">
       {/* Org name */}
       {org?.name && (
-        <p className="text-[#555] text-[10px] uppercase tracking-widest font-bold mb-3 truncate">
+        <p className="text-[var(--tk-text-faint)] text-[10px] uppercase tracking-widest font-bold mb-3 truncate">
           {org.name}
         </p>
       )}
 
       {/* Dropdown menu (opens upward, above the trigger) */}
       {open && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#151515] border border-[#2a2a2a] rounded-xl shadow-xl overflow-hidden z-30">
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-[var(--tk-surface2)] border border-[var(--tk-border2)] rounded-xl shadow-xl overflow-hidden z-30">
           <button
             onClick={() => { setOpen(false); navigate('/profile'); }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#cfcfcf] hover:bg-[#1f1f1f] hover:text-white transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--tk-text)] hover:bg-[var(--tk-surface3)] hover:text-[var(--tk-text)] transition-colors"
           >
             <User size={16} />
             Profile
           </button>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#cfcfcf] hover:bg-[#1f1f1f] hover:text-red-400 transition-colors border-t border-[#2a2a2a]"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--tk-text)] hover:bg-[var(--tk-surface3)] hover:text-red-400 transition-colors border-t border-[var(--tk-border2)]"
           >
             <LogOut size={16} />
             Log out
@@ -90,13 +90,13 @@ export default function UserProfileBlock() {
       {/* Trigger */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-3 rounded-xl px-1.5 py-1.5 transition-colors ${open ? 'bg-[#1a1a1a]' : 'hover:bg-[#161616]'}`}
+        className={`w-full flex items-center gap-3 rounded-xl px-1.5 py-1.5 transition-colors ${open ? 'bg-[var(--tk-surface3)]' : 'hover:bg-[var(--tk-surface3)]'}`}
         title="Account"
       >
         <Avatar name={displayName} email={user.email} size={36} />
 
         <div className="flex-1 min-w-0 text-left">
-          <p className="text-white text-sm truncate">{displayName || 'User'}</p>
+          <p className="text-[var(--tk-text)] text-sm truncate">{displayName || 'User'}</p>
           <span className={`inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full mt-0.5 ${roleColor}`}>
             {role || 'member'}
           </span>
@@ -104,7 +104,7 @@ export default function UserProfileBlock() {
 
         <ChevronUp
           size={16}
-          className={`text-[#666] flex-shrink-0 transition-transform ${open ? '' : 'rotate-180'}`}
+          className={`text-[var(--tk-text-faint)] flex-shrink-0 transition-transform ${open ? '' : 'rotate-180'}`}
         />
       </button>
     </div>

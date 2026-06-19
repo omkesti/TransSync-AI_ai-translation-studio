@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Logo from "../components/Logo";
 import {
   Bell,
   Settings,
@@ -15,7 +16,8 @@ function LandingPage() {
     <div className="min-h-screen bg-background text-on-surface font-sans selection:bg-primary-container selection:text-background">
       {/* Navigation */}
       <nav className="flex items-center justify-between px-8 py-5 border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-md z-50">
-        <div className="flex items-center">
+        <div className="flex items-center gap-2.5">
+          <Logo variant="icon" className="h-8 w-8" />
           <span className="font-display font-bold text-xl tracking-tight text-primary-container">
             TransSync <span className="text-on-surface">AI</span>
           </span>
@@ -285,9 +287,7 @@ function LandingPage() {
       <footer className="border-t border-outline-variant/10 py-12 px-8 mt-12 bg-background">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="col-span-1 border-r border-outline-variant/10 pr-8 hidden md:block">
-            <div className="font-display font-bold text-xl tracking-tight text-primary-container mb-4">
-              TransSync <span className="text-on-surface">AI</span>
-            </div>
+            <Logo variant="full" className="h-12 mb-4" />
             <p className="text-on-surface-variant text-xs leading-relaxed max-w-xs">
               Context-aware document translation with memory, glossary control,
               and human review.

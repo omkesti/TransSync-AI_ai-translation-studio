@@ -4,6 +4,8 @@ import { validateText } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import UserProfileBlock from "../components/UserProfileBlock";
 import NavAvatar from "../components/NavAvatar";
+import Logo from "../components/Logo";
+import SettingsMenu from "../components/SettingsMenu";
 import {
   Bell,
   LayoutDashboard,
@@ -55,25 +57,25 @@ function ErrorCard({ errorText, index }) {
     high: {
       label:   "High Severity",
       color:   "#ff3333",
-      bg:      "#2a1313",
-      iconBg:  "#2a1313",
+      bg:      "var(--tk-danger-surface)",
+      iconBg:  "var(--tk-danger-surface)",
       glow:    "#ff4d4d",
       Icon:    AlertTriangle,
     },
     medium: {
       label:   "Medium Severity",
       color:   "#ffd166",
-      bg:      "#262111",
-      iconBg:  "#262111",
+      bg:      "var(--tk-accent-border)",
+      iconBg:  "var(--tk-accent-border)",
       glow:    "#ffd166",
       Icon:    AlertCircle,
     },
     low: {
       label:   "Low / Info",
-      color:   "#8c8c8b",
-      bg:      "#1a1a1a",
-      iconBg:  "#222222",
-      glow:    "#555555",
+      color:   "var(--tk-text-muted)",
+      bg:      "var(--tk-surface3)",
+      iconBg:  "var(--tk-surface5)",
+      glow:    "var(--tk-text-faint)",
       Icon:    Info,
     },
   }[severity];
@@ -81,7 +83,7 @@ function ErrorCard({ errorText, index }) {
   const { label, color, bg, iconBg, glow, Icon } = config;
 
   return (
-    <div className="bg-[#151515] border border-[#262626] rounded-[32px] p-8 relative overflow-hidden transition-colors hover:border-[#333333]">
+    <div className="bg-[var(--tk-surface2)] border border-[var(--tk-border)] rounded-[32px] p-8 relative overflow-hidden transition-colors hover:border-[var(--tk-border3)]">
       {/* Ambient glow */}
       <div
         className="absolute top-0 left-0 w-64 h-64 opacity-[0.04] blur-[60px] pointer-events-none rounded-full -translate-x-1/2 -translate-y-1/2"
@@ -103,14 +105,14 @@ function ErrorCard({ errorText, index }) {
             >
               {label}
             </span>
-            <h3 className="font-display font-bold text-xl tracking-tight text-white">
+            <h3 className="font-display font-bold text-xl tracking-tight text-[var(--tk-text)]">
               Issue #{index + 1}
             </h3>
           </div>
         </div>
       </div>
 
-      <p className="text-[#a0a09f] text-[14px] leading-relaxed max-w-xl font-sans relative z-10">
+      <p className="text-[var(--tk-text-muted2)] text-[14px] leading-relaxed max-w-xl font-sans relative z-10">
         {errorText}
       </p>
     </div>
@@ -121,20 +123,20 @@ function ErrorCard({ errorText, index }) {
 
 function SuccessBanner({ sentenceCount }) {
   return (
-    <div className="bg-[#15170d] border border-[#2a2e16] rounded-[32px] p-8 relative overflow-hidden">
+    <div className="bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] rounded-[32px] p-8 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-64 h-64 bg-[#c5fe00] opacity-[0.04] blur-[60px] pointer-events-none rounded-full -translate-x-1/2 -translate-y-1/2" />
       <div className="flex items-start gap-5 relative z-10">
-        <div className="w-12 h-12 rounded-full bg-[#1a2010] flex items-center justify-center shrink-0 border border-[#2a2e16]">
-          <CheckCircle size={22} className="text-[#c5fe00]" />
+        <div className="w-12 h-12 rounded-full bg-[var(--tk-accent-surface)] flex items-center justify-center shrink-0 border border-[var(--tk-accent-border)]">
+          <CheckCircle size={22} className="text-[var(--tk-accent-text)]" />
         </div>
         <div>
-          <span className="text-[#c5fe00] text-[9px] font-bold uppercase tracking-[0.2em] leading-none mb-2 block">
+          <span className="text-[var(--tk-accent-text)] text-[9px] font-bold uppercase tracking-[0.2em] leading-none mb-2 block">
             Validation Passed
           </span>
-          <h3 className="font-display font-bold text-2xl tracking-tight text-white mb-3">
+          <h3 className="font-display font-bold text-2xl tracking-tight text-[var(--tk-text)] mb-3">
             Document is clean and ready
           </h3>
-          <p className="text-[#8c8c8b] text-[14px] leading-relaxed max-w-xl font-sans">
+          <p className="text-[var(--tk-text-muted)] text-[14px] leading-relaxed max-w-xl font-sans">
             {sentenceCount} sentence{sentenceCount !== 1 ? "s" : ""} extracted successfully.
             No critical issues detected. You may proceed to translation.
           </p>
@@ -231,38 +233,41 @@ function ValidationPage() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="h-screen bg-[var(--tk-bg)] text-[var(--tk-text)] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[var(--tk-on-accent)]">
 
       {/* Left Sidebar */}
-      <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
+      <aside className="w-[260px] border-r border-[var(--tk-border)] border-opacity-50 flex flex-col shrink-0 bg-[var(--tk-bg)] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
         <div className="p-6 pb-2 flex-1 flex flex-col">
-          <div className="mb-12">
-            <h1 className="font-display font-black text-2xl tracking-tight text-[#c5fe00] leading-none mb-1">TransSync</h1>
-            <p className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</p>
+          <div className="flex items-center gap-3 mb-12">
+            <Logo variant="icon" className="w-10 h-10" />
+            <div className="flex flex-col">
+              <h1 className="font-display font-black text-2xl tracking-tight text-[var(--tk-accent-text)] leading-none mb-1">TransSync</h1>
+              <p className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</p>
+            </div>
           </div>
 
           <nav className="space-y-1">
-            <Link to="/dashboard" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+            <Link to="/dashboard" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]">
               <LayoutDashboard size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Dashboard</span>
             </Link>
-            <Link to="/upload" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+            <Link to="/upload" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]">
               <FileUp size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Upload</span>
             </Link>
-            <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
+            <div className="flex items-center gap-4 bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border border-[var(--tk-accent-border)] px-4 py-3 rounded-[12px] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
               <CheckCircle2 size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Validation</span>
             </div>
-            <Link to="/review" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+            <Link to="/review" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]">
               <MessageSquare size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Review</span>
             </Link>
-            <Link to="/glossary" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+            <Link to="/glossary" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]">
               <Book size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Glossary</span>
             </Link>
-            <Link to="/export" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+            <Link to="/export" className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]">
               <Download size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Export</span>
             </Link>
@@ -276,16 +281,16 @@ function ValidationPage() {
       </aside>
 
       {/* Main Framework */}
-      <div className="flex flex-col flex-1 relative w-full h-full overflow-hidden bg-[#0e0e0e]">
+      <div className="flex flex-col flex-1 relative w-full h-full overflow-hidden bg-[var(--tk-bg2)]">
 
         {/* Top Header */}
-        <header className="h-[88px] w-full border-b border-[#262626] bg-[#0e0e0e] flex items-center justify-between px-8 shrink-0 z-40">
+        <header className="h-[88px] w-full border-b border-[var(--tk-border)] bg-[var(--tk-bg2)] flex items-center justify-between px-8 shrink-0 z-40">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
-              <FileText size={12} className="text-[#c5fe00]" strokeWidth={3} />
-              <span className="text-[#c5fe00] text-[9px] font-bold uppercase tracking-[0.2em] leading-none">Active File</span>
+              <FileText size={12} className="text-[var(--tk-accent-text)]" strokeWidth={3} />
+              <span className="text-[var(--tk-accent-text)] text-[9px] font-bold uppercase tracking-[0.2em] leading-none">Active File</span>
             </div>
-            <h2 className="font-display text-[22px] font-bold tracking-tight text-white leading-none">
+            <h2 className="font-display text-[22px] font-bold tracking-tight text-[var(--tk-text)] leading-none">
               {docId ? `Doc: ${docId.slice(0, 16)}…` : "No active document"}
             </h2>
           </div>
@@ -294,16 +299,16 @@ function ValidationPage() {
             {/* Health Score */}
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
-                <Activity size={12} className="text-[#c5fe00]" />
-                <span className="text-[#8c8c8b] text-[9px] font-bold uppercase tracking-[0.2em] leading-none">Health Score</span>
+                <Activity size={12} className="text-[var(--tk-accent-text)]" />
+                <span className="text-[var(--tk-text-muted)] text-[9px] font-bold uppercase tracking-[0.2em] leading-none">Health Score</span>
               </div>
               <div className="flex items-center gap-4">
-                <div className="w-[100px] h-1.5 rounded-full bg-[#262626] overflow-hidden">
+                <div className="w-[100px] h-1.5 rounded-full bg-[var(--tk-border)] overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${healthScore ?? 0}%`,
-                      backgroundColor: healthScore === null ? "#262626" : healthScore >= 80 ? "#c5fe00" : healthScore >= 50 ? "#ffd166" : "#ff4d4d",
+                      backgroundColor: healthScore === null ? "var(--tk-border)" : healthScore >= 80 ? "#c5fe00" : healthScore >= 50 ? "#ffd166" : "#ff4d4d",
                     }}
                   />
                 </div>
@@ -313,14 +318,12 @@ function ValidationPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 border-l border-[#262626] pl-8">
-              <button className="w-10 h-10 rounded-full bg-[#151515] border border-[#262626] flex items-center justify-center text-[#8c8c8b] hover:text-white hover:bg-[#222222] transition-all">
+            <div className="flex items-center gap-4 border-l border-[var(--tk-border)] pl-8">
+              <button className="w-10 h-10 rounded-full bg-[var(--tk-surface2)] border border-[var(--tk-border)] flex items-center justify-center text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface5)] transition-all">
                 <HelpCircle size={18} />
               </button>
-              <button className="w-10 h-10 rounded-full bg-[#151515] border border-[#262626] flex items-center justify-center text-[#8c8c8b] hover:text-white hover:bg-[#222222] transition-all">
-                <Settings size={18} />
-              </button>
-              <button className="w-10 h-10 rounded-full bg-[#151515] border border-[#262626] flex items-center justify-center text-[#8c8c8b] hover:text-white hover:bg-[#222222] transition-all">
+              <SettingsMenu buttonClassName="w-10 h-10 rounded-full bg-[var(--tk-surface2)] border border-[var(--tk-border)] flex items-center justify-center text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface5)] transition-all" />
+              <button className="w-10 h-10 rounded-full bg-[var(--tk-surface2)] border border-[var(--tk-border)] flex items-center justify-center text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface5)] transition-all">
                 <Bell size={18} />
               </button>
               <NavAvatar />
@@ -346,12 +349,12 @@ function ValidationPage() {
                       onClick={() => { setActiveDocIndex(i); setErrorMessage(""); }}
                       className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-colors ${
                         i === activeDocIndex
-                          ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16]"
+                          ? "bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border-[var(--tk-accent-border)]"
                           : doc.status === "validated" || doc.status === "translated" || doc.status === "approved"
-                          ? "bg-[#111111] text-[#8c8c8b] border-[#2a2e16]"
+                          ? "bg-[var(--tk-surface1)] text-[var(--tk-text-muted)] border-[var(--tk-accent-border)]"
                           : doc.status === "error"
-                          ? "bg-[#1a0a0a] text-[#ff6b6b] border-[#4a1010]"
-                          : "bg-[#111111] text-[#555555] border-[#262626] hover:text-[#8c8c8b]"
+                          ? "bg-[var(--tk-danger-surface)] text-[#ff6b6b] border-[var(--tk-danger-border)]"
+                          : "bg-[var(--tk-surface1)] text-[var(--tk-text-faint)] border-[var(--tk-border)] hover:text-[var(--tk-text-muted)]"
                       }`}
                     >
                       {doc.filename.length > 20 ? doc.filename.slice(0, 18) + "…" : doc.filename}
@@ -363,7 +366,7 @@ function ValidationPage() {
               )}
 
               {/* ── Document List & Description ── */}
-                <p className="text-[#a0a09f] text-[15px] leading-relaxed max-w-2xl font-sans mt-4">
+                <p className="text-[var(--tk-text-muted2)] text-[15px] leading-relaxed max-w-2xl font-sans mt-4">
                   {validationState === "idle"
                     ? "Click 'Start Validation' to run the NLP quality check on your uploaded document."
                     : validationState === "running"
@@ -378,11 +381,11 @@ function ValidationPage() {
 
                 {/* ── Network error banner ── */}
                 {validationState === "error" && displayError && (
-                  <div className="bg-[#2a1313] border border-[#ff4d4d] rounded-[24px] p-6 flex items-center justify-between">
+                  <div className="bg-[var(--tk-danger-surface)] border border-[#ff4d4d] rounded-[24px] p-6 flex items-center justify-between">
                     <span className="text-[#ff4d4d] text-sm">{displayError}</span>
                     <button
                       onClick={() => { setErrorMessage(""); updateDoc(docId, { status: "uploaded", error: null }); }}
-                      className="text-[#ff4d4d] hover:text-white text-[11px] font-bold uppercase tracking-widest border border-[#4a1010] px-3 py-1.5 rounded-full transition-colors ml-4 shrink-0"
+                      className="text-[#ff4d4d] hover:text-[var(--tk-text)] text-[11px] font-bold uppercase tracking-widest border border-[var(--tk-danger-border)] px-3 py-1.5 rounded-full transition-colors ml-4 shrink-0"
                     >
                       Retry
                     </button>
@@ -391,14 +394,14 @@ function ValidationPage() {
 
                 {/* ── IDLE STATE ── */}
                 {validationState === "idle" && !displayError && (
-                  <div className="flex flex-col items-center justify-center min-h-[320px] text-center bg-[#111111] border border-[#1a1a1a] rounded-[32px] p-12">
-                    <div className="w-16 h-16 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8">
-                      <ShieldCheck size={28} className="text-[#c5fe00]" />
+                  <div className="flex flex-col items-center justify-center min-h-[320px] text-center bg-[var(--tk-surface1)] border border-[var(--tk-surface3)] rounded-[32px] p-12">
+                    <div className="w-16 h-16 rounded-full bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] flex items-center justify-center mb-8">
+                      <ShieldCheck size={28} className="text-[var(--tk-accent-text)]" />
                     </div>
                     <h3 className="font-display font-bold text-2xl tracking-tight mb-3">
                       {docId ? "Ready to Validate" : "No Document Loaded"}
                     </h3>
-                    <p className="text-[#555555] text-[13px] max-w-sm leading-relaxed mb-8">
+                    <p className="text-[var(--tk-text-faint)] text-[13px] max-w-sm leading-relaxed mb-8">
                       {docId
                         ? "The NLP pipeline will check your document for encoding issues, empty sections, sentence quality, and more."
                         : "Please upload a document first before running validation."}
@@ -408,7 +411,7 @@ function ValidationPage() {
                         {multiDoc && pendingDocsCount > 1 && (
                           <button
                             onClick={() => handleStartValidation(true)}
-                            className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
+                            className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[var(--tk-on-accent)] rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
                           >
                             <Zap size={16} className="fill-current" />
                             Validate All {pendingDocsCount} Docs
@@ -417,8 +420,8 @@ function ValidationPage() {
                         <button
                           onClick={() => handleStartValidation(false)}
                           className={multiDoc && pendingDocsCount > 1
-                            ? "bg-transparent border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-white rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
-                            : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"}
+                            ? "bg-transparent border border-[var(--tk-text-faint)] hover:border-[#c5fe00] hover:text-[var(--tk-accent-text)] text-[var(--tk-text)] rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                            : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[var(--tk-on-accent)] rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"}
                         >
                           <ShieldCheck size={16} />
                           {multiDoc && pendingDocsCount > 1 ? "Validate Current Doc" : "Start Validation"}
@@ -427,7 +430,7 @@ function ValidationPage() {
                     ) : (
                       <Link
                         to="/upload"
-                        className="border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-8 py-4 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                        className="border border-[var(--tk-border)] text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:border-[var(--tk-text-faint)] rounded-full px-8 py-4 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
                       >
                         Go to Upload <ArrowRight size={14} />
                       </Link>
@@ -437,12 +440,12 @@ function ValidationPage() {
 
                 {/* ── RUNNING STATE ── */}
                 {validationState === "running" && (
-                  <div className="flex flex-col items-center justify-center min-h-[320px] text-center bg-[#111111] border border-[#1a1a1a] rounded-[32px] p-12">
-                    <div className="w-16 h-16 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8">
-                      <Loader2 size={28} className="text-[#c5fe00] animate-spin" />
+                  <div className="flex flex-col items-center justify-center min-h-[320px] text-center bg-[var(--tk-surface1)] border border-[var(--tk-surface3)] rounded-[32px] p-12">
+                    <div className="w-16 h-16 rounded-full bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] flex items-center justify-center mb-8">
+                      <Loader2 size={28} className="text-[var(--tk-accent-text)] animate-spin" />
                     </div>
                     <h3 className="font-display font-bold text-2xl tracking-tight mb-3">Validating…</h3>
-                    <p className="text-[#555555] text-[13px] max-w-sm leading-relaxed">
+                    <p className="text-[var(--tk-text-faint)] text-[13px] max-w-sm leading-relaxed">
                       Running NLP quality checks and sentence segmentation on your document.
                     </p>
                     <div className="mt-8 flex gap-[4px]">
@@ -469,7 +472,7 @@ function ValidationPage() {
 
                 {/* ── DONE: no errors array but status error (unexpected) ── */}
                 {validationState === "done" && apiStatus !== "ok" && apiErrors.length === 0 && (
-                  <div className="bg-[#2a1313] border border-[#ff4d4d] rounded-[24px] p-6 text-[#ff4d4d] text-sm">
+                  <div className="bg-[var(--tk-danger-surface)] border border-[#ff4d4d] rounded-[24px] p-6 text-[#ff4d4d] text-sm">
                     Validation returned an error with no details. Please try again.
                   </div>
                 )}
@@ -479,7 +482,7 @@ function ValidationPage() {
                   <div className="flex justify-center mt-4">
                     <button
                       onClick={() => handleStartValidation(false)}
-                      className="bg-transparent border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-[#8c8c8b] rounded-full px-8 py-3 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                      className="bg-transparent border border-[var(--tk-text-faint)] hover:border-[#c5fe00] hover:text-[var(--tk-accent-text)] text-[var(--tk-text-muted)] rounded-full px-8 py-3 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
                     >
                       <ShieldCheck size={14} />
                       Re-validate This Document
@@ -495,29 +498,29 @@ function ValidationPage() {
 
               {/* Validation Summary */}
               <div>
-                <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Validation Summary</h4>
+                <h4 className="text-[var(--tk-text-faint)] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Validation Summary</h4>
                 <div className="space-y-3">
-                  <div className="bg-[#111111] border border-[#1a1a1a] rounded-[20px] p-5 flex items-center justify-between">
-                    <span className="text-[#a0a09f] text-[13px] font-medium">Critical Issues</span>
+                  <div className="bg-[var(--tk-surface1)] border border-[var(--tk-surface3)] rounded-[20px] p-5 flex items-center justify-between">
+                    <span className="text-[var(--tk-text-muted2)] text-[13px] font-medium">Critical Issues</span>
                     <span className="font-display font-bold text-xl" style={{ color: highErrors.length > 0 ? "#ff4d4d" : "#c5fe00" }}>
                       {validationState === "done" ? highErrors.length : "—"}
                     </span>
                   </div>
-                  <div className="bg-[#111111] border border-[#1a1a1a] rounded-[20px] p-5 flex items-center justify-between">
-                    <span className="text-[#a0a09f] text-[13px] font-medium">Warnings</span>
-                    <span className="font-display font-bold text-xl" style={{ color: medErrors.length > 0 ? "#ffd166" : "#8c8c8b" }}>
+                  <div className="bg-[var(--tk-surface1)] border border-[var(--tk-surface3)] rounded-[20px] p-5 flex items-center justify-between">
+                    <span className="text-[var(--tk-text-muted2)] text-[13px] font-medium">Warnings</span>
+                    <span className="font-display font-bold text-xl" style={{ color: medErrors.length > 0 ? "#ffd166" : "var(--tk-text-muted)" }}>
                       {validationState === "done" ? medErrors.length : "—"}
                     </span>
                   </div>
-                  <div className="bg-[#111111] border border-[#1a1a1a] rounded-[20px] p-5 flex items-center justify-between">
-                    <span className="text-[#a0a09f] text-[13px] font-medium">Sentences Extracted</span>
-                    <span className="font-display font-bold text-xl text-[#c5fe00]">
+                  <div className="bg-[var(--tk-surface1)] border border-[var(--tk-surface3)] rounded-[20px] p-5 flex items-center justify-between">
+                    <span className="text-[var(--tk-text-muted2)] text-[13px] font-medium">Sentences Extracted</span>
+                    <span className="font-display font-bold text-xl text-[var(--tk-accent-text)]">
                       {validationState === "done" ? sentenceCount : "—"}
                     </span>
                   </div>
-                  <div className="bg-[#111111] border border-[#1a1a1a] rounded-[20px] p-5 flex items-center justify-between">
-                    <span className="text-[#a0a09f] text-[13px] font-medium">Info Notices</span>
-                    <span className="font-display font-bold text-xl text-[#8c8c8b]">
+                  <div className="bg-[var(--tk-surface1)] border border-[var(--tk-surface3)] rounded-[20px] p-5 flex items-center justify-between">
+                    <span className="text-[var(--tk-text-muted2)] text-[13px] font-medium">Info Notices</span>
+                    <span className="font-display font-bold text-xl text-[var(--tk-text-muted)]">
                       {validationState === "done" ? lowErrors.length : "—"}
                     </span>
                   </div>
@@ -526,22 +529,22 @@ function ValidationPage() {
 
               {/* Quality Metrics */}
               <div>
-                <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Quality Metrics</h4>
-                <div className="bg-[#111111] border border-[#1a1a1a] rounded-[24px] p-6 space-y-6">
+                <h4 className="text-[var(--tk-text-faint)] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">Quality Metrics</h4>
+                <div className="bg-[var(--tk-surface1)] border border-[var(--tk-surface3)] rounded-[24px] p-6 space-y-6">
                   {/* Health Score bar */}
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-[11px] font-sans">
-                      <span className="text-[#a0a09f]">Health Score</span>
-                      <span className="font-bold" style={{ color: healthScore !== null ? (healthScore >= 80 ? "#c5fe00" : healthScore >= 50 ? "#ffd166" : "#ff4d4d") : "#555555" }}>
+                      <span className="text-[var(--tk-text-muted2)]">Health Score</span>
+                      <span className="font-bold" style={{ color: healthScore !== null ? (healthScore >= 80 ? "#c5fe00" : healthScore >= 50 ? "#ffd166" : "#ff4d4d") : "var(--tk-text-faint)" }}>
                         {healthScore !== null ? `${healthScore}%` : "—"}
                       </span>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-[#222222] overflow-hidden">
+                    <div className="w-full h-1.5 rounded-full bg-[var(--tk-surface5)] overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
                           width: `${healthScore ?? 0}%`,
-                          backgroundColor: healthScore !== null ? (healthScore >= 80 ? "#c5fe00" : healthScore >= 50 ? "#ffd166" : "#ff4d4d") : "#262626",
+                          backgroundColor: healthScore !== null ? (healthScore >= 80 ? "#c5fe00" : healthScore >= 50 ? "#ffd166" : "#ff4d4d") : "var(--tk-border)",
                         }}
                       />
                     </div>
@@ -550,13 +553,13 @@ function ValidationPage() {
                   {/* Sentence density */}
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-[11px] font-sans">
-                      <span className="text-[#a0a09f]">Document Status</span>
+                      <span className="text-[var(--tk-text-muted2)]">Document Status</span>
                       <span className={`font-bold text-[10px] uppercase tracking-widest px-2 py-1 rounded-full ${
                         validationState === "done"
                           ? apiStatus === "ok"
-                            ? "text-[#c5fe00] bg-[#1a2010] border border-[#2a2e16]"
-                            : "text-[#ff4d4d] bg-[#2a1313] border border-[#4a2020]"
-                          : "text-[#555555] bg-[#1a1a1a]"
+                            ? "text-[var(--tk-accent-text)] bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)]"
+                            : "text-[#ff4d4d] bg-[var(--tk-danger-surface)] border border-[#4a2020]"
+                          : "text-[var(--tk-text-faint)] bg-[var(--tk-surface3)]"
                       }`}>
                         {validationState === "idle" ? "Pending"
                           : validationState === "running" ? "Checking…"
@@ -569,10 +572,10 @@ function ValidationPage() {
               </div>
 
               {/* What we check */}
-              <div className="bg-[#151515] border border-[#2a2e16] rounded-[24px] p-8 shadow-[0_20px_40px_rgba(197,254,0,0.03)] mt-auto relative overflow-hidden group">
+              <div className="bg-[var(--tk-surface2)] border border-[var(--tk-accent-border)] rounded-[24px] p-8 shadow-[0_20px_40px_rgba(197,254,0,0.03)] mt-auto relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-32 h-32 bg-[#c5fe00] opacity-[0.03] blur-[40px] pointer-events-none rounded-full group-hover:opacity-10 transition-opacity" />
-                <h4 className="font-display text-white font-bold text-[18px] mb-3 relative z-10">What we check</h4>
-                <p className="text-[#8c8c8b] text-[12px] leading-relaxed mb-5 font-sans relative z-10">
+                <h4 className="font-display text-[var(--tk-text)] font-bold text-[18px] mb-3 relative z-10">What we check</h4>
+                <p className="text-[var(--tk-text-muted)] text-[12px] leading-relaxed mb-5 font-sans relative z-10">
                   Before translation, every document is run through the NLP pipeline:
                 </p>
                 <ul className="space-y-2.5 relative z-10">
@@ -581,8 +584,8 @@ function ValidationPage() {
                     "Sentence segmentation (spaCy)",
                     "Empty, encoding & length issues",
                   ].map((item) => (
-                    <li key={item} className="flex items-start gap-2.5 text-[#a0a09f] text-[12px] leading-relaxed">
-                      <CheckCircle size={13} className="text-[#c5fe00] shrink-0 mt-0.5" />
+                    <li key={item} className="flex items-start gap-2.5 text-[var(--tk-text-muted2)] text-[12px] leading-relaxed">
+                      <CheckCircle size={13} className="text-[var(--tk-accent-text)] shrink-0 mt-0.5" />
                       {item}
                     </li>
                   ))}
@@ -594,20 +597,20 @@ function ValidationPage() {
         </div>
 
         {/* Global Action Footer */}
-        <div className="absolute w-full bottom-0 h-[88px] border-t border-[#262626] bg-[#0a0a0a]/90 backdrop-blur-md flex items-center justify-between px-8 lg:px-12 z-50">
+        <div className="absolute w-full bottom-0 h-[88px] border-t border-[var(--tk-border)] bg-[var(--tk-bg)]/90 backdrop-blur-md flex items-center justify-between px-8 lg:px-12 z-50">
 
           {/* Left status */}
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-[#1a200a] text-[#c5fe00] border border-[#2a2e16] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(197,254,0,0.1)]">
+            <div className="w-10 h-10 rounded-full bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border border-[var(--tk-accent-border)] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(197,254,0,0.1)]">
               {validationState === "running"
                 ? <Loader2 size={16} className="animate-spin" />
                 : <Sparkles size={16} />
               }
               {validationState !== "running" && (
-                <div className="absolute right-0 bottom-0 w-2.5 h-2.5 bg-[#c5fe00] rounded-full border border-[#0a0a0a] animate-pulse" />
+                <div className="absolute right-0 bottom-0 w-2.5 h-2.5 bg-[#c5fe00] rounded-full border border-[var(--tk-bg)] animate-pulse" />
               )}
             </div>
-            <p className="text-[#8c8c8b] text-[12px] font-medium font-sans">
+            <p className="text-[var(--tk-text-muted)] text-[12px] font-medium font-sans">
               {validationState === "idle"    && "Click 'Start Validation' to begin."}
               {validationState === "running" && "NLP engine is processing your document…"}
               {validationState === "done" && apiStatus === "ok"  && "Validation passed. You may proceed to translation."}
@@ -623,7 +626,7 @@ function ValidationPage() {
                 <button
                   onClick={() => handleStartValidation(true)}
                   disabled={!docId}
-                  className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[var(--tk-on-accent)] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <ShieldCheck size={14} strokeWidth={2.5} />
                   Validate All {pendingDocsCount} Docs
@@ -633,8 +636,8 @@ function ValidationPage() {
                 onClick={() => handleStartValidation(false)}
                 disabled={!docId}
                 className={multiDoc && pendingDocsCount > 1
-                  ? "border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-white transition-colors rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
-                  : "bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"}
+                  ? "border border-[var(--tk-text-faint)] hover:border-[#c5fe00] hover:text-[var(--tk-accent-text)] text-[var(--tk-text)] transition-colors rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
+                  : "bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[var(--tk-on-accent)] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"}
               >
                 <ShieldCheck size={14} strokeWidth={2.5} />
                 {multiDoc && pendingDocsCount > 1 ? "Validate Current Doc" : "Start Validation"}
@@ -645,7 +648,7 @@ function ValidationPage() {
           {validationState === "running" && (
             <button
               disabled
-              className="bg-[#c5fe00] opacity-60 cursor-not-allowed text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest"
+              className="bg-[#c5fe00] opacity-60 cursor-not-allowed text-[var(--tk-on-accent)] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest"
             >
               <Loader2 size={14} className="animate-spin" /> Validating…
             </button>
@@ -655,7 +658,7 @@ function ValidationPage() {
             <button
               onClick={() => navigate("/review")}
               disabled={!canProceed}
-              className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[var(--tk-on-accent)] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
               title={canProceed ? "" : "Fix all validation issues before proceeding"}
             >
               Proceed to Review <ArrowRight strokeWidth={3} size={16} />

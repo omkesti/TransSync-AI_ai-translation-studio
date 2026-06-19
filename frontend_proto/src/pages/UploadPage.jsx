@@ -4,6 +4,8 @@ import { uploadDocument } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import UserProfileBlock from "../components/UserProfileBlock";
 import NavAvatar from "../components/NavAvatar";
+import Logo from "../components/Logo";
+import SettingsMenu from "../components/SettingsMenu";
 import {
   Bell,
   Settings,
@@ -151,20 +153,18 @@ function UploadPage() {
   };
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="h-screen bg-[var(--tk-bg)] text-[var(--tk-text)] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[var(--tk-on-accent)]">
       {/* Left Sidebar */}
-      <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 relative overflow-y-auto layout-scrollbar">
+      <aside className="w-[260px] border-r border-[var(--tk-border)] border-opacity-50 flex flex-col shrink-0 bg-[var(--tk-bg)] hidden md:flex z-50 relative overflow-y-auto layout-scrollbar">
         <div className="p-6 pb-2 flex-1 flex flex-col">
           {/* Workspace Selector */}
           <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 rounded-full bg-[#c5fe00] text-[#0a0a0a] flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,254,0,0.2)]">
-              <CloudUpload strokeWidth={2.5} size={22} />
-            </div>
+            <Logo variant="icon" className="w-10 h-10" />
             <div className="flex flex-col">
-              <span className="font-display text-[#c5fe00] font-black text-sm tracking-tight leading-none mb-1">
+              <span className="font-display text-[var(--tk-accent-text)] font-black text-sm tracking-tight leading-none mb-1">
                 TransSync
               </span>
-              <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">
+              <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest leading-none">
                 AI Studio
               </span>
             </div>
@@ -174,7 +174,7 @@ function UploadPage() {
           <nav className="space-y-1">
             <Link
               to="/dashboard"
-              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+              className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
             >
               <LayoutDashboard size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -182,7 +182,7 @@ function UploadPage() {
               </span>
             </Link>
 
-            <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] cursor-pointer shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
+            <div className="flex items-center gap-4 bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border border-[var(--tk-accent-border)] px-4 py-3 rounded-[12px] cursor-pointer shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
               <FileUp size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">
                 Upload
@@ -191,7 +191,7 @@ function UploadPage() {
 
             <Link
               to="/validation"
-              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+              className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
             >
               <CheckCircle2 size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -201,7 +201,7 @@ function UploadPage() {
 
             <Link
               to="/review"
-              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+              className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
             >
               <MessageSquare size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -211,7 +211,7 @@ function UploadPage() {
 
             <Link
               to="/glossary"
-              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+              className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
             >
               <Book size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -221,7 +221,7 @@ function UploadPage() {
 
             <Link
               to="/export"
-              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+              className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
             >
               <Download size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -238,7 +238,7 @@ function UploadPage() {
           </div>
 
           {/* CTA */}
-          <button className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-[16px] py-4 flex items-center justify-center font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.15)]">
+          <button className="w-full bg-[#c5fe00] text-[var(--tk-on-accent)] hover:bg-[#b9ef00] transition-colors rounded-[16px] py-4 flex items-center justify-center font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.15)]">
             New Project
           </button>
         </div>
@@ -248,31 +248,30 @@ function UploadPage() {
       <div className="flex-1 flex flex-col relative w-full h-full overflow-hidden">
         {/* Top Nav Centered — translucent blurred bar so labels stay readable
             over scrolled content (was fully transparent). */}
-        <nav className="h-[80px] w-full flex items-center justify-between px-8 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#262626]/60 absolute top-0 z-50 pointer-events-none">
+        <nav className="h-[80px] w-full flex items-center justify-between px-8 bg-[var(--tk-bg)]/80 backdrop-blur-md border-b border-[var(--tk-border)]/60 absolute top-0 z-50 pointer-events-none">
           <div className="w-1/3"></div>
 
           <div className="w-1/3 flex justify-center items-center gap-4 pointer-events-auto">
-            <Link to="/" className="inline-block">
-              <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] leading-none">
+            <Link to="/" className="inline-flex items-center gap-2.5">
+              <Logo variant="icon" className="h-8 w-8" />
+              <span className="font-display font-bold text-xl tracking-tight text-[var(--tk-accent-text)] leading-none">
                 TransSync
               </span>
             </Link>
-            <div className="w-px h-6 bg-[#262626]"></div>
-            <span className="text-[#8c8c8b] text-[13px] font-medium tracking-wide">
+            <div className="w-px h-6 bg-[var(--tk-border)]"></div>
+            <span className="text-[var(--tk-text-muted)] text-[13px] font-medium tracking-wide">
               Upload Documents
             </span>
           </div>
 
-          <div className="w-1/3 flex justify-end items-center gap-4 text-[#8c8c8b] pointer-events-auto">
-            <button className="hover:text-[#ffffff] transition-colors">
+          <div className="w-1/3 flex justify-end items-center gap-4 text-[var(--tk-text-muted)] pointer-events-auto">
+            <button className="hover:text-[var(--tk-text)] transition-colors">
               <Bell size={18} />
             </button>
-            <button className="hover:text-[#ffffff] transition-colors">
+            <button className="hover:text-[var(--tk-text)] transition-colors">
               <HelpCircle size={18} />
             </button>
-            <button className="hover:text-[#ffffff] transition-colors">
-              <Settings size={18} />
-            </button>
+            <SettingsMenu />
             <NavAvatar />
           </div>
         </nav>
@@ -290,9 +289,9 @@ function UploadPage() {
           {/* Hero Titles */}
           <div className="text-center w-full max-w-4xl z-10 space-y-3 mb-8 shrink-0">
             <h1 className="font-display font-black text-4xl md:text-5xl tracking-tighter leading-[0.95]">
-              upload &amp; <span className="text-[#c5fe00]">prepare</span>
+              upload &amp; <span className="text-[var(--tk-accent-text)]">prepare</span>
             </h1>
-            <p className="text-[#a0a09f] max-w-xl mx-auto text-[15px] leading-relaxed font-sans">
+            <p className="text-[var(--tk-text-muted2)] max-w-xl mx-auto text-[15px] leading-relaxed font-sans">
               Add the PDFs or Word documents you want to translate. We'll extract
               the text and get them ready for validation.
             </p>
@@ -302,7 +301,7 @@ function UploadPage() {
           <div className="w-full max-w-[1000px] grid grid-cols-1 lg:grid-cols-3 gap-6 z-10">
             {/* Left Upload Dropzone (Span 2) */}
             <div
-              className="lg:col-span-2 bg-[#13150d]/40 backdrop-blur-sm border border-[#262b14]/50 rounded-[32px] p-6 min-h-[320px] flex flex-col items-center justify-center group cursor-pointer hover:border-[#c5fe00]/30 transition-all hover:bg-[#171a0f]/60 relative overflow-hidden"
+              className="lg:col-span-2 bg-[var(--tk-accent-surface)]/40 backdrop-blur-sm border border-[var(--tk-accent-border)]/50 rounded-[32px] p-6 min-h-[320px] flex flex-col items-center justify-center group cursor-pointer hover:border-[#c5fe00]/30 transition-all hover:bg-[var(--tk-accent-surface)]/60 relative overflow-hidden"
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={(event) => event.preventDefault()}
@@ -319,7 +318,7 @@ function UploadPage() {
               <div className="w-16 h-16 rounded-full bg-[#c5fe00]/5 flex items-center justify-center mb-5 border border-[#c5fe00]/20 group-hover:scale-110 transition-transform duration-500 shadow-[0_0_40px_rgba(197,254,0,0.1)]">
                 <Upload
                   size={28}
-                  className="text-[#c5fe00]"
+                  className="text-[var(--tk-accent-text)]"
                   strokeWidth={2.5}
                 />
               </div>
@@ -327,7 +326,7 @@ function UploadPage() {
               <h3 className="font-display text-xl font-bold mb-2 tracking-tight">
                 Drop your documents here
               </h3>
-              <p className="text-[#8c8c8b] text-[13px] font-sans pb-3">
+              <p className="text-[var(--tk-text-muted)] text-[13px] font-sans pb-3">
                 Upload multiple files at once · Maximum file size: 50MB each
               </p>
 
@@ -341,41 +340,41 @@ function UploadPage() {
                   {selectedFiles.map((file, i) => (
                     <div
                       key={`${file.name}-${i}`}
-                      className="flex items-center justify-between bg-[#1a1c10] border border-[#2a2e16] rounded-[12px] px-4 py-3"
+                      className="flex items-center justify-between bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] rounded-[12px] px-4 py-3"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <FileText size={14} className="text-[#c5fe00] shrink-0" />
+                        <FileText size={14} className="text-[var(--tk-accent-text)] shrink-0" />
                         <span className="text-[13px] font-medium truncate">{file.name}</span>
-                        <span className="text-[#555555] text-[10px] font-bold tracking-widest shrink-0">
+                        <span className="text-[var(--tk-text-faint)] text-[10px] font-bold tracking-widest shrink-0">
                           {formatFileSize(file.size)}
                         </span>
                       </div>
                       <button
                         onClick={() => removeFile(i)}
-                        className="text-[#555555] hover:text-[#ff6b6b] transition-colors ml-2 shrink-0"
+                        className="text-[var(--tk-text-faint)] hover:text-[#ff6b6b] transition-colors ml-2 shrink-0"
                       >
                         <X size={14} />
                       </button>
                     </div>
                   ))}
-                  <p className="text-[#555555] text-[10px] font-bold tracking-widest uppercase text-center pt-2">
+                  <p className="text-[var(--tk-text-faint)] text-[10px] font-bold tracking-widest uppercase text-center pt-2">
                     {selectedFiles.length} file{selectedFiles.length !== 1 ? "s" : ""} selected
                   </p>
                 </div>
               )}
 
               {selectedFiles.length === 0 && (
-                <p className="text-[#555555] text-[11px] font-bold tracking-widest uppercase pb-3">
+                <p className="text-[var(--tk-text-faint)] text-[11px] font-bold tracking-widest uppercase pb-3">
                   No files selected
                 </p>
               )}
 
               {/* File Formats */}
               <div className="flex gap-4 mt-auto">
-                <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
+                <div className="bg-[var(--tk-surface5)] border border-[var(--tk-border3)] text-[var(--tk-text-muted2)] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[var(--tk-text)] transition-colors">
                   <FileText size={14} /> PDF
                 </div>
-                <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
+                <div className="bg-[var(--tk-surface5)] border border-[var(--tk-border3)] text-[var(--tk-text-muted2)] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[var(--tk-text)] transition-colors">
                   <File size={14} /> DOCX
                 </div>
               </div>
@@ -384,29 +383,29 @@ function UploadPage() {
             {/* Right Config Column */}
             <div className="flex flex-col gap-6">
               {/* Priority Row */}
-              <div className="bg-[#15170d] border border-[#2a2e16] rounded-[32px] p-8 shadow-[0_20px_40px_rgba(197,254,0,0.05)] relative overflow-hidden group flex-1 flex flex-col justify-center">
+              <div className="bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] rounded-[32px] p-8 shadow-[0_20px_40px_rgba(197,254,0,0.05)] relative overflow-hidden group flex-1 flex flex-col justify-center">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#c5fe00] opacity-10 blur-[50px] rounded-full pointer-events-none group-hover:opacity-20 transition-opacity"></div>
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="w-8 h-8 rounded-full bg-[#1a200a] text-[#c5fe00] flex items-center justify-center shadow-[inset_0_0_10px_rgba(197,254,0,0.1)]">
+                  <div className="w-8 h-8 rounded-full bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] flex items-center justify-center shadow-[inset_0_0_10px_rgba(197,254,0,0.1)]">
                     <Zap size={14} className="fill-[#c5fe00]" />
                   </div>
-                  <span className="text-[#c5fe00] font-bold text-[10px] tracking-widest uppercase">
+                  <span className="text-[var(--tk-accent-text)] font-bold text-[10px] tracking-widest uppercase">
                     Quick Start
                   </span>
                 </div>
 
-                <p className="text-[#555555] text-[12px] leading-relaxed mb-8 font-sans">
+                <p className="text-[var(--tk-text-faint)] text-[12px] leading-relaxed mb-8 font-sans">
                   Drop in one or more PDF or DOCX files. You'll pick the target
                   language on the Review page once your documents are validated.
                 </p>
 
                 <button
-                  className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full py-4 flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full bg-[#c5fe00] text-[var(--tk-on-accent)] hover:bg-[#b9ef00] transition-colors rounded-full py-4 flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                   onClick={handleUpload}
                   type="button"
                   disabled={isUploading}
                 >
-                  <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
+                  <Zap size={16} strokeWidth={3} className="fill-[var(--tk-bg)]" />
                   {isUploading
                     ? "Uploading..."
                     : selectedFiles.length > 1
@@ -425,12 +424,12 @@ function UploadPage() {
         </main>
 
         {isUploading ? (
-          <div className="absolute inset-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-sm flex items-center justify-center">
-            <div className="bg-[#15170d] border border-[#2a2e16] rounded-[24px] px-8 py-6 text-center shadow-[0_0_30px_rgba(197,254,0,0.08)]">
-              <p className="text-[#c5fe00] text-[10px] font-bold uppercase tracking-[0.2em] mb-2">
+          <div className="absolute inset-0 z-50 bg-[var(--tk-bg)]/80 backdrop-blur-sm flex items-center justify-center">
+            <div className="bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] rounded-[24px] px-8 py-6 text-center shadow-[0_0_30px_rgba(197,254,0,0.08)]">
+              <p className="text-[var(--tk-accent-text)] text-[10px] font-bold uppercase tracking-[0.2em] mb-2">
                 Uploading
               </p>
-              <p className="text-[#ffffff] text-sm">
+              <p className="text-[var(--tk-text)] text-sm">
                 {uploadProgress || "Processing your documents..."}
               </p>
             </div>
@@ -438,22 +437,22 @@ function UploadPage() {
         ) : null}
 
         {/* Global Footer Status Bar */}
-        <footer className="absolute bottom-0 w-full h-[48px] bg-[#0a0a0a]/90 backdrop-blur-md border-t border-[#262626] flex items-center justify-between px-8 text-[9px] font-bold tracking-[0.2em] uppercase text-[#555555] z-50 pointer-events-none">
+        <footer className="absolute bottom-0 w-full h-[48px] bg-[var(--tk-bg)]/90 backdrop-blur-md border-t border-[var(--tk-border)] flex items-center justify-between px-8 text-[9px] font-bold tracking-[0.2em] uppercase text-[var(--tk-text-faint)] z-50 pointer-events-none">
           <div className="flex items-center gap-8 pointer-events-auto">
             <span className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-[#c5fe00] rounded-full"></span>{" "}
               System Live
             </span>
             <span className="flex items-center gap-2 hidden md:flex">
-              Formats <span className="text-[#c5fe00]">PDF · DOCX</span>
+              Formats <span className="text-[var(--tk-accent-text)]">PDF · DOCX</span>
             </span>
             <span className="flex items-center gap-2 hidden md:flex">
-              Max Size <span className="text-[#c5fe00]">50MB / file</span>
+              Max Size <span className="text-[var(--tk-accent-text)]">50MB / file</span>
             </span>
           </div>
 
           <div className="flex items-center gap-3 pointer-events-auto">
-            TransSync AI Studio <Monitor size={12} className="text-[#a0a09f]" />
+            TransSync AI Studio <Monitor size={12} className="text-[var(--tk-text-muted2)]" />
           </div>
         </footer>
       </div>

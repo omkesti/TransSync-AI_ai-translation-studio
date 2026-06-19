@@ -15,6 +15,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Logo from '../components/Logo';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -111,9 +112,7 @@ function InviteAcceptPage() {
         {/* Logo */}
         <div className="mb-12 text-center">
           <Link to="/" className="inline-block">
-            <span className="font-display font-bold text-4xl tracking-tight text-primary-container block leading-none">
-              TransSync <span className="text-on-surface">AI</span>
-            </span>
+            <Logo variant="full" className="h-20 mx-auto" />
           </Link>
           <p className="text-[#a0a09f] text-[10px] uppercase tracking-[0.3em] mt-3">Join Your Team</p>
         </div>

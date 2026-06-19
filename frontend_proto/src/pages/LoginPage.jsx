@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Logo from '../components/Logo';
 
 function LoginPage() {
   const { signIn, resetPassword } = useAuth();
@@ -54,7 +55,7 @@ function LoginPage() {
         {/* Header / Logo Component */}
         <div className="mb-12 text-center">
           <Link to="/" className="inline-block">
-            <span className="font-display font-bold text-4xl tracking-tight text-primary-container block leading-none">TransSync <span className="text-on-surface">AI</span></span>
+            <Logo variant="full" className="h-20 mx-auto" />
           </Link>
           <p className="text-[#a0a09f] text-[10px] uppercase tracking-[0.3em] mt-3">Document Translation, With Memory</p>
         </div>

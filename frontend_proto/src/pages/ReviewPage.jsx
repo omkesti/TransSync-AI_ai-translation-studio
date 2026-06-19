@@ -5,6 +5,8 @@ import { useAppContext } from "../context/AppContext";
 import { languageLabel, TARGET_LANGUAGES } from "../constants/languages";
 import UserProfileBlock from "../components/UserProfileBlock";
 import NavAvatar from "../components/NavAvatar";
+import Logo from "../components/Logo";
+import SettingsMenu from "../components/SettingsMenu";
 import {
   Bell,
   Settings,
@@ -51,14 +53,14 @@ const matchLabel = (matchType) => {
 const matchBadgeCls = (matchType) => {
   switch (matchType) {
     case "tm_exact":
-      return "bg-[#1a2010] text-[#c5fe00] border-[#2a2e16]"; // Green
+      return "bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border-[var(--tk-accent-border)]"; // Green
     case "faiss_direct":
-      return "bg-[#201c00] text-[#ffcc00] border-[#3a3000]"; // Yellow
+      return "bg-[var(--tk-accent-border)] text-[#ffcc00] border-[var(--tk-accent-border)]"; // Yellow
     case "llm_guided":
       return "bg-[#2a130a] text-[#ff8800] border-[#4a2310]"; // Orange
     case "llm_cold":
     default:
-      return "bg-[#2a0a0a] text-[#ff4d4d] border-[#4a1010]"; // Red
+      return "bg-[var(--tk-danger-surface)] text-[#ff4d4d] border-[var(--tk-danger-border)]"; // Red
   }
 };
 
@@ -96,17 +98,15 @@ function firstPendingSection(groups, offsets) {
 
 function Sidebar() {
   return (
-    <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
+    <aside className="w-[260px] border-r border-[var(--tk-border)] border-opacity-50 flex flex-col shrink-0 bg-[var(--tk-bg)] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
       <div className="p-6 pb-2 flex-1 flex flex-col">
         <div className="flex items-center gap-3 mb-12">
-          <div className="w-10 h-10 rounded-full bg-[#c5fe00] text-[#0a0a0a] flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,254,0,0.2)]">
-            <Sparkles strokeWidth={2.5} size={22} />
-          </div>
+          <Logo variant="icon" className="w-10 h-10" />
           <div className="flex flex-col">
-            <span className="font-display text-[#c5fe00] font-black text-sm tracking-tight leading-none mb-1">
+            <span className="font-display text-[var(--tk-accent-text)] font-black text-sm tracking-tight leading-none mb-1">
               TransSync
             </span>
-            <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">
+            <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest leading-none">
               AI Studio
             </span>
           </div>
@@ -115,7 +115,7 @@ function Sidebar() {
         <nav className="space-y-1">
           <Link
             to="/dashboard"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]"
           >
             <LayoutDashboard size={18} />
             <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -124,7 +124,7 @@ function Sidebar() {
           </Link>
           <Link
             to="/upload"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]"
           >
             <FileUp size={18} />
             <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -133,14 +133,14 @@ function Sidebar() {
           </Link>
           <Link
             to="/validation"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]"
           >
             <CheckCircle2 size={18} />
             <span className="text-[11px] font-bold uppercase tracking-widest">
               Validation
             </span>
           </Link>
-          <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
+          <div className="flex items-center gap-4 bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border border-[var(--tk-accent-border)] px-4 py-3 rounded-[12px] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
             <MessageSquare size={18} />
             <span className="text-[11px] font-bold uppercase tracking-widest">
               Review
@@ -148,7 +148,7 @@ function Sidebar() {
           </div>
           <Link
             to="/glossary"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]"
           >
             <Book size={18} />
             <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -157,7 +157,7 @@ function Sidebar() {
           </Link>
           <Link
             to="/export"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:bg-[var(--tk-surface1)] transition-colors px-4 py-3 rounded-[12px]"
           >
             <Download size={18} />
             <span className="text-[11px] font-bold uppercase tracking-widest">
@@ -188,14 +188,14 @@ function ReviewSection({
 }) {
   if (!items || items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] text-center bg-[#111111] border border-[#262626] rounded-[24px]">
-        <div className="w-16 h-16 rounded-full bg-[#1a1a1a] border border-[#262626] flex items-center justify-center mb-6">
-          <Languages size={28} className="text-[#555555]" />
+      <div className="flex flex-col items-center justify-center min-h-[300px] text-center bg-[var(--tk-surface1)] border border-[var(--tk-border)] rounded-[24px]">
+        <div className="w-16 h-16 rounded-full bg-[var(--tk-surface3)] border border-[var(--tk-border)] flex items-center justify-center mb-6">
+          <Languages size={28} className="text-[var(--tk-text-faint)]" />
         </div>
-        <h2 className="font-display font-bold text-xl tracking-tight mb-2 text-[#8c8c8b]">
+        <h2 className="font-display font-bold text-xl tracking-tight mb-2 text-[var(--tk-text-muted)]">
           No {matchLabel(matchType)} Matches
         </h2>
-        <p className="text-[#555555] text-[13px] max-w-sm">
+        <p className="text-[var(--tk-text-faint)] text-[13px] max-w-sm">
           There are no sentences that matched this translation layer in the
           current document.
         </p>
@@ -208,9 +208,9 @@ function ReviewSection({
 
   if (isCompleted) {
     return (
-      <div className="bg-[#111111] border border-[#262626] rounded-[24px] p-6 text-center mb-6">
-        <CheckCircle size={24} className="mx-auto mb-2 text-[#555555]" />
-        <p className="text-[11px] uppercase tracking-widest font-bold text-[#8c8c8b]">
+      <div className="bg-[var(--tk-surface1)] border border-[var(--tk-border)] rounded-[24px] p-6 text-center mb-6">
+        <CheckCircle size={24} className="mx-auto mb-2 text-[var(--tk-text-faint)]" />
+        <p className="text-[11px] uppercase tracking-widest font-bold text-[var(--tk-text-muted)]">
           All {matchLabel(matchType)} reviewed
         </p>
       </div>
@@ -225,31 +225,31 @@ function ReviewSection({
   ).length;
 
   return (
-    <div className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden mb-6">
-      <div className="px-8 py-5 border-b border-[#262626] flex items-center justify-between">
+    <div className="bg-[var(--tk-surface1)] border border-[var(--tk-border)] rounded-[24px] overflow-hidden mb-6">
+      <div className="px-8 py-5 border-b border-[var(--tk-border)] flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span
             className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 shadow-[inset_0_0_10px_rgba(197,254,0,0.05)] ${matchBadgeCls(matchType)}`}
           >
             {matchLabel(matchType)}
           </span>
-          <span className="text-[#8c8c8b] text-[10px] font-bold uppercase tracking-[0.2em]">
+          <span className="text-[var(--tk-text-muted)] text-[10px] font-bold uppercase tracking-[0.2em]">
             Batch {currentBatchNum} / {totalBatches}
           </span>
         </div>
         <div className="flex items-center gap-4">
           {skippedInBatch > 0 && (
-            <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+            <span className="text-[var(--tk-text-faint)] text-[10px] font-bold uppercase tracking-widest">
               {skippedInBatch} already in TM
             </span>
           )}
-          <span className="text-[#555555] text-[10px] font-bold uppercase tracking-[0.2em]">
+          <span className="text-[var(--tk-text-faint)] text-[10px] font-bold uppercase tracking-[0.2em]">
             {batch.length} sentences
           </span>
         </div>
       </div>
 
-      <div className="divide-y divide-[#262626]">
+      <div className="divide-y divide-[var(--tk-border)]">
         {batch.map((item, index) => {
           const conf =
             item.score !== undefined && item.score !== null
@@ -261,20 +261,20 @@ function ReviewSection({
               key={`${item.source}-${index}`}
               className="grid grid-cols-1 md:grid-cols-2"
             >
-              <div className="p-6 border-r border-[#262626]">
+              <div className="p-6 border-r border-[var(--tk-border)]">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                  <span className="text-[var(--tk-text-faint)] text-[10px] font-bold uppercase tracking-widest">
                     Source — {sourceLang?.toUpperCase() || "EN"}
                   </span>
                 </div>
-                <p className="text-[#a0a09f] text-[15px] leading-[1.6] font-sans">
+                <p className="text-[var(--tk-text-muted2)] text-[15px] leading-[1.6] font-sans">
                   {item.source}
                 </p>
               </div>
 
               <div className="p-6">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                  <span className="text-[var(--tk-text-faint)] text-[10px] font-bold uppercase tracking-widest">
                     Target — {targetLang ? languageLabel(targetLang) : "TBD"}
                   </span>
 
@@ -286,7 +286,7 @@ function ReviewSection({
                     </span>
                   )}
                 </div>
-                <p className="text-[#ffffff] text-[15px] leading-[1.6] font-sans">
+                <p className="text-[var(--tk-text)] text-[15px] leading-[1.6] font-sans">
                   {item.translation}
                 </p>
 
@@ -300,7 +300,7 @@ function ReviewSection({
                     Possibly inaccurate — back-translation diverged
                     {item.back_translation_score !== null &&
                       item.back_translation_score !== undefined && (
-                        <span className="text-[#a0a09f] normal-case tracking-normal">
+                        <span className="text-[var(--tk-text-muted2)] normal-case tracking-normal">
                           ({Math.round(item.back_translation_score * 100)}% match)
                         </span>
                       )}
@@ -313,16 +313,16 @@ function ReviewSection({
       </div>
 
       {/* Section Footer Actions */}
-      <div className="p-6 bg-[#0a0a0a] border-t border-[#262626] flex justify-end gap-4">
+      <div className="p-6 bg-[var(--tk-bg)] border-t border-[var(--tk-border)] flex justify-end gap-4">
         <button
-          className="text-[#a0a09f] hover:text-[#ff4d4d] transition-colors font-bold text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed px-6 py-3 border border-[#262626] rounded-full"
+          className="text-[var(--tk-text-muted2)] hover:text-[#ff4d4d] transition-colors font-bold text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed px-6 py-3 border border-[var(--tk-border)] rounded-full"
           onClick={() => onDiscard(batch, matchType)}
           disabled={isApproving}
         >
           Discard Batch
         </button>
         <button
-          className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-6 py-3 font-bold flex items-center gap-2 text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
+          className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[var(--tk-on-accent)] rounded-full px-6 py-3 font-bold flex items-center gap-2 text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
           onClick={() => onApprove(batch, matchType)}
           disabled={isApproving}
         >
@@ -376,22 +376,22 @@ function TargetLanguageSelector() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2.5 bg-[#111111] hover:bg-[#1a1a1a] border border-[#262626] hover:border-[#333333] rounded-full px-4 py-2 transition-colors"
+        className="flex items-center gap-2.5 bg-[var(--tk-surface1)] hover:bg-[var(--tk-surface3)] border border-[var(--tk-border)] hover:border-[var(--tk-border3)] rounded-full px-4 py-2 transition-colors"
       >
-        <Globe size={13} className="text-[#c5fe00] shrink-0" />
-        <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest">
+        <Globe size={13} className="text-[var(--tk-accent-text)] shrink-0" />
+        <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest">
           Target:
         </span>
-        <span className={`text-[13px] font-bold ${currentLabel ? "text-white" : "text-[#555555]"}`}>
+        <span className={`text-[13px] font-bold ${currentLabel ? "text-[var(--tk-text)]" : "text-[var(--tk-text-faint)]"}`}>
           {currentLabel ? `${currentLabel} (${currentLang})` : "Select language"}
         </span>
-        <ChevronDown size={13} className={`text-[#555555] transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={13} className={`text-[var(--tk-text-faint)] transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-[220px] bg-[#111111] border border-[#262626] rounded-[16px] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] z-50">
-          <div className="px-4 py-3 border-b border-[#1a1a1a]">
-            <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest">Target Language</span>
+        <div className="absolute top-full left-0 mt-2 w-[220px] bg-[var(--tk-surface1)] border border-[var(--tk-border)] rounded-[16px] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] z-50">
+          <div className="px-4 py-3 border-b border-[var(--tk-surface3)]">
+            <span className="text-[var(--tk-text-faint)] font-bold text-[9px] uppercase tracking-widest">Target Language</span>
           </div>
           <div className="py-1">
             {TARGET_LANGUAGES.map((lang) => (
@@ -400,12 +400,12 @@ function TargetLanguageSelector() {
                 onClick={() => handleSelect(lang.code)}
                 className={`w-full text-left px-4 py-2.5 flex items-center justify-between transition-colors text-[13px] ${
                   currentLang === lang.code
-                    ? "bg-[#1a1c10] text-[#c5fe00]"
-                    : "text-[#a0a09f] hover:bg-[#1a1a1a] hover:text-white"
+                    ? "bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)]"
+                    : "text-[var(--tk-text-muted2)] hover:bg-[var(--tk-surface3)] hover:text-[var(--tk-text)]"
                 }`}
               >
                 <span>{lang.label}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#555555]">{lang.code}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--tk-text-faint)]">{lang.code}</span>
               </button>
             ))}
           </div>
@@ -705,28 +705,29 @@ function ReviewPage() {
   }, [allReviewed, docId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="h-screen bg-[var(--tk-bg)] text-[var(--tk-text)] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[var(--tk-on-accent)]">
       <Sidebar />
 
-      <div className="flex flex-col flex-1 relative w-full h-full overflow-hidden bg-[#0e0e0e]">
+      <div className="flex flex-col flex-1 relative w-full h-full overflow-hidden bg-[var(--tk-bg2)]">
         {/* Top Header */}
-        <header className="h-[80px] w-full border-b border-[#262626] bg-[#0a0a0a] flex items-center justify-between px-8 shrink-0 z-40">
+        <header className="h-[80px] w-full border-b border-[var(--tk-border)] bg-[var(--tk-bg)] flex items-center justify-between px-8 shrink-0 z-40">
           <div className="flex items-center gap-4">
-            <Link to="/" className="inline-block">
-              <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] leading-none">
+            <Link to="/" className="inline-flex items-center gap-2.5">
+              <Logo variant="icon" className="h-8 w-8" />
+              <span className="font-display font-bold text-xl tracking-tight text-[var(--tk-accent-text)] leading-none">
                 TransSync
               </span>
             </Link>
-            <div className="w-px h-6 bg-[#262626]"></div>
+            <div className="w-px h-6 bg-[var(--tk-border)]"></div>
             {/* ── Target Language Selector ── */}
             <TargetLanguageSelector />
           </div>
 
           {/* Live Sync Badge */}
           {translationState === "done" && (
-            <div className="hidden lg:flex items-center gap-3 bg-[#1a1a1a] border border-[#262626] px-4 py-2 rounded-full absolute left-1/2 -translate-x-1/2">
+            <div className="hidden lg:flex items-center gap-3 bg-[var(--tk-surface3)] border border-[var(--tk-border)] px-4 py-2 rounded-full absolute left-1/2 -translate-x-1/2">
               <div className="w-2.5 h-2.5 bg-[#c5fe00] rounded-full animate-pulse"></div>
-              <span className="text-[#a0a09f] font-bold text-[9px] uppercase tracking-widest leading-none">
+              <span className="text-[var(--tk-text-muted2)] font-bold text-[9px] uppercase tracking-widest leading-none">
                 Live Sync
                 <br />
                 Active
@@ -735,22 +736,20 @@ function ReviewPage() {
           )}
 
           <div className="flex items-center gap-6">
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
+            <button className="text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] transition-colors">
               <Bell size={18} />
             </button>
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
+            <button className="text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] transition-colors">
               <HelpCircle size={18} />
             </button>
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
-              <Settings size={18} />
-            </button>
+            <SettingsMenu />
             <NavAvatar />
           </div>
         </header>
 
         {/* Content Area */}
         <div className="flex-1 flex overflow-hidden w-full pb-[88px]">
-          <main className="flex-1 overflow-y-auto layout-scrollbar bg-[#0a0a0a]">
+          <main className="flex-1 overflow-y-auto layout-scrollbar bg-[var(--tk-bg)]">
             <div className="p-8 max-w-5xl mx-auto space-y-6">
               {/* ── Multi-doc tabs — only validated/translated/approved docs ── */}
               {showDocTabs && (
@@ -766,14 +765,14 @@ function ReviewPage() {
                         }}
                         className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-colors ${
                           i === activeDocIndex
-                            ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16]"
+                            ? "bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border-[var(--tk-accent-border)]"
                             : doc.status === "approved"
-                              ? "bg-[#111111] text-[#8c8c8b] border-[#2a2e16]"
+                              ? "bg-[var(--tk-surface1)] text-[var(--tk-text-muted)] border-[var(--tk-accent-border)]"
                               : doc.status === "translated"
-                                ? "bg-[#111111] text-[#a0a09f] border-[#262626]"
+                                ? "bg-[var(--tk-surface1)] text-[var(--tk-text-muted2)] border-[var(--tk-border)]"
                                 : doc.status === "translating"
-                                  ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16] opacity-60 animate-pulse"
-                                  : "bg-[#111111] text-[#555555] border-[#262626] hover:text-[#8c8c8b]"
+                                  ? "bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border-[var(--tk-accent-border)] opacity-60 animate-pulse"
+                                  : "bg-[var(--tk-surface1)] text-[var(--tk-text-faint)] border-[var(--tk-border)] hover:text-[var(--tk-text-muted)]"
                         }`}
                       >
                         {doc.filename.length > 20
@@ -789,11 +788,11 @@ function ReviewPage() {
 
               {/* Error Banner */}
               {isError && errorMessage && (
-                <div className="bg-[#2a1313] border border-[#ff4d4d] rounded-[24px] p-6 flex items-center justify-between">
+                <div className="bg-[var(--tk-danger-surface)] border border-[#ff4d4d] rounded-[24px] p-6 flex items-center justify-between">
                   <span className="text-[#ff4d4d] text-sm">{errorMessage}</span>
                   <button
                     onClick={() => setTranslationState("idle")}
-                    className="text-[#ff4d4d] hover:text-white text-[11px] font-bold uppercase tracking-widest border border-[#4a1010] px-3 py-1.5 rounded-full transition-colors ml-4 shrink-0"
+                    className="text-[#ff4d4d] hover:text-[var(--tk-text)] text-[11px] font-bold uppercase tracking-widest border border-[var(--tk-danger-border)] px-3 py-1.5 rounded-full transition-colors ml-4 shrink-0"
                   >
                     Retry
                   </button>
@@ -803,19 +802,19 @@ function ReviewPage() {
               {/* ── IDLE STATE ── */}
               {translationState === "idle" && !isError && (
                 <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-                  <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
-                    <Languages size={32} className="text-[#c5fe00]" />
+                  <div className="w-20 h-20 rounded-full bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
+                    <Languages size={32} className="text-[var(--tk-accent-text)]" />
                   </div>
                   <h2 className="font-display font-bold text-3xl tracking-tight mb-3">
                     Ready to Translate
                   </h2>
-                  <p className="text-[#8c8c8b] text-[15px] mb-2 max-w-md leading-relaxed">
+                  <p className="text-[var(--tk-text-muted)] text-[15px] mb-2 max-w-md leading-relaxed">
                     {sentences && sentences.length > 0
                       ? `${sentences.length} validated sentence${sentences.length > 1 ? "s" : ""} ready for translation into ${docTargetLang ? languageLabel(docTargetLang) : "your target language"}.`
                       : "No validated sentences found. Please go back and validate your document first."}
                   </p>
                   {sentences && sentences.length > 0 && (
-                    <p className="text-[#555555] text-[12px] mb-10 uppercase tracking-widest font-bold">
+                    <p className="text-[var(--tk-text-faint)] text-[12px] mb-10 uppercase tracking-widest font-bold">
                       This may take a few seconds depending on document size.
                     </p>
                   )}
@@ -825,9 +824,9 @@ function ReviewPage() {
                         {reviewableDocs.filter((d) => d.status === "validated").length > 1 && (
                           <button
                             onClick={() => handleStartTranslation(true)}
-                            className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
+                            className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[var(--tk-on-accent)] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
                           >
-                            <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
+                            <Zap size={16} strokeWidth={3} className="fill-[var(--tk-bg)]" />
                             {`Translate All ${reviewableDocs.filter((d) => d.status === "validated").length} Docs`}
                           </button>
                         )}
@@ -835,23 +834,23 @@ function ReviewPage() {
                           onClick={() => handleStartTranslation(false)}
                           className={
                             reviewableDocs.filter((d) => d.status === "validated").length > 1
-                              ? "border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-[#ffffff] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest transition-colors"
-                              : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
+                              ? "border border-[var(--tk-text-faint)] hover:border-[#c5fe00] hover:text-[var(--tk-accent-text)] text-[var(--tk-text)] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest transition-colors"
+                              : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[var(--tk-on-accent)] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
                           }
                         >
-                          <Zap size={16} strokeWidth={3} className={reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "" : "fill-[#0a0a0a]"} />
+                          <Zap size={16} strokeWidth={3} className={reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "" : "fill-[var(--tk-bg)]"} />
                           {reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "Translate Current Doc" : "Start Translation"}
                         </button>
                       </div>
                     ) : (
                       /* No target language picked yet — point to the header selector. */
-                      <div className="flex flex-col items-center gap-3 bg-[#15170d] border border-[#2a2e16] rounded-[20px] px-8 py-6">
-                        <Globe size={22} className="text-[#c5fe00]" />
-                        <p className="text-[#ffffff] text-sm font-bold">
+                      <div className="flex flex-col items-center gap-3 bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] rounded-[20px] px-8 py-6">
+                        <Globe size={22} className="text-[var(--tk-accent-text)]" />
+                        <p className="text-[var(--tk-text)] text-sm font-bold">
                           Select a target language to begin
                         </p>
-                        <p className="text-[#8c8c8b] text-[12px] max-w-xs leading-relaxed">
-                          Use the <span className="text-[#c5fe00] font-bold">Target</span> selector
+                        <p className="text-[var(--tk-text-muted)] text-[12px] max-w-xs leading-relaxed">
+                          Use the <span className="text-[var(--tk-accent-text)] font-bold">Target</span> selector
                           in the header above to choose a language. The Start Translation button
                           appears once it's set.
                         </p>
@@ -860,7 +859,7 @@ function ReviewPage() {
                   ) : (
                     <Link
                       to="/validation"
-                      className="border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-8 py-4 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                      className="border border-[var(--tk-border)] text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:border-[var(--tk-text-faint)] rounded-full px-8 py-4 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
                     >
                       <ArrowRight size={14} /> Go to Validation
                     </Link>
@@ -871,16 +870,16 @@ function ReviewPage() {
               {/* ── RUNNING STATE ── */}
               {translationState === "running" && (
                 <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-                  <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
+                  <div className="w-20 h-20 rounded-full bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
                     <Loader2
                       size={32}
-                      className="text-[#c5fe00] animate-spin"
+                      className="text-[var(--tk-accent-text)] animate-spin"
                     />
                   </div>
                   <h2 className="font-display font-bold text-3xl tracking-tight mb-3">
                     Translating…
                   </h2>
-                  <p className="text-[#8c8c8b] text-[15px] max-w-md leading-relaxed">
+                  <p className="text-[var(--tk-text-muted)] text-[15px] max-w-md leading-relaxed">
                     Running {sentences?.length || 0} sentences through TM
                     lookup, FAISS search, and the Groq LLM. This may take 10–30
                     seconds.
@@ -900,13 +899,13 @@ function ReviewPage() {
               {/* ── DONE STATE — ALL REVIEWED ── */}
               {translationState === "done" && !isRunning && allReviewed && (
                 <div className="flex flex-col items-center justify-center min-h-[300px] text-center">
-                  <div className="w-16 h-16 rounded-full bg-[#1a2010] border border-[#2a2e16] flex items-center justify-center mb-6">
-                    <CheckCircle size={28} className="text-[#c5fe00]" />
+                  <div className="w-16 h-16 rounded-full bg-[var(--tk-accent-surface)] border border-[var(--tk-accent-border)] flex items-center justify-center mb-6">
+                    <CheckCircle size={28} className="text-[var(--tk-accent-text)]" />
                   </div>
                   <h2 className="font-display font-bold text-2xl tracking-tight mb-2">
                     All Sections Reviewed
                   </h2>
-                  <p className="text-[#8c8c8b] text-[14px] mb-8">
+                  <p className="text-[var(--tk-text-muted)] text-[14px] mb-8">
                     {hasResults
                       ? `${reviewedCount} sentences reviewed. Approved translations have been saved.`
                       : "No translation results available."}
@@ -914,13 +913,13 @@ function ReviewPage() {
                   <div className="flex items-center gap-4">
                     <Link
                       to="/export"
-                      className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-8 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
+                      className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[var(--tk-on-accent)] rounded-full px-8 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
                     >
                       <ArrowRight size={14} /> Download Translated Document
                     </Link>
                     <Link
                       to="/dashboard"
-                      className="border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-6 py-3.5 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                      className="border border-[var(--tk-border)] text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] hover:border-[var(--tk-text-faint)] rounded-full px-6 py-3.5 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
                     >
                       Back to Dashboard
                     </Link>
@@ -947,17 +946,17 @@ function ReviewPage() {
           </main>
 
           {/* Right Context Panel */}
-          <aside className="w-[360px] border-l border-[#262626] bg-[#0e0e0e] shrink-0 flex flex-col overflow-y-auto layout-scrollbar">
-            <div className="flex items-center gap-6 border-b border-[#262626] px-8 pt-8">
+          <aside className="w-[360px] border-l border-[var(--tk-border)] bg-[var(--tk-bg2)] shrink-0 flex flex-col overflow-y-auto layout-scrollbar">
+            <div className="flex items-center gap-6 border-b border-[var(--tk-border)] px-8 pt-8">
               <button
                 onClick={() => setSidebarTab("match_types")}
-                className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "match_types" ? "text-[#c5fe00] border-[#c5fe00]" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
+                className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "match_types" ? "text-[var(--tk-accent-text)] border-[#c5fe00]" : "text-[var(--tk-text-faint)] border-transparent hover:text-[var(--tk-text-muted)]"}`}
               >
                 Match Types
               </button>
               <button
                 onClick={() => setSidebarTab("context")}
-                className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "context" ? "text-[#c5fe00] border-[#c5fe00]" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
+                className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "context" ? "text-[var(--tk-accent-text)] border-[#c5fe00]" : "text-[var(--tk-text-faint)] border-transparent hover:text-[var(--tk-text-muted)]"}`}
               >
                 Context
               </button>
@@ -966,19 +965,19 @@ function ReviewPage() {
             <div className="p-8 space-y-10">
               {sidebarTab === "context" && (
                 <div>
-                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
+                  <h4 className="text-[var(--tk-text-faint)] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
                     Draft Settings
                   </h4>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-[13px]">
-                      <span className="text-[#8c8c8b]">Tone of Voice</span>
-                      <span className="text-[#c5fe00] font-bold">
+                      <span className="text-[var(--tk-text-muted)]">Tone of Voice</span>
+                      <span className="text-[var(--tk-accent-text)] font-bold">
                         Sophisticated
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-[13px]">
-                      <span className="text-[#8c8c8b]">Formality</span>
-                      <div className="w-[100px] h-1.5 rounded-full bg-[#262626] overflow-hidden">
+                      <span className="text-[var(--tk-text-muted)]">Formality</span>
+                      <div className="w-[100px] h-1.5 rounded-full bg-[var(--tk-border)] overflow-hidden">
                         <div className="w-[85%] h-full bg-[#c5fe00] rounded-full"></div>
                       </div>
                     </div>
@@ -988,7 +987,7 @@ function ReviewPage() {
 
               {sidebarTab === "match_types" && (
                 <div>
-                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
+                  <h4 className="text-[var(--tk-text-faint)] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
                     Match Types
                   </h4>
                   <div className="space-y-3">
@@ -1018,10 +1017,10 @@ function ReviewPage() {
                         <button
                           key={type}
                           onClick={() => setActiveSection(type)}
-                          className={`w-full text-left bg-[#111111] border rounded-[16px] p-4 transition-colors ${
+                          className={`w-full text-left bg-[var(--tk-surface1)] border rounded-[16px] p-4 transition-colors ${
                             isActive
                               ? "border-[#c5fe00]"
-                              : "border-[#1a1a1a] hover:border-[#333333]"
+                              : "border-[var(--tk-surface3)] hover:border-[var(--tk-border3)]"
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
@@ -1031,12 +1030,12 @@ function ReviewPage() {
                               {matchLabel(type)}
                             </span>
                             <span
-                              className={`text-[10px] font-bold ${isActive ? "text-[#ffffff]" : "text-[#555555]"}`}
+                              className={`text-[10px] font-bold ${isActive ? "text-[var(--tk-text)]" : "text-[var(--tk-text-faint)]"}`}
                             >
                               {count} pending
                             </span>
                           </div>
-                          <p className="text-[#555555] text-[11px] leading-relaxed">
+                          <p className="text-[var(--tk-text-faint)] text-[11px] leading-relaxed">
                             {desc}
                           </p>
                         </button>
@@ -1051,15 +1050,15 @@ function ReviewPage() {
 
         {/* Footer Action Bar — only shown when reviewing */}
         {translationState === "done" && !isRunning && (
-          <div className="absolute w-full bottom-0 h-[88px] border-t border-[#262626] bg-[#0a0a0a]/90 backdrop-blur-md flex items-center justify-between px-8 z-50">
+          <div className="absolute w-full bottom-0 h-[88px] border-t border-[var(--tk-border)] bg-[var(--tk-bg)]/90 backdrop-blur-md flex items-center justify-between px-8 z-50">
             {/* Progress */}
             <div className="flex items-center gap-12">
               <div className="flex flex-col gap-2 w-[240px]">
-                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555]">
+                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--tk-text-faint)]">
                   <span>Overall Progress</span>
-                  <span className="text-[#ffffff]">{progressPercent}%</span>
+                  <span className="text-[var(--tk-text)]">{progressPercent}%</span>
                 </div>
-                <div className="w-full h-1.5 rounded-full bg-[#262626] overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-[var(--tk-border)] overflow-hidden">
                   <div
                     className="h-full bg-[#c5fe00] rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
@@ -1068,20 +1067,20 @@ function ReviewPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-8 text-[#a0a09f] text-[11px] font-bold tracking-[0.1em] uppercase">
+            <div className="flex items-center gap-8 text-[var(--tk-text-muted2)] text-[11px] font-bold tracking-[0.1em] uppercase">
               <div className="flex items-center gap-2">
-                <CheckCircle size={14} className="text-[#c5fe00]" />{" "}
+                <CheckCircle size={14} className="text-[var(--tk-accent-text)]" />{" "}
                 {reviewedCount} Reviewed
               </div>
               <div className="flex items-center gap-2">
-                <MoreHorizontal size={14} className="text-[#8c8c8b]" />{" "}
+                <MoreHorizontal size={14} className="text-[var(--tk-text-muted)]" />{" "}
                 {pendingCount} Pending
               </div>
             </div>
 
             {/* Actions are now managed per-section, so we keep this space clean or put something else here */}
             <div className="flex items-center gap-6">
-              <span className="text-[#555555] text-[10px] uppercase tracking-widest font-bold">
+              <span className="text-[var(--tk-text-faint)] text-[10px] uppercase tracking-widest font-bold">
                 Approve items in the sections above
               </span>
             </div>
@@ -1090,12 +1089,12 @@ function ReviewPage() {
 
         {/* Footer — idle/running states: show start button */}
         {(isIdle || isRunning) && !isError && (
-          <div className="absolute w-full bottom-0 h-[88px] border-t border-[#262626] bg-[#0a0a0a]/90 backdrop-blur-md flex items-center justify-between px-8 z-50">
+          <div className="absolute w-full bottom-0 h-[88px] border-t border-[var(--tk-border)] bg-[var(--tk-bg)]/90 backdrop-blur-md flex items-center justify-between px-8 z-50">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#1a200a] text-[#c5fe00] border border-[#2a2e16] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-[var(--tk-accent-surface)] text-[var(--tk-accent-text)] border border-[var(--tk-accent-border)] flex items-center justify-center">
                 <Sparkles size={14} />
               </div>
-              <p className="text-[#8c8c8b] text-[12px] font-medium">
+              <p className="text-[var(--tk-text-muted)] text-[12px] font-medium">
                 {isRunning
                   ? "Translation in progress…"
                   : hasTargetLang
@@ -1108,7 +1107,7 @@ function ReviewPage() {
               <button
                 onClick={() => handleStartTranslation()}
                 disabled={isRunning || !sentences?.length}
-                className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[var(--tk-on-accent)] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isRunning ? (
                   <>
@@ -1116,13 +1115,13 @@ function ReviewPage() {
                   </>
                 ) : (
                   <>
-                    <Zap size={14} strokeWidth={3} className="fill-[#0a0a0a]" />{" "}
+                    <Zap size={14} strokeWidth={3} className="fill-[var(--tk-bg)]" />{" "}
                     Start Translation
                   </>
                 )}
               </button>
             ) : (
-              <span className="flex items-center gap-2 text-[#c5fe00] text-[11px] font-bold uppercase tracking-widest border border-[#2a2e16] bg-[#15170d] rounded-full px-5 py-3">
+              <span className="flex items-center gap-2 text-[var(--tk-accent-text)] text-[11px] font-bold uppercase tracking-widest border border-[var(--tk-accent-border)] bg-[var(--tk-accent-surface)] rounded-full px-5 py-3">
                 <Globe size={14} /> Target language required
               </span>
             )}

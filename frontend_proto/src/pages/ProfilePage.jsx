@@ -22,6 +22,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { updateProfile, fetchMyDocuments } from '../services/api';
 import Avatar from '../components/Avatar';
+import Logo from '../components/Logo';
+import SettingsMenu from '../components/SettingsMenu';
 
 const ROLE_COLORS = {
   owner:      'bg-amber-500/20 text-amber-400',
@@ -109,26 +111,28 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="min-h-screen bg-[var(--tk-bg)] text-[var(--tk-text)] font-sans selection:bg-[#c5fe00] selection:text-[var(--tk-on-accent)]">
       {/* Top nav */}
-      <nav className="h-[72px] border-b border-[#262626] border-opacity-50 flex items-center justify-between px-8">
+      <nav className="h-[72px] border-b border-[var(--tk-border)] border-opacity-50 flex items-center justify-between px-8">
         <div className="flex items-center gap-6">
-          <Link to="/dashboard" className="flex items-center gap-2 text-[#8c8c8b] hover:text-white transition-colors text-sm font-semibold">
+          <Link to="/dashboard" className="flex items-center gap-2 text-[var(--tk-text-muted)] hover:text-[var(--tk-text)] transition-colors text-sm font-semibold">
             <ArrowLeft size={18} />
             Back
           </Link>
-          <Link to="/" className="inline-block">
-            <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] block leading-none">
-              TransSync <span className="text-white">AI</span>
+          <Link to="/" className="inline-flex items-center gap-2.5">
+            <Logo variant="icon" className="h-8 w-8" />
+            <span className="font-display font-bold text-xl tracking-tight text-[var(--tk-accent-text)] block leading-none">
+              TransSync <span className="text-[var(--tk-text)]">AI</span>
             </span>
           </Link>
         </div>
+        <SettingsMenu align="right" />
       </nav>
 
       <div className="max-w-4xl mx-auto px-6 py-12 space-y-10">
 
         {/* Identity card */}
-        <section className="bg-[#131313] border border-[#262626] border-opacity-70 rounded-[28px] p-8">
+        <section className="bg-[var(--tk-surface1)] border border-[var(--tk-border)] border-opacity-70 rounded-[28px] p-8">
           <div className="flex items-start gap-6">
             <Avatar name={displayName} email={email} size={88} />
 
@@ -142,19 +146,19 @@ export default function ProfilePage() {
                     onChange={(e) => setNameDraft(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
                     maxLength={80}
-                    className="bg-[#0a0a0a] border border-[#333] focus:border-[#c5fe00] outline-none rounded-lg px-3 py-2 text-2xl font-display font-bold text-white w-full max-w-xs transition-colors"
+                    className="bg-[var(--tk-bg)] border border-[var(--tk-border3)] focus:border-[#c5fe00] outline-none rounded-lg px-3 py-2 text-2xl font-display font-bold text-[var(--tk-text)] w-full max-w-xs transition-colors"
                   />
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="p-2 rounded-lg bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors disabled:opacity-50"
+                    className="p-2 rounded-lg bg-[#c5fe00] text-[var(--tk-on-accent)] hover:bg-[#b9ef00] transition-colors disabled:opacity-50"
                     title="Save"
                   >
                     <Check size={18} />
                   </button>
                   <button
                     onClick={() => { setEditing(false); setSaveError(null); }}
-                    className="p-2 rounded-lg bg-[#1f1f1f] text-[#999] hover:text-white transition-colors"
+                    className="p-2 rounded-lg bg-[var(--tk-surface3)] text-[var(--tk-text-muted2)] hover:text-[var(--tk-text)] transition-colors"
                     title="Cancel"
                   >
                     <X size={18} />
@@ -167,7 +171,7 @@ export default function ProfilePage() {
                   </h1>
                   <button
                     onClick={() => setEditing(true)}
-                    className="p-2 rounded-lg text-[#666] hover:text-[#c5fe00] hover:bg-[#1a1a1a] transition-colors"
+                    className="p-2 rounded-lg text-[var(--tk-text-faint)] hover:text-[var(--tk-accent-text)] hover:bg-[var(--tk-surface3)] transition-colors"
                     title="Edit name"
                   >
                     <Pencil size={16} />
@@ -185,7 +189,7 @@ export default function ProfilePage() {
             {/* Logout */}
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-2 text-[#999] hover:text-red-400 border border-[#2a2a2a] hover:border-red-500/40 px-4 py-2 rounded-full transition-colors text-sm font-semibold"
+              className="flex items-center gap-2 text-[var(--tk-text-muted2)] hover:text-red-400 border border-[var(--tk-border2)] hover:border-red-500/40 px-4 py-2 rounded-full transition-colors text-sm font-semibold"
             >
               <LogOut size={16} />
               Log out
@@ -193,7 +197,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Detail rows */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-8 border-t border-[#262626]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-8 border-t border-[var(--tk-border)]">
             <Detail icon={<Mail size={15} />} label="Email" value={email} />
             <Detail icon={<Building2 size={15} />} label="Organization" value={org?.name || '—'} />
             <Detail icon={<ShieldCheck size={15} />} label="Role" value={role || 'member'} />
@@ -205,44 +209,44 @@ export default function ProfilePage() {
           <div className="flex items-end justify-between mb-5">
             <div>
               <h2 className="font-display font-bold text-[22px] tracking-tight">Your Translations</h2>
-              <p className="text-[#8c8c8b] text-[13px] mt-1">Documents you have translated</p>
+              <p className="text-[var(--tk-text-muted)] text-[13px] mt-1">Documents you have translated</p>
             </div>
-            <Link to="/upload" className="text-[#c5fe00] text-[11px] font-bold uppercase tracking-widest hover:underline">
+            <Link to="/upload" className="text-[var(--tk-accent-text)] text-[11px] font-bold uppercase tracking-widest hover:underline">
               New Project →
             </Link>
           </div>
 
-          <div className="border border-[#262626] border-opacity-80 rounded-[24px] overflow-hidden">
+          <div className="border border-[var(--tk-border)] border-opacity-80 rounded-[24px] overflow-hidden">
             {docsLoading ? (
-              <div className="divide-y divide-[#1c1c1c]">
+              <div className="divide-y divide-[var(--tk-surface4)]">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-4 px-6 py-5 animate-pulse">
-                    <div className="w-4 h-4 rounded bg-[#1e1e1e]" />
-                    <div className="h-3 w-48 bg-[#1e1e1e] rounded" />
-                    <div className="ml-auto h-3 w-16 bg-[#1e1e1e] rounded" />
+                    <div className="w-4 h-4 rounded bg-[var(--tk-surface4)]" />
+                    <div className="h-3 w-48 bg-[var(--tk-surface4)] rounded" />
+                    <div className="ml-auto h-3 w-16 bg-[var(--tk-surface4)] rounded" />
                   </div>
                 ))}
               </div>
             ) : docs.length === 0 ? (
               <div className="px-6 py-14 text-center">
-                <p className="text-[#555] text-sm">You haven't translated any documents yet.</p>
-                <Link to="/upload" className="text-[#c5fe00] text-[11px] font-bold uppercase tracking-widest mt-2 inline-block hover:underline">
+                <p className="text-[var(--tk-text-faint)] text-sm">You haven't translated any documents yet.</p>
+                <Link to="/upload" className="text-[var(--tk-accent-text)] text-[11px] font-bold uppercase tracking-widest mt-2 inline-block hover:underline">
                   Upload a document →
                 </Link>
               </div>
             ) : (
-              <div className="divide-y divide-[#1c1c1c]">
+              <div className="divide-y divide-[var(--tk-surface4)]">
                 {docs.map((d, i) => (
-                  <div key={i} className="flex items-center gap-4 px-6 py-5 hover:bg-[#131313] transition-colors">
-                    <FileText size={16} className="text-[#a0a09f] shrink-0" />
-                    <p className="truncate text-sm text-white flex-1 min-w-0">{d.source_document}</p>
-                    <span className="bg-[#1a1a1a] border border-[#262626] text-[#8c8c8b] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
+                  <div key={i} className="flex items-center gap-4 px-6 py-5 hover:bg-[var(--tk-surface1)] transition-colors">
+                    <FileText size={16} className="text-[var(--tk-text-muted2)] shrink-0" />
+                    <p className="truncate text-sm text-[var(--tk-text)] flex-1 min-w-0">{d.source_document}</p>
+                    <span className="bg-[var(--tk-surface3)] border border-[var(--tk-border)] text-[var(--tk-text-muted)] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
                       {d.target_lang || '—'}
                     </span>
-                    <span className="text-[#8c8c8b] text-xs font-medium whitespace-nowrap w-20 text-right">
+                    <span className="text-[var(--tk-text-muted)] text-xs font-medium whitespace-nowrap w-20 text-right">
                       {d.sentence_count} {d.sentence_count === 1 ? 'sentence' : 'sentences'}
                     </span>
-                    <span className="text-[#555] text-[10px] font-bold uppercase tracking-widest whitespace-nowrap w-20 text-right">
+                    <span className="text-[var(--tk-text-faint)] text-[10px] font-bold uppercase tracking-widest whitespace-nowrap w-20 text-right">
                       {timeAgo(d.last_activity)}
                     </span>
                   </div>
@@ -259,10 +263,10 @@ export default function ProfilePage() {
 function Detail({ icon, label, value }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="text-[#666] mt-0.5">{icon}</div>
+      <div className="text-[var(--tk-text-faint)] mt-0.5">{icon}</div>
       <div className="min-w-0">
-        <p className="text-[#555] text-[10px] font-bold uppercase tracking-widest mb-1">{label}</p>
-        <p className="text-white text-sm truncate">{value}</p>
+        <p className="text-[var(--tk-text-faint)] text-[10px] font-bold uppercase tracking-widest mb-1">{label}</p>
+        <p className="text-[var(--tk-text)] text-sm truncate">{value}</p>
       </div>
     </div>
   );

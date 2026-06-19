@@ -2,7 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/no_name.png" />
+    <!-- Apply the saved theme before paint to avoid a flash of the wrong colors. -->
+    <script>
+      (function () {
+        try {
+          var m = localStorage.getItem('transsync-theme') || 'system';
+          var light = m === 'light' ||
+            (m === 'system' && window.matchMedia &&
+             window.matchMedia('(prefers-color-scheme: light)').matches);
+          document.documentElement.classList.add(light ? 'light' : 'dark');
+        } catch (e) {}
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TransSync AI</title>
     <!-- Google Fonts: Inter and Manrope -->
