@@ -7,6 +7,7 @@ import NavAvatar from "../components/NavAvatar";
 import {
   Bell,
   LayoutDashboard,
+  FolderOpen,
   FileUp,
   CheckCircle2,
   MessageSquare,
@@ -149,7 +150,7 @@ function SuccessBanner({ sentenceCount }) {
 function ValidationPage() {
   const navigate = useNavigate();
 
-  const { docId, rawText, setSentences, documents, activeDocIndex, setActiveDocIndex, updateDoc, validationResult, setValidationResult } = useAppContext();
+  const { docId, rawText, setSentences, documents, activeDocIndex, setActiveDocIndex, updateDoc, validationResult, setValidationResult, currentProjectId } = useAppContext();
   
   const activeDoc = documents[activeDocIndex];
   const activeDocStatus = activeDoc?.status || "uploaded";
@@ -246,6 +247,12 @@ function ValidationPage() {
               <LayoutDashboard size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Dashboard</span>
             </Link>
+            {currentProjectId && (
+              <Link to={`/projects/${currentProjectId}`} className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+                <FolderOpen size={18} />
+                <span className="text-[11px] font-bold uppercase tracking-widest">Project</span>
+              </Link>
+            )}
             <Link to="/upload" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
               <FileUp size={18} />
               <span className="text-[11px] font-bold uppercase tracking-widest">Upload</span>

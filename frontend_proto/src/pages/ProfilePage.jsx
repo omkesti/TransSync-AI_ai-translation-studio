@@ -10,6 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
+  FolderOpen,
   LogOut,
   Check,
   Pencil,
@@ -20,6 +21,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 import { updateProfile, fetchMyDocuments } from '../services/api';
 import Avatar from '../components/Avatar';
 
@@ -44,6 +46,7 @@ function timeAgo(isoString) {
 
 export default function ProfilePage() {
   const { user, role, org, displayName, accessToken, signOut, refreshProfile } = useAuth();
+  const { currentProjectId } = useAppContext();
   const navigate = useNavigate();
 
   const [editing, setEditing] = useState(false);
@@ -117,6 +120,12 @@ export default function ProfilePage() {
             <ArrowLeft size={18} />
             Back
           </Link>
+          {currentProjectId && (
+            <Link to={`/projects/${currentProjectId}`} className="flex items-center gap-2 text-[#8c8c8b] hover:text-white transition-colors text-sm font-semibold">
+              <FolderOpen size={18} />
+              Project
+            </Link>
+          )}
           <Link to="/" className="inline-block">
             <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] block leading-none">
               TransSync <span className="text-white">AI</span>

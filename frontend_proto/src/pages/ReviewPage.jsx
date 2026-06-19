@@ -9,6 +9,7 @@ import {
   Bell,
   Settings,
   LayoutDashboard,
+  FolderOpen,
   FileUp,
   CheckCircle2,
   MessageSquare,
@@ -95,6 +96,7 @@ function firstPendingSection(groups, offsets) {
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
 function Sidebar() {
+  const { currentProjectId } = useAppContext();
   return (
     <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
       <div className="p-6 pb-2 flex-1 flex flex-col">
@@ -122,6 +124,17 @@ function Sidebar() {
               Dashboard
             </span>
           </Link>
+          {currentProjectId && (
+            <Link
+              to={`/projects/${currentProjectId}`}
+              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            >
+              <FolderOpen size={18} />
+              <span className="text-[11px] font-bold uppercase tracking-widest">
+                Project
+              </span>
+            </Link>
+          )}
           <Link
             to="/upload"
             className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"

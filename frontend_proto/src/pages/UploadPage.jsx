@@ -9,6 +9,7 @@ import {
   Settings,
   Plus,
   LayoutDashboard,
+  FolderOpen,
   FileUp,
   CheckCircle2,
   MessageSquare,
@@ -205,6 +206,18 @@ function UploadPage() {
                 Dashboard
               </span>
             </Link>
+
+            {currentProjectId && (
+              <Link
+                to={`/projects/${currentProjectId}`}
+                className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer"
+              >
+                <FolderOpen size={18} />
+                <span className="text-[11px] font-bold uppercase tracking-widest">
+                  Project
+                </span>
+              </Link>
+            )}
 
             <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] cursor-pointer shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
               <FileUp size={18} />
