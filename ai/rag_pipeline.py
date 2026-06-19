@@ -1,8 +1,8 @@
 import numpy as np
 
-from ai.embeddings import generate_embeddings
-from ai.translation_memory import exact_match_lookup
-from ai.vector_store import faiss_search
+from ai.embeddings import generate_embeddings, generate_embeddings_batch
+from ai.translation_memory import exact_match_lookup, exact_match_lookup_batch
+from ai.vector_store import faiss_search, faiss_search_batch
 from ai.llm_client import (
     llm_guided_search,
     llm_guided_batch,
@@ -134,45 +134,61 @@ async def translate_pipeline(obj: dict) -> list[dict]:
     guided_queue: list[dict] = []
     cold_queue: list[dict] = []
 
-    for index, sentence in enumerate(sentences):
-        # Glossary matches for this specific sentence (computed once, reused)
-        sentence_hints = _find_glossary_matches(sentence, glossary_hints)
+    # Glossary matches per sentence (computed once, reused throughout).
+    hints_by_index = [_find_glossary_matches(s, glossary_hints) for s in sentences]
 
-        # Exact TM lookup — language-aware + org-scoped
-        exact = await exact_match_lookup(sentence, target_lang, org_id)
+    # ── Stage 1: Exact TM lookup for ALL sentences in one Supabase query ────────
+    # Behaviour is identical to a per-sentence exact_match_lookup loop; this just
+    # collapses N round-trips into one (and is language-aware + org-scoped).
+    exact_map = await exact_match_lookup_batch(sentences, target_lang, org_id)
+
+    remaining_indices: list[int] = []
+    for index, sentence in enumerate(sentences):
+        exact = exact_map.get(sentence)
         if exact:
             # Apply post-hoc glossary enforcement even on TM hits
-            enforced = _apply_glossary_posthoc(sentence, exact, sentence_hints)
+            enforced = _apply_glossary_posthoc(sentence, exact, hints_by_index[index])
             results[index] = _build_result(sentence, enforced, "tm_exact", score=0.0)
             continue
+        remaining_indices.append(index)
 
-        # FAISS similarity search — language-aware + org-scoped
-        embeddings = generate_embeddings(sentence)
-        faiss_result = faiss_search(embeddings, target_lang, org_id)
+    # ── Stage 2: Batch-embed + batch-FAISS for everything that missed TM ────────
+    # generate_embeddings_batch yields per-row vectors identical to encoding one
+    # at a time; faiss_search_batch replays the same neighbour-selection logic as
+    # faiss_search. Pure round-trip / model-call reduction, no accuracy change.
+    if remaining_indices:
+        remaining_sentences = [sentences[i] for i in remaining_indices]
+        embeddings = generate_embeddings_batch(remaining_sentences)
+        faiss_results = faiss_search_batch(embeddings, target_lang, org_id)
 
-        if faiss_result:
-            if faiss_result["score"] >= 0.95:
-                faiss_translation = faiss_result["translated_text"]
-                # Apply post-hoc glossary enforcement on FAISS direct hits too
-                enforced = _apply_glossary_posthoc(sentence, faiss_translation, sentence_hints)
-                results[index] = _build_result(sentence, enforced, "faiss_direct", score=faiss_result["score"])
+        for position, index in enumerate(remaining_indices):
+            sentence = sentences[index]
+            sentence_hints = hints_by_index[index]
+            faiss_result = faiss_results[position]
+
+            if faiss_result:
+                if faiss_result["score"] >= 0.95:
+                    faiss_translation = faiss_result["translated_text"]
+                    # Apply post-hoc glossary enforcement on FAISS direct hits too
+                    enforced = _apply_glossary_posthoc(sentence, faiss_translation, sentence_hints)
+                    results[index] = _build_result(sentence, enforced, "faiss_direct", score=faiss_result["score"])
+                    continue
+
+                guided_queue.append({
+                    "index": index,
+                    "sentence": sentence,
+                    "reference_source": faiss_result["source_text"],
+                    "reference_translation": faiss_result["translated_text"],
+                    "glossary_hints": sentence_hints,
+                    "faiss_score": faiss_result["score"],
+                })
                 continue
 
-            guided_queue.append({
+            cold_queue.append({
                 "index": index,
                 "sentence": sentence,
-                "reference_source": faiss_result["source_text"],
-                "reference_translation": faiss_result["translated_text"],
                 "glossary_hints": sentence_hints,
-                "faiss_score": faiss_result["score"],
             })
-            continue
-
-        cold_queue.append({
-            "index": index,
-            "sentence": sentence,
-            "glossary_hints": sentence_hints,
-        })
 
     # ── Guided LLM — ONE single API call for the entire guided queue ────────────
     # Previously: ceil(len(guided_queue) / 15) calls

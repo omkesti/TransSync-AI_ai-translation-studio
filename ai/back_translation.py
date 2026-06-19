@@ -28,7 +28,7 @@ import os
 
 import numpy as np
 
-from ai.embeddings import generate_embeddings
+from ai.embeddings import generate_embeddings, generate_embeddings_batch
 from ai.llm_client import back_translate
 
 # Only these tiers are verified. tm_exact / faiss_direct came from
@@ -100,19 +100,45 @@ async def verify_back_translations(results: list[dict], source_lang: str) -> Non
         return_exceptions=True,
     )
 
-    # ── Phase 2: embeddings + cosine scoring (sequential) ─────────────────────
+    # ── Phase 2: embeddings + cosine scoring ──────────────────────────────────
     threshold = _threshold()
+
+    # Collect the (result, back-translation) pairs that actually need scoring,
+    # filtering out failed / empty back-translations exactly as before.
+    scored_pairs: list[tuple[dict, str]] = []
     for result, back in zip(targets, backs):
         if isinstance(back, Exception):
             print(f"[back_translation] back-translation failed — skipping: {back}")
             continue
         if not back:
             continue  # validator unavailable / empty output → skip silently
-        try:
-            score = _cosine_similarity(result["source"], back)
-        except Exception as e:
-            print(f"[back_translation] scoring failed — skipping: {e}")
-            continue
+        scored_pairs.append((result, back))
 
-        result["back_translation_score"] = round(score, 4)
-        result["back_translation_failed"] = score < threshold
+    if not scored_pairs:
+        return
+
+    # Batch-embed all sources and all back-translations in two model calls.
+    # Embeddings are L2-normalised, so the per-row dot product equals the cosine
+    # similarity — identical scores to scoring each pair individually, just fewer
+    # model invocations.
+    try:
+        sources = [r["source"] for r, _ in scored_pairs]
+        backs_text = [b for _, b in scored_pairs]
+        src_mat = generate_embeddings_batch(sources)
+        back_mat = generate_embeddings_batch(backs_text)
+        scores = np.clip(np.sum(src_mat * back_mat, axis=1), -1.0, 1.0)
+        for (result, _), score in zip(scored_pairs, scores):
+            result["back_translation_score"] = round(float(score), 4)
+            result["back_translation_failed"] = float(score) < threshold
+    except Exception as e:
+        # Best-effort fallback: score pair-by-pair so one bad row can't drop the
+        # whole batch's annotations.
+        print(f"[back_translation] batch scoring failed — falling back per-item: {e}")
+        for result, back in scored_pairs:
+            try:
+                score = _cosine_similarity(result["source"], back)
+            except Exception as inner:
+                print(f"[back_translation] scoring failed — skipping: {inner}")
+                continue
+            result["back_translation_score"] = round(score, 4)
+            result["back_translation_failed"] = score < threshold

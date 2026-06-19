@@ -77,6 +77,23 @@ class DocExportData(BaseModel):
     extraction_data:   Optional[dict] = None
 
 
+# ── XML safety ────────────────────────────────────────────────────────────────
+
+# OOXML (XML 1.0) forbids C0 control characters except tab (\x09), newline
+# (\x0A) and carriage return (\x0D). PDF text extraction and, rarely, LLM output
+# can carry NULL bytes / form feeds / other control chars; passing them to
+# python-docx raises "All strings must be XML compatible". Strip them defensively
+# at every text-injection point.
+_XML_ILLEGAL_RE = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F]")
+
+
+def xml_safe(text: str) -> str:
+    """Remove XML-incompatible control characters from text (keeps \\t \\n \\r)."""
+    if not text:
+        return text
+    return _XML_ILLEGAL_RE.sub("", text)
+
+
 # ── Heading detection heuristic ───────────────────────────────────────────────
 
 def is_heading(text: str) -> bool:
@@ -178,6 +195,7 @@ def reconstruct_docx(data: DocExportData) -> io.BytesIO:
     translated_paragraphs = reconstruct_paragraphs(data.raw_text, data.translations)
 
     for text in translated_paragraphs:
+        text = xml_safe(text)
         p = doc.add_paragraph()
         p.paragraph_format.space_after = Pt(6)
         run = p.add_run(text)
@@ -318,7 +336,7 @@ def build_translated_docx(data: DocExportData) -> io.BytesIO:
             continue
         translated = _resolve_paragraph_translation(original, exact_map, fuzzy_items)
         if translated is not None and translated != original:
-            inject_translation_into_paragraph(para, translated)
+            inject_translation_into_paragraph(para, xml_safe(translated))
 
     buf = io.BytesIO()
     doc.save(buf)

@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -40,31 +41,44 @@ def _get_groq_client():
     return _groq_client
 
 
-def _chat_completion(messages: list[dict], *, max_tokens: int, temperature: float, label: str):
-    """
-    Run a chat completion against Gemini, falling back to Groq's Llama 3.3 70B
-    on any error (rate limit, timeout, server error, etc.).
+# ── Rate-limit circuit breaker ────────────────────────────────────────────────
+# When Gemini returns rate-limit (HTTP 429 / quota) errors several times in a
+# row, we stop hammering it: the circuit "opens" and subsequent requests skip
+# Gemini and go STRAIGHT to the Groq fallback for a short cooldown. After the
+# cooldown one request probes Gemini again (half-open); success closes the
+# circuit, another rate limit re-opens it. This avoids paying a guaranteed-429
+# round-trip on every sentence batch once Gemini is clearly throttling us.
+RATE_LIMIT_TRIP_THRESHOLD = 3      # consecutive 429s before opening the circuit
+CIRCUIT_COOLDOWN_SECONDS = 60.0    # how long to bypass Gemini once opened
 
-    Returns the assistant message content string, or None if both providers
-    fail (or the fallback is unavailable). `label` is used only for logging.
-    """
+_consecutive_rate_limits = 0
+_circuit_open_until = 0.0           # monotonic deadline; <= now means "closed"
+
+
+def _is_rate_limit_error(exc: Exception) -> bool:
+    """Best-effort detection of a rate-limit / quota error across SDKs."""
+    # openai.RateLimitError (Gemini uses the OpenAI-compatible surface).
     try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-        )
-        content = response.choices[0].message.content if response.choices else None
-        return content.strip() if content else None
-    except Exception as primary_error:
-        print(f"[{label}] Gemini error: {primary_error} — falling back to {FALLBACK_MODEL_NAME}")
+        from openai import RateLimitError
+        if isinstance(exc, RateLimitError):
+            return True
+    except Exception:
+        pass
+    status = getattr(exc, "status_code", None) or getattr(
+        getattr(exc, "response", None), "status_code", None
+    )
+    if status == 429:
+        return True
+    text = str(exc).lower()
+    return "429" in text or "rate limit" in text or "quota" in text or "resource_exhausted" in text
 
+
+def _groq_completion(messages, *, max_tokens, temperature, label):
+    """Run a completion against the Groq fallback. Returns content or None."""
     groq_client = _get_groq_client()
     if groq_client is None:
         print(f"[{label}] No GROQ_API_KEY configured — fallback unavailable.")
         return None
-
     try:
         response = groq_client.chat.completions.create(
             model=FALLBACK_MODEL_NAME,
@@ -77,6 +91,55 @@ def _chat_completion(messages: list[dict], *, max_tokens: int, temperature: floa
     except Exception as fallback_error:
         print(f"[{label}] Groq fallback error: {fallback_error}")
         return None
+
+
+def _chat_completion(messages: list[dict], *, max_tokens: int, temperature: float, label: str):
+    """
+    Run a chat completion against Gemini, falling back to Groq's Llama 3.3 70B
+    on any error (rate limit, timeout, server error, etc.).
+
+    A circuit breaker tracks consecutive Gemini rate-limit errors: once
+    RATE_LIMIT_TRIP_THRESHOLD is reached, Gemini is bypassed entirely for
+    CIRCUIT_COOLDOWN_SECONDS and requests go directly to Groq.
+
+    Returns the assistant message content string, or None if both providers
+    fail (or the fallback is unavailable). `label` is used only for logging.
+    """
+    global _consecutive_rate_limits, _circuit_open_until
+
+    # Circuit OPEN → skip Gemini entirely, go straight to the fallback.
+    if time.monotonic() < _circuit_open_until:
+        return _groq_completion(messages, max_tokens=max_tokens, temperature=temperature, label=label)
+
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        content = response.choices[0].message.content if response.choices else None
+        _consecutive_rate_limits = 0      # success → reset / close the circuit
+        return content.strip() if content else None
+    except Exception as primary_error:
+        if _is_rate_limit_error(primary_error):
+            _consecutive_rate_limits += 1
+            print(
+                f"[{label}] Gemini rate-limited "
+                f"({_consecutive_rate_limits}/{RATE_LIMIT_TRIP_THRESHOLD}) — "
+                f"falling back to {FALLBACK_MODEL_NAME}"
+            )
+            if _consecutive_rate_limits >= RATE_LIMIT_TRIP_THRESHOLD:
+                _circuit_open_until = time.monotonic() + CIRCUIT_COOLDOWN_SECONDS
+                print(
+                    f"[{label}] Gemini circuit OPEN — routing directly to "
+                    f"{FALLBACK_MODEL_NAME} for {CIRCUIT_COOLDOWN_SECONDS:.0f}s"
+                )
+        else:
+            # Non-rate-limit error: don't trip the breaker, just fall back once.
+            print(f"[{label}] Gemini error: {primary_error} — falling back to {FALLBACK_MODEL_NAME}")
+
+    return _groq_completion(messages, max_tokens=max_tokens, temperature=temperature, label=label)
 
 
 def back_translate(text: str, source_lang: str) -> str | None:

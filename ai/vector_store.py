@@ -179,3 +179,96 @@ def faiss_search(embedding: np.ndarray, target_lang: str, org_id: str) -> dict |
         return result
 
     return None
+
+
+def faiss_search_batch(
+    embeddings: np.ndarray, target_lang: str, org_id: str
+) -> list[dict | None]:
+    """
+    Batch version of faiss_search.
+
+    Runs ONE FAISS search for all query vectors and resolves all candidate
+    neighbours against Supabase in ONE `.in_(...)` query, then replays the exact
+    same per-vector selection logic as faiss_search:
+        - search k = min(3, ntotal) neighbours
+        - skip unfilled slots (f_index < 0) and too-dissimilar hits (score > 0.8)
+        - take the first neighbour that resolves to a row for this lang + org
+        - include source_text when score >= 0.05; score >= 0.95 stays the
+          caller's concern (same dict contract as faiss_search)
+
+    Accuracy note: results are identical to calling faiss_search per row. FAISS
+    batch search returns the same neighbours as single search, and the resolution
+    map holds the same row .limit(1) would have returned for each faiss_index
+    (first row per index wins). This is purely a round-trip reduction.
+
+    Args:
+        embeddings: 2D array of shape (N, dim) — one query vector per row.
+    Returns:
+        A list of length N; entry i is the faiss_search-style dict for query i,
+        or None when no neighbour resolved above threshold.
+    """
+    n = int(embeddings.shape[0]) if embeddings.ndim == 2 else 0
+    if n == 0:
+        return []
+    if index.ntotal == 0:
+        return [None] * n
+
+    normalized = _normalize_lang(target_lang)
+    matrix = embeddings.astype("float32")
+
+    k = min(3, index.ntotal)
+    scores, indices = index.search(matrix, k=k)
+
+    # ── Gather every candidate faiss_index that passes the distance gate ───────
+    candidates: set[int] = set()
+    for row_scores, row_indices in zip(scores, indices):
+        for score, f_index in zip(row_scores, row_indices):
+            if f_index < 0 or score > 0.8:
+                continue
+            candidates.add(int(f_index))
+
+    if not candidates:
+        return [None] * n
+
+    # ── Resolve all candidates against Supabase in one query ───────────────────
+    try:
+        response = (
+            supabase.from_("translation_memory")
+            .select("source_text, translated_text, faiss_index")
+            .in_("faiss_index", list(candidates))
+            .eq("target_lang", normalized)
+            .eq("org_id", org_id)
+            .execute()
+        )
+        rows = response.data or []
+    except Exception as e:
+        print(f"[faiss] Batch Supabase resolution error: {e}")
+        return [None] * n
+
+    row_by_index: dict[int, dict] = {}
+    for row in rows:
+        f_index = int(row["faiss_index"])
+        # First row per faiss_index wins (mirrors .limit(1)).
+        if f_index not in row_by_index:
+            row_by_index[f_index] = row
+
+    # ── Replay the per-vector selection against the resolved map ───────────────
+    results: list[dict | None] = [None] * n
+    for i, (row_scores, row_indices) in enumerate(zip(scores, indices)):
+        for score, f_index in zip(row_scores, row_indices):
+            if f_index < 0 or score > 0.8:
+                continue
+            row = row_by_index.get(int(f_index))
+            if row is None:
+                continue  # vector exists but no row for this lang/org — try next k
+
+            result = {
+                "translated_text": row["translated_text"],
+                "score": float(score),
+            }
+            if score >= 0.05:
+                result["source_text"] = row["source_text"]
+            results[i] = result
+            break
+
+    return results
