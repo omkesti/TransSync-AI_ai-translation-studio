@@ -54,16 +54,17 @@ function LandingPage() {
         {/* Hero Section */}
         <section className="pt-24 pb-16 text-center space-y-8 flex flex-col items-center">
           <h1 className="font-display text-6xl md:text-8xl font-black tracking-tight leading-[0.9]">
-            Global Translation.
+            Translate documents.
             <br />
             <span className="text-primary-container">
-              Local Context. Neural Intelligence.
+              Preserve every detail.
             </span>
           </h1>
           <p className="text-on-surface-variant max-w-xl mx-auto font-sans leading-relaxed text-sm md:text-base">
-            RAG-powered translation with a perfect memory.
-            <br /> Secure, consistent, and contextually precise across every
-            document.
+            RAG-powered translation that reuses your approved memory and enforces
+            your glossary —
+            <br /> reviewed by a human and exported with the original formatting
+            intact.
           </p>
           <Link
             to="/dashboard"
@@ -91,15 +92,15 @@ function LandingPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div>
               <p className="text-primary-container font-bold text-xs tracking-widest uppercase mb-3">
-                Architecture
+                How it works
               </p>
               <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight">
-                The Liquid Workflow
+                From upload to download
               </h2>
             </div>
             <p className="text-on-surface-variant text-sm max-w-xs md:text-right">
-              Experience data that flows like water, adapting to cultural
-              nuances in real-time.
+              Every document flows through validation, memory-aware translation,
+              human review, and a format-true export.
             </p>
           </div>
 
@@ -111,11 +112,12 @@ function LandingPage() {
                   <Sparkles size={18} />
                 </div>
                 <h3 className="font-display text-xl font-bold">
-                  Neural Adaptation
+                  Translation Memory
                 </h3>
                 <p className="text-on-surface-variant text-sm leading-relaxed pb-8">
-                  Our engines don't just translate; they adapt to the emotional
-                  cadence of the speaker.
+                  Exact and semantic matches reuse the translations you've
+                  already approved — consistent terminology with fewer LLM calls
+                  over time.
                 </p>
               </div>
               <div className="h-40 w-full overflow-hidden shrink-0 mt-auto px-4 pb-4">
@@ -134,11 +136,12 @@ function LandingPage() {
                   <Sparkles size={18} />
                 </div>
                 <h3 className="font-display text-xl font-bold">
-                  TransSync Engine V2
+                  Glossary Enforcement
                 </h3>
                 <p className="text-on-surface-variant text-sm leading-relaxed pb-8">
-                  Proprietary LLM technology optimized for sub-100ms latency
-                  across 140+ dialects.
+                  Verified glossary terms are injected into every prompt and
+                  re-checked after translation, so your domain language stays
+                  exact.
                 </p>
               </div>
               <div className="h-40 w-full overflow-hidden shrink-0 mt-auto px-4 pb-4">
@@ -157,11 +160,11 @@ function LandingPage() {
                   <Globe size={18} />
                 </div>
                 <h3 className="font-display text-xl font-bold">
-                  Global Context
+                  Format-Preserving Export
                 </h3>
                 <p className="text-on-surface-variant text-sm leading-relaxed pb-8">
-                  Localized slang and professional terminology are baked into
-                  every request.
+                  Translations are injected back into your original DOCX at the
+                  run level — fonts, tables, and styles survive untouched.
                 </p>
               </div>
               <div className="h-40 w-full overflow-hidden shrink-0 mt-auto px-4 pb-4">
@@ -199,19 +202,20 @@ function LandingPage() {
           <div className="space-y-8">
             <div>
               <p className="text-primary-container font-bold text-xs tracking-widest uppercase mb-3">
-                Compliance
+                Privacy
               </p>
               <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight">
-                Enterprise Grade
+                Private by
                 <br />
-                Security
+                architecture
               </h2>
             </div>
 
             <p className="text-on-surface-variant text-sm leading-relaxed">
-              Your data stays yours. We employ end-to-end post-quantum
-              encryption and zero-knowledge storage, ensuring your conversations
-              remain private at every layer of the translation process.
+              Your data stays yours. The backend is stateless — uploaded files
+              are parsed in memory and never written to disk. Only the
+              translations you explicitly approve are saved, scoped to your
+              organization.
             </p>
 
             <div className="space-y-6 pt-4">
@@ -225,11 +229,11 @@ function LandingPage() {
                 </div>
                 <div>
                   <h4 className="font-display font-bold text-lg mb-1 relative after:content-[''] after:inline-block after:w-2 after:h-2 after:bg-primary-container after:rounded-full after:ml-2 after:mb-1 after:animate-pulse">
-                    SOC2 Type II Certified
+                    Stateless Document Handling
                   </h4>
                   <p className="text-on-surface-variant text-sm">
-                    Meeting the highest global standards for data security and
-                    operational excellence.
+                    Uploaded PDFs and Word files are parsed in memory and never
+                    persisted to disk.
                   </p>
                 </div>
               </div>
@@ -239,11 +243,11 @@ function LandingPage() {
                 </div>
                 <div>
                   <h4 className="font-display font-bold text-lg mb-1 relative after:content-[''] after:inline-block after:w-2 after:h-2 after:bg-primary-container after:rounded-full after:ml-2 after:mb-1 after:animate-pulse">
-                    Zero-Retention Policy
+                    Organization-Scoped Access
                   </h4>
                   <p className="text-on-surface-variant text-sm">
-                    Translations are processed in volatile memory and instantly
-                    purged upon delivery.
+                    Supabase-backed role control ties every translation, glossary
+                    term, and memory entry to your org.
                   </p>
                 </div>
               </div>
@@ -255,11 +259,12 @@ function LandingPage() {
         <section className="py-16 my-12">
           <div className="bg-surface-dim border border-outline-variant/10 rounded-3xl p-12 md:p-24 text-center space-y-8 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
             <h2 className="font-display text-4xl md:text-6xl font-black italic tracking-tighter">
-              Break the Silence.
+              Bring your documents.
             </h2>
             <p className="text-on-surface-variant max-w-lg mx-auto text-sm">
-              Join over 5,000 global enterprises scaling their communication
-              with TransSync AI.
+              From validation to a polished, format-true download — TransSync
+              handles the workflow so your team can focus on the words that
+              matter.
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
               <Link
@@ -284,8 +289,8 @@ function LandingPage() {
               TransSync <span className="text-on-surface">AI</span>
             </div>
             <p className="text-on-surface-variant text-xs leading-relaxed max-w-xs">
-              Redefining how the world communicates through atmospheric neural
-              intelligence.
+              Context-aware document translation with memory, glossary control,
+              and human review.
             </p>
           </div>
 
@@ -295,16 +300,16 @@ function LandingPage() {
             </h5>
             <ul className="text-on-surface-variant text-xs space-y-3 font-medium">
               <li className="hover:text-on-surface cursor-pointer">
-                Neural Engines
+                Translation Memory
               </li>
               <li className="hover:text-on-surface cursor-pointer">
-                Real-time Audio
+                Glossary Control
               </li>
               <li className="hover:text-on-surface cursor-pointer">
-                API Documentation
+                Review Workflow
               </li>
               <li className="hover:text-on-surface cursor-pointer">
-                Voice Synthesis
+                Format-Preserving Export
               </li>
             </ul>
           </div>
@@ -345,7 +350,7 @@ function LandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto flex justify-between items-center pt-8 border-t border-outline-variant/10 text-[10px] text-on-surface-variant">
-          <p>&copy; 2026 TransSync AI Inc. Built for the unbroken future.</p>
+          <p>&copy; 2026 TransSync AI. Translate with context, memory, and confidence.</p>
           <div className="flex gap-4">
             <Globe size={14} className="hover:text-on-surface cursor-pointer" />
             <Settings

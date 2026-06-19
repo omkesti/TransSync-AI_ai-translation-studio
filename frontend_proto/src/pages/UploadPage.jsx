@@ -20,7 +20,6 @@ import {
   CloudUpload,
   FileText,
   File,
-  Code,
   Download,
   X,
 } from "lucide-react";
@@ -290,11 +289,11 @@ function UploadPage() {
           {/* Hero Titles */}
           <div className="text-center w-full max-w-4xl z-10 space-y-6 mb-16">
             <h1 className="font-display font-black text-6xl md:text-7xl tracking-tighter leading-[0.9]">
-              digital <span className="text-[#c5fe00]">transmission</span>
+              upload &amp; <span className="text-[#c5fe00]">prepare</span>
             </h1>
             <p className="text-[#a0a09f] max-w-xl mx-auto text-lg leading-relaxed font-sans">
-              Prepare your assets for multilingual expansion. Our engine
-              processes semantic nuances across 80+ locales in milliseconds.
+              Add the PDFs or Word documents you want to translate. We'll extract
+              the text and get them ready for validation.
             </p>
           </div>
 
@@ -377,9 +376,6 @@ function UploadPage() {
                 <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
                   <File size={14} /> DOCX
                 </div>
-                <div className="bg-[#222222] border border-[#333333] text-[#a0a09f] flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-bold tracking-widest hover:text-[#ffffff] transition-colors">
-                  <Code size={14} /> XLIFF
-                </div>
               </div>
             </div>
 
@@ -393,12 +389,13 @@ function UploadPage() {
                     <Zap size={14} className="fill-[#c5fe00]" />
                   </div>
                   <span className="text-[#c5fe00] font-bold text-[10px] tracking-widest uppercase">
-                    Priority Processing
+                    Quick Start
                   </span>
                 </div>
 
                 <p className="text-[#555555] text-[12px] leading-relaxed mb-8 font-sans">
-                  Select your target language on the Review page before starting translation. Upload your files here to get started.
+                  Drop in one or more PDF or DOCX files. You'll pick the target
+                  language on the Review page once your documents are validated.
                 </p>
 
                 <button
@@ -445,15 +442,15 @@ function UploadPage() {
               System Live
             </span>
             <span className="flex items-center gap-2 hidden md:flex">
-              Latency <span className="text-[#c5fe00]">128ms</span>
+              Formats <span className="text-[#c5fe00]">PDF · DOCX</span>
             </span>
             <span className="flex items-center gap-2 hidden md:flex">
-              Context Retention <span className="text-[#c5fe00]">99.9%</span>
+              Max Size <span className="text-[#c5fe00]">50MB / file</span>
             </span>
           </div>
 
           <div className="flex items-center gap-3 pointer-events-auto">
-            V4.2.0-STABLE <Monitor size={12} className="text-[#a0a09f]" />
+            TransSync AI Studio <Monitor size={12} className="text-[#a0a09f]" />
           </div>
         </footer>
       </div>

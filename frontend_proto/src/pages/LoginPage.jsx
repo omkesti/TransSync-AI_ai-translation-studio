@@ -56,7 +56,7 @@ function LoginPage() {
           <Link to="/" className="inline-block">
             <span className="font-display font-bold text-4xl tracking-tight text-primary-container block leading-none">TransSync <span className="text-on-surface">AI</span></span>
           </Link>
-          <p className="text-[#a0a09f] text-[10px] uppercase tracking-[0.3em] mt-3">Architecting Global Dialogue</p>
+          <p className="text-[#a0a09f] text-[10px] uppercase tracking-[0.3em] mt-3">Document Translation, With Memory</p>
         </div>
 
         {/* Login Card */}

@@ -252,10 +252,10 @@ function DashboardPage() {
 
             {/* Header */}
             <div>
-              <h1 className="font-display font-bold text-4xl mb-3 tracking-tight">Systems Overview</h1>
+              <h1 className="font-display font-bold text-4xl mb-3 tracking-tight">Overview</h1>
               <p className="text-[#8c8c8b] text-[15px]">
-                Monitoring linguistic processing throughput and document health<br/>
-                across all active translation nodes.
+                Your translation activity at a glance — memory reuse, LLM usage,<br/>
+                and the most recent documents across your organization.
               </p>
             </div>
 

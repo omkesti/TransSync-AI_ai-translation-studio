@@ -109,15 +109,9 @@ function ErrorCard({ errorText, index }) {
         </div>
       </div>
 
-      <p className="text-[#a0a09f] text-[14px] leading-relaxed mb-8 max-w-xl font-sans relative z-10">
+      <p className="text-[#a0a09f] text-[14px] leading-relaxed max-w-xl font-sans relative z-10">
         {errorText}
       </p>
-
-      <div className="flex gap-4 relative z-10">
-        <button className="bg-[#222222] hover:bg-[#2a2a2a] border border-transparent text-[#a0a09f] hover:text-white font-bold text-xs uppercase tracking-widest px-8 py-3.5 rounded-full transition-colors">
-          Ignore
-        </button>
-      </div>
     </div>
   );
 }
@@ -231,11 +225,6 @@ function ValidationPage() {
 
   const healthScore  = validationState === "done"
     ? (apiStatus === "ok" ? 100 : computeHealthScore(apiErrors))
-    : null;
-
-  // Proxy readability: scales with sentence count, capped at 98
-  const readability = sentenceCount > 0
-    ? Math.min(98, 60 + Math.round(sentenceCount / 2))
     : null;
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -559,22 +548,6 @@ function ValidationPage() {
                     </div>
                   </div>
 
-                  {/* Readability proxy bar */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-[11px] font-sans">
-                      <span className="text-[#a0a09f]">Readability Index</span>
-                      <span className="font-bold text-[#c5fe00]">
-                        {readability !== null && validationState === "done" ? `${readability}%` : "—"}
-                      </span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-[#222222] overflow-hidden">
-                      <div
-                        className="h-full bg-[#c5fe00] rounded-full transition-all duration-700"
-                        style={{ width: `${validationState === "done" && readability ? readability : 0}%` }}
-                      />
-                    </div>
-                  </div>
-
                   {/* Sentence density */}
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-[11px] font-sans">
@@ -596,17 +569,25 @@ function ValidationPage() {
                 </div>
               </div>
 
-              {/* AI Quick-Resolve Block */}
+              {/* What we check */}
               <div className="bg-[#151515] border border-[#2a2e16] rounded-[24px] p-8 shadow-[0_20px_40px_rgba(197,254,0,0.03)] mt-auto relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-32 h-32 bg-[#c5fe00] opacity-[0.03] blur-[40px] pointer-events-none rounded-full group-hover:opacity-10 transition-opacity" />
-                <h4 className="font-display text-white font-bold text-[18px] mb-3 relative z-10">AI Quick-Resolve</h4>
-                <p className="text-[#8c8c8b] text-[12px] leading-relaxed mb-6 font-sans relative z-10">
-                  Enable auto-fix for all low-severity issues to speed up the workflow.
+                <h4 className="font-display text-white font-bold text-[18px] mb-3 relative z-10">What we check</h4>
+                <p className="text-[#8c8c8b] text-[12px] leading-relaxed mb-5 font-sans relative z-10">
+                  Before translation, every document is run through the NLP pipeline:
                 </p>
-                <button className="text-[#c5fe00] hover:text-[#b9ef00] transition-colors font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 relative z-10">
-                  {validationState === "running" ? "Validating…" : "Activate Auto-Pilot"}{" "}
-                  <ArrowRight size={14} />
-                </button>
+                <ul className="space-y-2.5 relative z-10">
+                  {[
+                    "Grammar & spelling (LanguageTool)",
+                    "Sentence segmentation (spaCy)",
+                    "Empty, encoding & length issues",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-[#a0a09f] text-[12px] leading-relaxed">
+                      <CheckCircle size={13} className="text-[#c5fe00] shrink-0 mt-0.5" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
             </aside>

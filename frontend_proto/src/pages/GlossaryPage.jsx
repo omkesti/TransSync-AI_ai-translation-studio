@@ -104,7 +104,7 @@ function AddTermModal({ onClose, onSave }) {
             <label className={labelCls}>Source Term (EN)</label>
             <input
               className={inputCls}
-              placeholder="e.g. Neural Interface"
+              placeholder="e.g. Force Majeure"
               value={form.source_term}
               onChange={e => setForm(f => ({ ...f, source_term: e.target.value }))}
             />
@@ -114,7 +114,7 @@ function AddTermModal({ onClose, onSave }) {
             <label className={labelCls}>Translation</label>
             <input
               className={inputCls}
-              placeholder="e.g. Interface Neurale"
+              placeholder="e.g. Cas de Force Majeure"
               value={form.target_term}
               onChange={e => setForm(f => ({ ...f, target_term: e.target.value }))}
             />
@@ -364,7 +364,7 @@ function GlossaryPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 relative z-10 gap-6">
               <div>
                 <h1 className="font-display font-black text-5xl tracking-tight mb-3">glossary <br className="hidden md:block"/>management</h1>
-                <p className="text-[#8c8c8b] text-[15px] font-sans">Centralized linguistic assets for TransSync global projects.</p>
+                <p className="text-[#8c8c8b] text-[15px] font-sans">Lock in your domain terminology — verified terms are enforced in every translation.</p>
               </div>
               <button
                 onClick={() => setShowModal(true)}
