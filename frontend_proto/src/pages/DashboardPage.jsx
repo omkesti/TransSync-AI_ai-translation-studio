@@ -785,14 +785,6 @@ function DashboardPage() {
         {/* Sidebar */}
         <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex overflow-y-auto layout-scrollbar">
           <div className="p-6 pb-2 flex-1 flex flex-col">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-8 h-8 rounded-full bg-[#c5fe00] text-[#0a0a0a] flex items-center justify-center font-bold text-sm">A</div>
-              <div className="flex flex-col">
-                <span className="text-[#c5fe00] font-bold text-[11px] uppercase tracking-widest leading-none mb-1">TransSync</span>
-                <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</span>
-              </div>
-            </div>
-
             <button
               onClick={() => setModalOpen(true)}
               className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full py-3.5 flex items-center justify-center gap-2 font-bold text-sm shadow-[0_0_15px_rgba(197,254,0,0.15)] mb-8"
