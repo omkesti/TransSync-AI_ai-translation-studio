@@ -142,6 +142,69 @@ def bulk_insert_translations(rows: list[dict]) -> list[dict]:
     return response.data
 
 
+# ── Pipeline events (analytics) ───────────────────────────────────────────────
+# Table: pipeline_events
+#   id              uuid (PK, auto)
+#   org_id          text
+#   source_text     text
+#   translated_text text
+#   source_lang     varchar (default "en")
+#   target_lang     varchar
+#   match_type      varchar ("tm_exact" | "faiss_direct" | "llm_guided" | "llm_cold")
+#   source_document text    (original upload filename, "" when unknown)
+#   created_at      timestamp (auto)
+#
+# Unlike translation_memory (which only stores APPROVED LLM translations),
+# pipeline_events records EVERY processed sentence at translate-time — including
+# TM-exact and FAISS-direct hits that are never re-stored in the TM. This is the
+# source of truth for the Dashboard's tier breakdown and "recent documents".
+
+def log_pipeline_events(rows: list[dict]) -> None:
+    """
+    Best-effort insert of per-sentence pipeline events.
+
+    NEVER raises — analytics logging must never break a translation request.
+    A failure here (e.g. the table doesn't exist yet) is logged and swallowed.
+    """
+    if not rows:
+        return
+    try:
+        client = get_client()
+        formatted = [
+            {
+                "org_id":          r["org_id"],
+                "source_text":     r.get("source_text", ""),
+                "translated_text": r.get("translated_text", ""),
+                "source_lang":     r.get("source_lang", "en"),
+                "target_lang":     r.get("target_lang", ""),
+                "match_type":      r.get("match_type", ""),
+                "source_document": r.get("source_document", "") or "",
+            }
+            for r in rows
+        ]
+        client.table("pipeline_events").insert(formatted).execute()
+    except Exception as e:
+        print(f"[pipeline_events] log failed (non-fatal): {e}")
+
+
+def fetch_pipeline_events(org_id: str) -> list[dict]:
+    """
+    Returns pipeline_events rows for an org, newest first.
+
+    Used by GET /api/dashboard-stats. The caller is expected to guard against
+    exceptions (e.g. the table not existing yet) and fall back to an empty list.
+    """
+    client = get_client()
+    response = (
+        client.table("pipeline_events")
+        .select("*")
+        .eq("org_id", org_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return response.data
+
+
 # ── Glossary ──────────────────────────────────────────────────────────────────
 # Table: glossary
 #   id          uuid (PK, auto)

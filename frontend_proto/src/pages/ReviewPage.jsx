@@ -68,6 +68,29 @@ const ORDERED_MATCH_TYPES = [
   "tm_exact",
 ];
 
+const EMPTY_OFFSETS = { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 };
+
+// Bucket translation results by their match_type tier.
+function groupByMatchType(list) {
+  const groups = { llm_cold: [], llm_guided: [], faiss_direct: [], tm_exact: [] };
+  (list || []).forEach((r) => {
+    (groups[r.match_type] || groups.llm_cold).push(r);
+  });
+  return groups;
+}
+
+// The first tier (in review order) that still has unreviewed batches, given the
+// per-tier reviewed offsets. Falls back to the first populated tier, then cold.
+function firstPendingSection(groups, offsets) {
+  return (
+    ORDERED_MATCH_TYPES.find(
+      (mt) => groups[mt]?.length > 0 && (offsets?.[mt] || 0) < groups[mt].length,
+    ) ||
+    ORDERED_MATCH_TYPES.find((mt) => groups[mt]?.length > 0) ||
+    "llm_cold"
+  );
+}
+
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
 function Sidebar() {
@@ -399,6 +422,7 @@ function ReviewPage() {
 
   const {
     docId,
+    filename,
     sentences,
     results,
     setResults,
@@ -434,23 +458,7 @@ function ReviewPage() {
   const [sidebarTab, setSidebarTab] = useState("match_types");
 
   // Group results by match_type
-  const groupedResults = useMemo(() => {
-    const groups = {
-      llm_cold: [],
-      llm_guided: [],
-      faiss_direct: [],
-      tm_exact: [],
-    };
-    if (!results) return groups;
-    results.forEach((r) => {
-      if (groups[r.match_type]) {
-        groups[r.match_type].push(r);
-      } else {
-        groups.llm_cold.push(r);
-      }
-    });
-    return groups;
-  }, [results]);
+  const groupedResults = useMemo(() => groupByMatchType(results), [results]);
 
   const initialState = results && results.length > 0 ? "done" : "idle";
   const [translationState, setTranslationState] = useState(initialState);
@@ -469,29 +477,29 @@ function ReviewPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Sync offsets + reviewedCount from AppContext whenever active doc changes ──
+  // ── Sync offsets + reviewedCount + landing section whenever the active doc changes ──
+  // Switching documents lands on that doc's first still-pending tier. This runs
+  // ONLY on doc switch (keyed by docId) — NOT on every approval — so approving a
+  // batch can't snap the view back to another section.
   useEffect(() => {
     const doc = documents[activeDocIndex];
-    setOffsets(doc?.reviewOffsets || { llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 });
+    const docOffsets = doc?.reviewOffsets || { ...EMPTY_OFFSETS };
+    setOffsets(docOffsets);
     setReviewedCount(doc?.reviewedCount ?? 0);
+    if (doc?.results && doc.results.length > 0) {
+      setActiveSection(firstPendingSection(groupByMatchType(doc.results), docOffsets));
+    }
   }, [activeDocIndex, docId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Track translation lifecycle state (does NOT touch the active section) ──
   useEffect(() => {
     if (results && results.length > 0) {
       setTranslationState("done");
-      const firstPopulated =
-        ORDERED_MATCH_TYPES.find((mt) => groupedResults[mt]?.length > 0) ||
-        "llm_cold";
-      setActiveSection(firstPopulated);
     } else {
       const activeDoc = documents[activeDocIndex];
-      if (activeDoc?.status === "translating") {
-        setTranslationState("running");
-      } else {
-        setTranslationState("idle");
-      }
+      setTranslationState(activeDoc?.status === "translating" ? "running" : "idle");
     }
-  }, [results, docId, groupedResults, documents, activeDocIndex]);
+  }, [results, docId, documents, activeDocIndex]);
 
   const handleStartTranslation = async (translateAll = true) => {
     const pendingDocs = documents.filter(
@@ -525,6 +533,9 @@ function ReviewPage() {
     setTranslationState("running");
     setErrorMessage("");
 
+    // Results for the doc currently in view — used to land on its first tier.
+    let activeResultsAfter = null;
+
     try {
       if (isMultiMode) {
         let currentDocResponse = null;
@@ -544,6 +555,7 @@ function ReviewPage() {
             doc.sentences,
             sourceLang,
             effLang,
+            doc.filename,
           );
           updateDoc(doc.docId, {
             results: response.results || [],
@@ -561,7 +573,8 @@ function ReviewPage() {
         }
 
         if (currentDocResponse) {
-          setResults(currentDocResponse.results || []);
+          activeResultsAfter = currentDocResponse.results || [];
+          setResults(activeResultsAfter);
         }
       } else {
         const effLang = docTargetLang || targetLang;
@@ -569,8 +582,10 @@ function ReviewPage() {
           sentences,
           sourceLang,
           effLang,
+          filename,
         );
-        setResults(response.results || []);
+        activeResultsAfter = response.results || [];
+        setResults(activeResultsAfter);
         updateDoc(docId, {
           results: response.results || [],
           // Persist the language the doc was actually translated into, so it
@@ -582,8 +597,14 @@ function ReviewPage() {
         });
       }
 
-      setOffsets({ llm_cold: 0, llm_guided: 0, faiss_direct: 0, tm_exact: 0 });
+      setOffsets({ ...EMPTY_OFFSETS });
       setReviewedCount(0);
+      // Land on the first populated tier for the doc now in view.
+      if (activeResultsAfter && activeResultsAfter.length > 0) {
+        setActiveSection(
+          firstPendingSection(groupByMatchType(activeResultsAfter), EMPTY_OFFSETS),
+        );
+      }
       setTranslationState("done");
     } catch (error) {
       setErrorMessage(error.message || "Translation failed.");
@@ -594,6 +615,16 @@ function ReviewPage() {
   const pendingCount = Math.max(0, totalCount - reviewedCount);
   const progressPercent =
     totalCount > 0 ? Math.round((reviewedCount / totalCount) * 100) : 0;
+
+  // Advance to the next pending tier ONLY when the tier just acted on is fully
+  // reviewed. While a tier still has batches left, the view stays put — so
+  // approving one batch never jumps the reviewer to another section.
+  const advanceSectionAfter = (newOffsets, matchType) => {
+    const current = groupedResults[matchType];
+    if (current && newOffsets[matchType] < current.length) return; // still pending → stay
+    const next = firstPendingSection(groupedResults, newOffsets);
+    setActiveSection(next);
+  };
 
   const handleApproveBatch = async (batch, matchType) => {
     if (!batch.length || isApproving) return;
@@ -633,6 +664,7 @@ function ReviewPage() {
       setReviewedCount(newReviewedCount);
       setOffsets(newOffsets);
       updateDoc(docId, { reviewOffsets: newOffsets, reviewedCount: newReviewedCount });
+      advanceSectionAfter(newOffsets, matchType);
     } catch (error) {
       setErrorMessage(error.message || "Approval failed.");
     } finally {
@@ -647,12 +679,17 @@ function ReviewPage() {
     setReviewedCount(newReviewedCount);
     setOffsets(newOffsets);
     updateDoc(docId, { reviewOffsets: newOffsets, reviewedCount: newReviewedCount });
+    advanceSectionAfter(newOffsets, matchType);
   };
 
   const isIdle = translationState === "idle";
   const isRunning = translationState === "running";
   const isDone = translationState === "done" || hasResults;
   const isError = translationState === "error";
+
+  // Translation can only start once a target language has been chosen (the
+  // selector lives in the header). Gate the Start Translation controls on it.
+  const hasTargetLang = Boolean(docTargetLang || targetLang);
 
   // Check if ALL sections are fully reviewed
   const allReviewed =
@@ -788,28 +825,43 @@ function ReviewPage() {
                     </p>
                   )}
                   {sentences && sentences.length > 0 ? (
-                    <div className="flex flex-col sm:flex-row gap-4 items-center">
-                      {reviewableDocs.filter((d) => d.status === "validated").length > 1 && (
+                    hasTargetLang ? (
+                      <div className="flex flex-col sm:flex-row gap-4 items-center">
+                        {reviewableDocs.filter((d) => d.status === "validated").length > 1 && (
+                          <button
+                            onClick={() => handleStartTranslation(true)}
+                            className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
+                          >
+                            <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
+                            {`Translate All ${reviewableDocs.filter((d) => d.status === "validated").length} Docs`}
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleStartTranslation(true)}
-                          className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
+                          onClick={() => handleStartTranslation(false)}
+                          className={
+                            reviewableDocs.filter((d) => d.status === "validated").length > 1
+                              ? "border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-[#ffffff] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest transition-colors"
+                              : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
+                          }
                         >
-                          <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
-                          {`Translate All ${reviewableDocs.filter((d) => d.status === "validated").length} Docs`}
+                          <Zap size={16} strokeWidth={3} className={reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "" : "fill-[#0a0a0a]"} />
+                          {reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "Translate Current Doc" : "Start Translation"}
                         </button>
-                      )}
-                      <button
-                        onClick={() => handleStartTranslation(false)}
-                        className={
-                          reviewableDocs.filter((d) => d.status === "validated").length > 1
-                            ? "border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-[#ffffff] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest transition-colors"
-                            : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
-                        }
-                      >
-                        <Zap size={16} strokeWidth={3} className={reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "" : "fill-[#0a0a0a]"} />
-                        {reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "Translate Current Doc" : "Start Translation"}
-                      </button>
-                    </div>
+                      </div>
+                    ) : (
+                      /* No target language picked yet — point to the header selector. */
+                      <div className="flex flex-col items-center gap-3 bg-[#15170d] border border-[#2a2e16] rounded-[20px] px-8 py-6">
+                        <Globe size={22} className="text-[#c5fe00]" />
+                        <p className="text-[#ffffff] text-sm font-bold">
+                          Select a target language to begin
+                        </p>
+                        <p className="text-[#8c8c8b] text-[12px] max-w-xs leading-relaxed">
+                          Use the <span className="text-[#c5fe00] font-bold">Target</span> selector
+                          in the header above to choose a language. The Start Translation button
+                          appears once it's set.
+                        </p>
+                      </div>
+                    )
                   ) : (
                     <Link
                       to="/validation"
@@ -1051,25 +1103,34 @@ function ReviewPage() {
               <p className="text-[#8c8c8b] text-[12px] font-medium">
                 {isRunning
                   ? "Translation in progress…"
-                  : "Click Start Translation when ready."}
+                  : hasTargetLang
+                    ? "Click Start Translation when ready."
+                    : "Select a target language in the header to begin."}
               </p>
             </div>
-            <button
-              onClick={handleStartTranslation}
-              disabled={isRunning || !sentences?.length}
-              className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isRunning ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" /> Translating…
-                </>
-              ) : (
-                <>
-                  <Zap size={14} strokeWidth={3} className="fill-[#0a0a0a]" />{" "}
-                  Start Translation
-                </>
-              )}
-            </button>
+            {/* Start Translation only appears once a target language is selected. */}
+            {hasTargetLang ? (
+              <button
+                onClick={() => handleStartTranslation()}
+                disabled={isRunning || !sentences?.length}
+                className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isRunning ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Translating…
+                  </>
+                ) : (
+                  <>
+                    <Zap size={14} strokeWidth={3} className="fill-[#0a0a0a]" />{" "}
+                    Start Translation
+                  </>
+                )}
+              </button>
+            ) : (
+              <span className="flex items-center gap-2 text-[#c5fe00] text-[11px] font-bold uppercase tracking-widest border border-[#2a2e16] bg-[#15170d] rounded-full px-5 py-3">
+                <Globe size={14} /> Target language required
+              </span>
+            )}
           </div>
         )}
       </div>

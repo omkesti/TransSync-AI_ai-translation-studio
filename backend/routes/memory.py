@@ -26,7 +26,11 @@ Responsibility:
 from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
-from backend.services.supabase_client import fetch_all_memory, bulk_insert_translations
+from backend.services.supabase_client import (
+    fetch_all_memory,
+    bulk_insert_translations,
+    fetch_pipeline_events,
+)
 from backend.utils.language_codes import normalize_lang_code
 from ai.tm_indexing import index_approved_rows
 from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
@@ -84,21 +88,25 @@ async def get_dashboard_stats(current_user: CurrentUser = Depends(get_current_us
     """
     GET /api/dashboard-stats
 
-    Returns aggregated metrics computed from translation_memory for the
-    Dashboard page.  All aggregation is done in Python from a single DB
-    fetch so we don't need extra Supabase queries.
+    Returns aggregated metrics for the Dashboard page, computed in Python from a
+    single pipeline_events fetch.
+
+    pipeline_events records EVERY processed sentence at translate-time (including
+    TM-exact and FAISS-direct hits that are never re-stored in translation_memory),
+    so the tier breakdown here reflects true pipeline usage — not just approved
+    LLM translations.
+
+    The table is treated as optional: if it doesn't exist yet (migration not run)
+    the fetch fails softly and the dashboard renders empty rather than erroring.
 
     Response shape:
         {
             "total_translations": 312,
             "match_type_breakdown": {
-                "tm_exact":    45,
-                "faiss_direct": 80,
-                "llm_guided":  90,
-                "llm_cold":    97
+                "tm_exact": 45, "faiss_direct": 80, "llm_guided": 90, "llm_cold": 97
             },
             "languages": ["fr", "de", "es"],
-            "recent": [
+            "recent": [                         # individual sentences, newest first
                 {
                     "source_text":     "The contract is binding.",
                     "translated_text": "Le contrat est contraignant.",
@@ -107,18 +115,27 @@ async def get_dashboard_stats(current_user: CurrentUser = Depends(get_current_us
                     "created_at":      "2024-06-01T..."
                 },
                 ...  (up to 5 records)
+            ],
+            "recent_documents": [              # documents, newest activity first
+                {
+                    "source_document": "report.docx",
+                    "target_lang":     "fr",
+                    "sentence_count":  42,
+                    "breakdown":       {"tm_exact": 5, "faiss_direct": 8, "llm_guided": 9, "llm_cold": 20},
+                    "last_activity":   "2024-06-01T..."
+                },
+                ...  (up to 8 groups)
             ]
         }
     """
     try:
-        records = fetch_all_memory(org_id=current_user.org_id)  # already sorted newest-first
+        records = fetch_pipeline_events(org_id=current_user.org_id)  # newest-first
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch translation memory stats: {str(e)}",
-        )
+        # Table may not exist yet (migration pending). Degrade gracefully.
+        print(f"[dashboard-stats] pipeline_events fetch failed (treating as empty): {e}")
+        records = []
 
-    # ── Aggregate ─────────────────────────────────────────────────────────────
+    # ── Aggregate breakdown + languages ───────────────────────────────────────
     breakdown = {"tm_exact": 0, "faiss_direct": 0, "llm_guided": 0, "llm_cold": 0}
     seen_langs: set[str] = set()
 
@@ -130,6 +147,7 @@ async def get_dashboard_stats(current_user: CurrentUser = Depends(get_current_us
         if lang:
             seen_langs.add(lang)
 
+    # ── Recent sentences (Recent Translations card) ───────────────────────────
     recent = [
         {
             "source_text":     r.get("source_text", ""),
@@ -141,11 +159,40 @@ async def get_dashboard_stats(current_user: CurrentUser = Depends(get_current_us
         for r in records[:5]
     ]
 
+    # ── Recent documents (Recent Activity table) ──────────────────────────────
+    # Group newest-first events by (document, target_lang). Because records are
+    # already sorted descending, the first time a group is seen its created_at is
+    # the group's latest activity.
+    doc_groups: dict[str, dict] = {}
+    recent_documents: list[dict] = []
+    for r in records:
+        document = r.get("source_document") or "Untitled document"
+        lang = r.get("target_lang", "")
+        key = f"{document} | {lang}"
+        group = doc_groups.get(key)
+        if group is None:
+            group = {
+                "source_document": document,
+                "target_lang":     lang,
+                "sentence_count":  0,
+                "breakdown":       {"tm_exact": 0, "faiss_direct": 0, "llm_guided": 0, "llm_cold": 0},
+                "last_activity":   r.get("created_at", ""),
+            }
+            doc_groups[key] = group
+            recent_documents.append(group)
+        group["sentence_count"] += 1
+        mt = r.get("match_type", "")
+        if mt in group["breakdown"]:
+            group["breakdown"][mt] += 1
+
+    recent_documents = recent_documents[:8]
+
     return {
-        "total_translations":  len(records),
+        "total_translations":   len(records),
         "match_type_breakdown": breakdown,
-        "languages":           sorted(seen_langs),
-        "recent":              recent,
+        "languages":            sorted(seen_langs),
+        "recent":               recent,
+        "recent_documents":     recent_documents,
     }
 
 

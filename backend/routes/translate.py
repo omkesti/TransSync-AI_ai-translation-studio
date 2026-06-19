@@ -15,12 +15,14 @@ Data flow:
     NLP module  →  POST /api/translate  →  translate_pipeline()  →  JSON response  →  Frontend review UI
 """
 
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 # ── Om's interface contract ───────────────────────────────────────────────────
 from ai.rag_pipeline import translate_pipeline
-from backend.services.supabase_client import fetch_verified_glossary_terms
+from backend.services.supabase_client import fetch_verified_glossary_terms, log_pipeline_events
 from backend.utils.language_codes import normalize_lang_code
 from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
@@ -46,6 +48,11 @@ class TranslateRequest(BaseModel):
         description="BCP-47 language code for the target language. E.g. 'fr', 'de', 'es', 'hi'.",
         min_length=2,
         max_length=10,
+    )
+    source_document: Optional[str] = Field(
+        default=None,
+        description="Original upload filename. Recorded in pipeline_events for the Dashboard's "
+                    "'recent documents' view. Optional — analytics only, never affects translation.",
     )
 
     class Config:
@@ -155,6 +162,24 @@ async def translate_document(body: TranslateRequest, current_user: CurrentUser =
             detail=f"Translation pipeline error: {str(e)}",
         )
 
+    # ── Log pipeline analytics (best-effort, never blocks the response) ────────
+    # Records every processed sentence with its match_type so the Dashboard can
+    # report the true tier distribution (incl. TM/FAISS hits that are never
+    # re-stored in translation_memory) and the most recently translated documents.
+    _VALID_TIERS = {"tm_exact", "faiss_direct", "llm_guided", "llm_cold"}
+    log_pipeline_events([
+        {
+            "org_id":          current_user.org_id,
+            "source_text":     r.get("source", ""),
+            "translated_text": r.get("translation", ""),
+            "source_lang":     body.source_lang,
+            "target_lang":     normalized_target,
+            "match_type":      r.get("match_type", ""),
+            "source_document": body.source_document or "",
+        }
+        for r in results
+        if r.get("match_type") in _VALID_TIERS
+    ])
 
     return TranslateResponse(
         target_lang=normalized_target,

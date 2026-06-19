@@ -245,8 +245,9 @@ function UploadPage() {
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col relative w-full h-full overflow-hidden">
-        {/* Top Nav Centered */}
-        <nav className="h-[80px] w-full flex items-center justify-between px-8 bg-transparent absolute top-0 z-50 pointer-events-none">
+        {/* Top Nav Centered — translucent blurred bar so labels stay readable
+            over scrolled content (was fully transparent). */}
+        <nav className="h-[80px] w-full flex items-center justify-between px-8 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#262626]/60 absolute top-0 z-50 pointer-events-none">
           <div className="w-1/3"></div>
 
           <div className="w-1/3 flex justify-center items-center gap-4 pointer-events-auto">
@@ -281,17 +282,22 @@ function UploadPage() {
           </div>
         </nav>
 
-        {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto w-full pt-[120px] pb-[80px] px-8 flex flex-col items-center layout-scrollbar relative">
+        {/* Scrollable Content — compact so the upload section fits in the
+            viewport by default; it only scrolls once many files are added. */}
+        <main className="flex-1 overflow-y-auto w-full pt-[100px] pb-[72px] px-8 flex flex-col items-center layout-scrollbar relative">
           {/* Background Highlight */}
           <div className="absolute top-0 right-[20%] w-[600px] h-[600px] bg-[#c5fe00] opacity-[0.03] blur-[120px] rounded-full pointer-events-none z-0"></div>
 
+          {/* my-auto centers the block when it fits, but still allows full scroll
+              (top stays reachable) once the content grows past the viewport. */}
+          <div className="my-auto w-full flex flex-col items-center">
+
           {/* Hero Titles */}
-          <div className="text-center w-full max-w-4xl z-10 space-y-6 mb-16">
-            <h1 className="font-display font-black text-6xl md:text-7xl tracking-tighter leading-[0.9]">
+          <div className="text-center w-full max-w-4xl z-10 space-y-3 mb-8 shrink-0">
+            <h1 className="font-display font-black text-4xl md:text-5xl tracking-tighter leading-[0.95]">
               upload &amp; <span className="text-[#c5fe00]">prepare</span>
             </h1>
-            <p className="text-[#a0a09f] max-w-xl mx-auto text-lg leading-relaxed font-sans">
+            <p className="text-[#a0a09f] max-w-xl mx-auto text-[15px] leading-relaxed font-sans">
               Add the PDFs or Word documents you want to translate. We'll extract
               the text and get them ready for validation.
             </p>
@@ -301,7 +307,7 @@ function UploadPage() {
           <div className="w-full max-w-[1000px] grid grid-cols-1 lg:grid-cols-3 gap-6 z-10">
             {/* Left Upload Dropzone (Span 2) */}
             <div
-              className="lg:col-span-2 bg-[#13150d]/40 backdrop-blur-sm border border-[#262b14]/50 rounded-[32px] p-8 min-h-[440px] flex flex-col items-center justify-center group cursor-pointer hover:border-[#c5fe00]/30 transition-all hover:bg-[#171a0f]/60 relative overflow-hidden"
+              className="lg:col-span-2 bg-[#13150d]/40 backdrop-blur-sm border border-[#262b14]/50 rounded-[32px] p-6 min-h-[320px] flex flex-col items-center justify-center group cursor-pointer hover:border-[#c5fe00]/30 transition-all hover:bg-[#171a0f]/60 relative overflow-hidden"
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={(event) => event.preventDefault()}
@@ -315,25 +321,26 @@ function UploadPage() {
                 onChange={handleFileChange}
               />
               {/* Internal glowing ring */}
-              <div className="w-24 h-24 rounded-full bg-[#c5fe00]/5 flex items-center justify-center mb-8 border border-[#c5fe00]/20 group-hover:scale-110 transition-transform duration-500 shadow-[0_0_40px_rgba(197,254,0,0.1)]">
+              <div className="w-16 h-16 rounded-full bg-[#c5fe00]/5 flex items-center justify-center mb-5 border border-[#c5fe00]/20 group-hover:scale-110 transition-transform duration-500 shadow-[0_0_40px_rgba(197,254,0,0.1)]">
                 <Upload
-                  size={36}
+                  size={28}
                   className="text-[#c5fe00]"
                   strokeWidth={2.5}
                 />
               </div>
 
-              <h3 className="font-display text-2xl font-bold mb-3 tracking-tight">
+              <h3 className="font-display text-xl font-bold mb-2 tracking-tight">
                 Drop your documents here
               </h3>
-              <p className="text-[#8c8c8b] text-[13px] font-sans pb-4">
+              <p className="text-[#8c8c8b] text-[13px] font-sans pb-3">
                 Upload multiple files at once · Maximum file size: 50MB each
               </p>
 
-              {/* Selected file list */}
+              {/* Selected file list — capped height; scrolls internally once
+                  many files are queued so the dropzone never balloons. */}
               {selectedFiles.length > 0 && (
                 <div
-                  className="w-full max-w-md space-y-2 mt-4"
+                  className="w-full max-w-md space-y-2 mt-2 max-h-[168px] overflow-y-auto pr-1 layout-scrollbar"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {selectedFiles.map((file, i) => (
@@ -363,7 +370,7 @@ function UploadPage() {
               )}
 
               {selectedFiles.length === 0 && (
-                <p className="text-[#555555] text-[11px] font-bold tracking-widest uppercase pb-6">
+                <p className="text-[#555555] text-[11px] font-bold tracking-widest uppercase pb-3">
                   No files selected
                 </p>
               )}
@@ -419,6 +426,7 @@ function UploadPage() {
               </div>
             </div>
           </div>
+          </div>{/* end my-auto centering wrapper */}
         </main>
 
         {isUploading ? (

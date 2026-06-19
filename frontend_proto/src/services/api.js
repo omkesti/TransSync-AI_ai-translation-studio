@@ -103,7 +103,12 @@ export async function validateText(rawText, docId) {
 
 // ── Translate ───────────────────────────────────────────────────────────────
 
-export async function translateSentences(sentences, sourceLang, targetLang) {
+export async function translateSentences(
+  sentences,
+  sourceLang,
+  targetLang,
+  sourceDocument = "",
+) {
   const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/translate`, {
     method: "POST",
@@ -115,6 +120,8 @@ export async function translateSentences(sentences, sourceLang, targetLang) {
       sentences,
       source_lang: sourceLang,
       target_lang: targetLang,
+      // Recorded in pipeline_events so the Dashboard can group "recent documents".
+      source_document: sourceDocument || "",
     }),
   });
 

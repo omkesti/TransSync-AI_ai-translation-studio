@@ -45,6 +45,14 @@ function matchTypeLabel(mt) {
   }
 }
 
+// Tier dot colors for the per-document distribution mini-legend.
+const TIER_META = [
+  { key: 'tm_exact',     label: 'TM',     color: '#c5fe00' },
+  { key: 'faiss_direct', label: 'FAISS',  color: '#00c5fe' },
+  { key: 'llm_guided',   label: 'Guided', color: '#c500fe' },
+  { key: 'llm_cold',     label: 'Cold',   color: '#8c8c8b' },
+];
+
 function matchTypeBadgeStyle(mt) {
   switch (mt) {
     case 'tm_exact':
@@ -84,14 +92,14 @@ function SkeletonInsight() {
   );
 }
 
-function SkeletonRow() {
+function SkeletonDocRow() {
   return (
     <tr className="border-b border-[#262626] animate-pulse">
       <td className="py-6 px-8"><div className="h-3 w-48 bg-[#1e1e1e] rounded"></div></td>
-      <td className="py-6 px-8"><div className="h-3 w-20 bg-[#1e1e1e] rounded"></div></td>
+      <td className="py-6 px-8"><div className="h-5 w-12 bg-[#1e1e1e] rounded-full"></div></td>
       <td className="py-6 px-8"><div className="h-2 w-28 bg-[#1e1e1e] rounded-full"></div></td>
-      <td className="py-6 px-8"><div className="h-5 w-16 bg-[#1e1e1e] rounded-full"></div></td>
-      <td className="py-6 px-8 text-right"><div className="h-4 w-4 bg-[#1e1e1e] rounded ml-auto"></div></td>
+      <td className="py-6 px-8"><div className="h-3 w-10 bg-[#1e1e1e] rounded"></div></td>
+      <td className="py-6 px-8 text-right"><div className="h-3 w-16 bg-[#1e1e1e] rounded ml-auto"></div></td>
     </tr>
   );
 }
@@ -128,6 +136,7 @@ function DashboardPage() {
   const tmHits = (bd.tm_exact ?? 0) + (bd.faiss_direct ?? 0);
   const llmCalls = (bd.llm_guided ?? 0) + (bd.llm_cold ?? 0);
   const recent = stats?.recent ?? [];
+  const recentDocuments = stats?.recent_documents ?? [];
   const languages = stats?.languages ?? [];
 
   return (
@@ -412,10 +421,13 @@ function DashboardPage() {
               </div>
             </div>
 
-            {/* Bottom Row: Recent Translations Table */}
+            {/* Bottom Row: Recent Activity — recently translated DOCUMENTS */}
             <div className="border border-[#262626] border-opacity-80 rounded-[28px] overflow-hidden">
               <div className="p-8 border-b border-[#262626] flex justify-between items-end">
-                <h3 className="font-display font-bold text-[22px] tracking-tight">Recent Activity</h3>
+                <div>
+                  <h3 className="font-display font-bold text-[22px] tracking-tight">Recent Activity</h3>
+                  <p className="text-[#8c8c8b] text-[13px] mt-1">Documents translated recently across your organization</p>
+                </div>
                 <Link to="/review" className="text-[#8c8c8b] text-[11px] font-bold tracking-widest uppercase hover:text-white transition-colors">
                   Go to Review →
                 </Link>
@@ -425,44 +437,63 @@ function DashboardPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr>
-                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] w-2/5">Source</th>
-                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] w-2/5">Translation</th>
+                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] w-2/5">Document</th>
                       <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Lang</th>
-                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Tier</th>
-                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] text-right">When</th>
+                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] w-1/3">Tier Mix</th>
+                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] text-right">Sentences</th>
+                      <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] text-right">Last Activity</th>
                     </tr>
                   </thead>
                   <tbody className="text-[13px]">
                     {loading
-                      ? [1,2,3,4,5].map(i => <SkeletonRow key={i} />)
-                      : recent.length > 0
-                        ? recent.map((r, i) => (
-                            <tr key={i} className={`border-b border-[#262626] hover:bg-[#131313] transition-colors ${i === recent.length - 1 ? 'border-b-0' : ''}`}>
-                              <td className="py-5 px-8 font-medium max-w-0">
-                                <p className="truncate text-[#ffffff]">{r.source_text}</p>
-                              </td>
-                              <td className="py-5 px-8 text-[#8c8c8b] max-w-0">
-                                <p className="truncate">{r.translated_text}</p>
-                              </td>
-                              <td className="py-5 px-8">
-                                <span className="bg-[#1a1a1a] border border-[#262626] text-[#8c8c8b] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
-                                  {r.target_lang}
-                                </span>
-                              </td>
-                              <td className="py-5 px-8">
-                                <span className={`inline-flex items-center text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full ${matchTypeBadgeStyle(r.match_type)}`}>
-                                  {matchTypeLabel(r.match_type)}
-                                </span>
-                              </td>
-                              <td className="py-5 px-8 text-right text-[#555555] text-[11px] font-bold uppercase tracking-widest whitespace-nowrap">
-                                {timeAgo(r.created_at)}
-                              </td>
-                            </tr>
-                          ))
+                      ? [1,2,3,4,5].map(i => <SkeletonDocRow key={i} />)
+                      : recentDocuments.length > 0
+                        ? recentDocuments.map((d, i) => {
+                            const count = d.sentence_count || 0;
+                            const bdown = d.breakdown || {};
+                            return (
+                              <tr key={i} className={`border-b border-[#262626] hover:bg-[#131313] transition-colors ${i === recentDocuments.length - 1 ? 'border-b-0' : ''}`}>
+                                <td className="py-5 px-8 font-medium max-w-0">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <FileText size={15} className="text-[#a0a09f] shrink-0" />
+                                    <p className="truncate text-[#ffffff]">{d.source_document}</p>
+                                  </div>
+                                </td>
+                                <td className="py-5 px-8">
+                                  <span className="bg-[#1a1a1a] border border-[#262626] text-[#8c8c8b] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
+                                    {d.target_lang || '—'}
+                                  </span>
+                                </td>
+                                <td className="py-5 px-8">
+                                  {/* Stacked tier bar */}
+                                  <div className="flex h-2 w-full max-w-[220px] rounded-full overflow-hidden bg-[#1a1a1a]">
+                                    {TIER_META.map(({ key, color }) => {
+                                      const c = bdown[key] ?? 0;
+                                      const pct = count > 0 ? (c / count) * 100 : 0;
+                                      if (pct <= 0) return null;
+                                      return (
+                                        <div
+                                          key={key}
+                                          title={`${matchTypeLabel(key)}: ${c}`}
+                                          style={{ width: `${pct}%`, backgroundColor: color }}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                </td>
+                                <td className="py-5 px-8 text-right font-bold text-[#ffffff] whitespace-nowrap">
+                                  {count.toLocaleString()}
+                                </td>
+                                <td className="py-5 px-8 text-right text-[#555555] text-[11px] font-bold uppercase tracking-widest whitespace-nowrap">
+                                  {timeAgo(d.last_activity)}
+                                </td>
+                              </tr>
+                            );
+                          })
                         : (
                           <tr>
                             <td colSpan={5} className="py-12 text-center text-[#555555] text-sm">
-                              No translations stored yet. Upload and approve a document to see activity here.
+                              No documents translated yet. Upload and translate a document to see activity here.
                             </td>
                           </tr>
                         )
