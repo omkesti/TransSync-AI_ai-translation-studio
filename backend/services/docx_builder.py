@@ -146,14 +146,22 @@ def reconstruct_paragraphs(
 
     paragraphs = [p.strip() for p in re.split(r"\n{2,}", raw_text) if p.strip()]
 
+    # Longest source first, so a full sentence is substituted before any shorter
+    # source that is a substring of it (same overlap hazard as the DOCX path).
+    ordered = sorted(
+        ((s, t) for s, t in lookup.items() if s),
+        key=lambda it: len(it[0]),
+        reverse=True,
+    )
+
     result = []
     for paragraph in paragraphs:
         translated = paragraph
-        for source, translation in lookup.items():
-            if not source:
-                continue
+        for source, translation in ordered:
             pattern = build_fuzzy_pattern(source)
-            translated = pattern.sub(translation, translated, count=1)
+            # Replace via a function so backslashes/group refs in the
+            # translation are treated as literal text, not regex syntax.
+            translated = pattern.sub(lambda _m: translation, translated, count=1)
         result.append(translated)
 
     return result
@@ -274,6 +282,14 @@ def _resolve_paragraph_translation(
        the paragraph, tolerating whitespace differences. This handles
        paragraphs the NLP layer split into several sentences.
 
+    `fuzzy_items` MUST be ordered longest-source-first (see build_translated_docx).
+    Otherwise a short source that is a prefix/substring of a longer sentence —
+    e.g. a heading or table-cell word like "Overview" that also opens a body
+    sentence "Overview of the results follows." — would be substituted first,
+    mutating the text so the longer sentence's pattern can no longer match. The
+    visible result is a sentence with only its shared leading word translated
+    and the rest left in the source language.
+
     Returns the new text, or None if nothing matched (caller leaves the
     paragraph untouched, preserving it perfectly).
     """
@@ -320,23 +336,40 @@ def build_translated_docx(data: DocExportData) -> io.BytesIO:
     doc = Document(io.BytesIO(raw_bytes))
 
     # Build lookup tables once. exact_map keeps the FIRST translation seen for a
-    # given source so duplicate sources stay deterministic.
+    # given source so duplicate sources stay deterministic. A blank/whitespace-
+    # only translation is dropped here (not just empty "") so it can never blank
+    # out an original paragraph — an un-translated source is left untouched
+    # instead, which is always preferable to an empty cell.
     exact_map: Dict[str, str] = {}
     fuzzy_items: List[tuple] = []
     for item in data.translations:
         source = (item.source or "").strip()
-        if not source or not item.translation:
+        translation = item.translation or ""
+        if not source or not translation.strip():
             continue
-        exact_map.setdefault(source, item.translation)
-        fuzzy_items.append((source, item.translation))
+        exact_map.setdefault(source, translation)
+        fuzzy_items.append((source, translation))
+
+    # Apply the longest sources first so a full sentence is substituted before
+    # any shorter source that is a substring of it (e.g. a heading word that
+    # also opens the sentence). Without this, the short source replaces its
+    # fragment first and the full-sentence pattern stops matching — leaving the
+    # sentence with only its shared word translated. Stable sort keeps document
+    # order among equal-length sources.
+    fuzzy_items.sort(key=lambda it: len(it[0]), reverse=True)
 
     for para in _iter_all_paragraphs(doc):
         original = para.text
         if not original.strip():
             continue
         translated = _resolve_paragraph_translation(original, exact_map, fuzzy_items)
-        if translated is not None and translated != original:
-            inject_translation_into_paragraph(para, xml_safe(translated))
+        if translated is None or translated == original:
+            continue
+        safe = xml_safe(translated)
+        # Never replace a non-empty paragraph with blank text.
+        if not safe.strip():
+            continue
+        inject_translation_into_paragraph(para, safe)
 
     buf = io.BytesIO()
     doc.save(buf)
