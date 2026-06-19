@@ -257,14 +257,9 @@ function UploadPage() {
 
         <div className="p-6 space-y-4">
           {/* Bottom Links */}
-          <div className="space-y-1 mb-8">
+          <div className="space-y-1">
             <UserProfileBlock />
           </div>
-
-          {/* CTA */}
-          <button className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-[16px] py-4 flex items-center justify-center font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.15)]">
-            New Project
-          </button>
         </div>
       </aside>
 
