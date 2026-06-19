@@ -571,25 +571,29 @@ function Sidebar({ active }) {
         </div>
 
         <nav className="space-y-1">
-          {currentProjectId && (
-            <Link to={`/projects/${currentProjectId}`} className="flex items-center gap-4 text-[#8c8c8b] hover:text-white hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
-              <FolderOpen size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Project</span>
-            </Link>
-          )}
-          {navItems.map(({ to, Icon, label }) =>
-            to === "/export" && active === "export" ? (
-              <div key={to} className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
-                <Icon size={18} />
-                <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
-              </div>
-            ) : (
-              <Link key={to} to={to} className="flex items-center gap-4 text-[#8c8c8b] hover:text-white hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
-                <Icon size={18} />
-                <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
-              </Link>
-            )
-          )}
+          {navItems.map(({ to, Icon, label }) => (
+            <React.Fragment key={to}>
+              {to === "/export" && active === "export" ? (
+                <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
+                  <Icon size={18} />
+                  <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
+                </div>
+              ) : (
+                <Link to={to} className="flex items-center gap-4 text-[#8c8c8b] hover:text-white hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+                  <Icon size={18} />
+                  <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
+                </Link>
+              )}
+
+              {/* Project link sits directly under Dashboard, when inside a project. */}
+              {to === "/dashboard" && currentProjectId && (
+                <Link to={`/projects/${currentProjectId}`} className="flex items-center gap-4 text-[#8c8c8b] hover:text-white hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+                  <FolderOpen size={18} />
+                  <span className="text-[11px] font-bold uppercase tracking-widest">Project</span>
+                </Link>
+              )}
+            </React.Fragment>
+          ))}
         </nav>
       </div>
 

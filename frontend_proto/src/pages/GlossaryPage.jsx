@@ -19,6 +19,7 @@ import {
   Trash2,
   Loader2,
   Download,
+  FolderOpen,
 } from 'lucide-react';
 import {
   fetchGlossary,
@@ -30,6 +31,7 @@ import { TARGET_LANGUAGES } from '../constants/languages';
 import UserProfileBlock from '../components/UserProfileBlock';
 import NavAvatar from '../components/NavAvatar';
 import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -178,6 +180,7 @@ function AddTermModal({ onClose, onSave }) {
 
 function GlossaryPage() {
   const { accessToken } = useAuth();
+  const { currentProjectId } = useAppContext();
   const [terms, setTerms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -285,20 +288,32 @@ function GlossaryPage() {
               <span className="text-[11px] font-bold uppercase tracking-widest">Dashboard</span>
             </Link>
 
-            <Link to="/upload" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-              <FileUp size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Upload</span>
-            </Link>
+            {currentProjectId && (
+              <Link to={`/projects/${currentProjectId}`} className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+                <FolderOpen size={18} />
+                <span className="text-[11px] font-bold uppercase tracking-widest">Project</span>
+              </Link>
+            )}
 
-            <Link to="/validation" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-              <CheckCircle2 size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Validation</span>
-            </Link>
+            {/* Workflow steps only make sense inside a project. */}
+            {currentProjectId && (
+              <>
+                <Link to="/upload" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+                  <FileUp size={18} />
+                  <span className="text-[11px] font-bold uppercase tracking-widest">Upload</span>
+                </Link>
 
-            <Link to="/review" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-              <MessageSquare size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Review</span>
-            </Link>
+                <Link to="/validation" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+                  <CheckCircle2 size={18} />
+                  <span className="text-[11px] font-bold uppercase tracking-widest">Validation</span>
+                </Link>
+
+                <Link to="/review" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+                  <MessageSquare size={18} />
+                  <span className="text-[11px] font-bold uppercase tracking-widest">Review</span>
+                </Link>
+              </>
+            )}
 
             {/* Active Item */}
             <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] cursor-pointer shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
@@ -306,10 +321,12 @@ function GlossaryPage() {
               <span className="text-[11px] font-bold uppercase tracking-widest">Glossary</span>
             </div>
 
-            <Link to="/export" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
-              <Download size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Export</span>
-            </Link>
+            {currentProjectId && (
+              <Link to="/export" className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px] cursor-pointer">
+                <Download size={18} />
+                <span className="text-[11px] font-bold uppercase tracking-widest">Export</span>
+              </Link>
+            )}
           </nav>
         </div>
 
