@@ -54,6 +54,7 @@ class GlossaryTermCreate(BaseModel):
     source_lang: str = Field(default="en", description="BCP-47 source language code.")
     category:    str = Field(default="", description="Term category, e.g. 'TECHNICAL', 'LEGAL'.")
     status:      str = Field(default="PENDING", description="'PENDING' or 'VERIFIED'.")
+    project_id:  Optional[str] = Field(default=None, description="Optional project scope. Omit for an org-level term.")
 
     class Config:
         json_schema_extra = {
@@ -90,6 +91,10 @@ async def list_glossary(
         default=None,
         description="Case-insensitive substring match on source_term.",
     ),
+    project_id: Optional[str] = Query(
+        default=None,
+        description="Filter to a project's terms. Omit for org-level terms only.",
+    ),
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """
@@ -118,7 +123,7 @@ async def list_glossary(
         }
     """
     try:
-        terms = fetch_all_glossary(org_id=current_user.org_id, target_lang=target_lang, search=search)
+        terms = fetch_all_glossary(org_id=current_user.org_id, target_lang=target_lang, search=search, project_id=project_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch glossary: {str(e)}")
 

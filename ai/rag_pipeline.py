@@ -128,6 +128,10 @@ async def translate_pipeline(obj: dict) -> list[dict]:
     sentences = obj.get("sentences", [])
     target_lang = obj.get("target_lang")
     org_id = obj.get("org_id", "")
+    # Optional project scope. When present, TM + FAISS lookups search the
+    # project's data first and fall through to org-scoped data. Pure pass-through
+    # parameter — the translation logic itself is unchanged.
+    project_id = obj.get("project_id") or None
     glossary_hints: dict = obj.get("glossary_hints") or {}
 
     results: list[dict | None] = [None] * len(sentences)
@@ -140,7 +144,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
     # ── Stage 1: Exact TM lookup for ALL sentences in one Supabase query ────────
     # Behaviour is identical to a per-sentence exact_match_lookup loop; this just
     # collapses N round-trips into one (and is language-aware + org-scoped).
-    exact_map = await exact_match_lookup_batch(sentences, target_lang, org_id)
+    exact_map = await exact_match_lookup_batch(sentences, target_lang, org_id, project_id)
 
     remaining_indices: list[int] = []
     for index, sentence in enumerate(sentences):
@@ -159,7 +163,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
     if remaining_indices:
         remaining_sentences = [sentences[i] for i in remaining_indices]
         embeddings = generate_embeddings_batch(remaining_sentences)
-        faiss_results = faiss_search_batch(embeddings, target_lang, org_id)
+        faiss_results = faiss_search_batch(embeddings, target_lang, org_id, project_id)
 
         for position, index in enumerate(remaining_indices):
             sentence = sentences[index]
@@ -316,6 +320,7 @@ async def translate_sentence(
     target_lang: str,
     org_id: str = "",
     glossary_hints: dict | None = None,
+    project_id: str | None = None,
 ) -> dict:
     """
     Legacy single-sentence helper; prefer translate_pipeline via POST /api/translate.
@@ -324,6 +329,7 @@ async def translate_sentence(
         "sentences": [sentence],
         "target_lang": target_lang,
         "org_id": org_id,
+        "project_id": project_id,
         "glossary_hints": glossary_hints or {},
     })
     return results[0]

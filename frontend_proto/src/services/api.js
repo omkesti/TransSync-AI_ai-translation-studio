@@ -108,6 +108,7 @@ export async function translateSentences(
   sourceLang,
   targetLang,
   sourceDocument = "",
+  projectId = null,
 ) {
   const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/translate`, {
@@ -122,6 +123,8 @@ export async function translateSentences(
       target_lang: targetLang,
       // Recorded in pipeline_events so the Dashboard can group "recent documents".
       source_document: sourceDocument || "",
+      // Optional project scope — TM/FAISS/glossary search project-first.
+      project_id: projectId || null,
     }),
   });
 
@@ -130,7 +133,7 @@ export async function translateSentences(
 
 // ── Approve ─────────────────────────────────────────────────────────────────
 
-export async function approveTranslations(reviewed) {
+export async function approveTranslations(reviewed, projectId = null) {
   const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/approve`, {
     method: "POST",
@@ -140,6 +143,8 @@ export async function approveTranslations(reviewed) {
     },
     body: JSON.stringify({
       reviewed,
+      // Optional project scope — approved rows are stored + indexed per project.
+      project_id: projectId || null,
     }),
   });
 
@@ -187,10 +192,11 @@ export async function fetchDashboardStats() {
 
 // ── Glossary ────────────────────────────────────────────────────────────────
 
-export async function fetchGlossary({ targetLang, search } = {}) {
+export async function fetchGlossary({ targetLang, search, projectId } = {}) {
   const params = new URLSearchParams();
   if (targetLang) params.set("target_lang", targetLang);
   if (search) params.set("search", search);
+  if (projectId) params.set("project_id", projectId);
   const qs = params.toString() ? `?${params.toString()}` : "";
   const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/glossary${qs}`, {
@@ -319,4 +325,120 @@ export async function exportBatch(documents) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ── Projects ──────────────────────────────────────────────────────────────────
+
+/** GET /api/projects — list projects for the user's org (with progress + members). */
+export async function listProjects() {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/projects`, {
+    headers: { ...authHeaders },
+  });
+  return handleResponse(response);
+}
+
+/** POST /api/projects — create a project. */
+export async function createProject(payload) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/projects`, {
+    method: "POST",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
+/** GET /api/projects/{id} — one project with documents + progress stats. */
+export async function getProject(projectId) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+    headers: { ...authHeaders },
+  });
+  return handleResponse(response);
+}
+
+/** PATCH /api/projects/{id} — update project metadata. */
+export async function updateProject(projectId, patch) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+    method: "PATCH",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  return handleResponse(response);
+}
+
+/** PATCH /api/projects/{id}/archive — archive a project. */
+export async function archiveProject(projectId) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/archive`, {
+    method: "PATCH",
+    headers: { ...authHeaders },
+  });
+  return handleResponse(response);
+}
+
+/** POST /api/projects/{id}/members — add a per-project member role override. */
+export async function addProjectMember(projectId, member) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/members`, {
+    method: "POST",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify(member),
+  });
+  return handleResponse(response);
+}
+
+/** DELETE /api/projects/{id}/members/{userId} — remove a member. */
+export async function removeProjectMember(projectId, userId) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/members/${userId}`, {
+    method: "DELETE",
+    headers: { ...authHeaders },
+  });
+  return handleResponse(response);
+}
+
+// ── Documents (project-scoped, DB-persisted) ──────────────────────────────────
+
+/** POST /api/projects/{id}/documents — create a document record in a project. */
+export async function createProjectDocument(projectId, payload) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/documents`, {
+    method: "POST",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
+/** GET /api/documents/{id} — fetch one document with full persisted state. */
+export async function getDocument(documentId) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}`, {
+    headers: { ...authHeaders },
+  });
+  return handleResponse(response);
+}
+
+/** PATCH /api/documents/{id} — persist stage and/or working state. */
+export async function updateDocument(documentId, patch) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}`, {
+    method: "PATCH",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  return handleResponse(response);
+}
+
+/** DELETE /api/documents/{id} — delete a document. */
+export async function deleteDocument(documentId) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}`, {
+    method: "DELETE",
+    headers: { ...authHeaders },
+  });
+  return handleResponse(response);
 }

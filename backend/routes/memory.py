@@ -72,6 +72,12 @@ class ApproveRequest(BaseModel):
         ...,
         description="Full list of reviewed sentences. Rejected ones are filtered server-side.",
     )
+    project_id: Optional[str] = Field(
+        default=None,
+        description="Optional project scope. When set, approved rows are stored with this "
+                    "project_id and indexed into the project's FAISS index instead of the "
+                    "org/fallback index.",
+    )
 
 
 class ApproveResponse(BaseModel):
@@ -202,6 +208,10 @@ async def get_translation_memory(
         default=None,
         description="Filter by language code, e.g. 'fr'. Omit for all languages.",
     ),
+    project_id: Optional[str] = Query(
+        default=None,
+        description="Filter to one project's TM rows. Omit for all org rows.",
+    ),
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """
@@ -230,7 +240,7 @@ async def get_translation_memory(
         }
     """
     try:
-        records = fetch_all_memory(org_id=current_user.org_id, target_lang=target_lang)
+        records = fetch_all_memory(org_id=current_user.org_id, target_lang=target_lang, project_id=project_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch translation memory: {str(e)}")
 
@@ -314,6 +324,10 @@ async def approve_translations(body: ApproveRequest, current_user: CurrentUser =
         normalized_langs.append(normalized)
 
     # ── Build rows ────────────────────────────────────────────────────────────
+    # project_id (optional) scopes both the stored TM row and which FAISS index
+    # the vector lands in. A blank/None project_id keeps the original org-scoped
+    # behaviour (row.project_id stays NULL, vector goes to the org index).
+    project_id = body.project_id or None
     rows = [
         {
             "source_text":     s.source_text,
@@ -323,16 +337,18 @@ async def approve_translations(body: ApproveRequest, current_user: CurrentUser =
             "faiss_index":     s.faiss_index,  # None for new LLM translations
             "source_lang":     "en",
             "org_id":          current_user.org_id,
+            "project_id":      project_id,
         }
         for s, lang in zip(to_save, normalized_langs)
     ]
 
     # ── FAISS indexing (before Supabase write) ────────────────────────────────
     # Rows missing faiss_index (LLM-translated sentences) are embedded and
-    # appended to the FAISS index here.  If this step fails we abort so that
-    # Supabase never gets rows with null faiss_index that should be searchable.
+    # appended to the FAISS index here (the project index when project_id is set,
+    # else the org/fallback index). If this step fails we abort so that Supabase
+    # never gets rows with null faiss_index that should be searchable.
     try:
-        rows = index_approved_rows(rows)
+        rows = index_approved_rows(rows, project_id=project_id)
         indexed_count = sum(1 for r in rows if r.get("faiss_index") is not None)
     except Exception as e:
         raise HTTPException(

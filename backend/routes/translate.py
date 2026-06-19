@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 
 # ── Om's interface contract ───────────────────────────────────────────────────
 from ai.rag_pipeline import translate_pipeline
-from backend.services.supabase_client import fetch_verified_glossary_terms, log_pipeline_events
+from backend.services.supabase_client import fetch_verified_glossary_terms, log_pipeline_events, fetch_project
 from backend.utils.language_codes import normalize_lang_code
 from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
@@ -53,6 +53,12 @@ class TranslateRequest(BaseModel):
         default=None,
         description="Original upload filename. Recorded in pipeline_events for the Dashboard's "
                     "'recent documents' view. Optional — analytics only, never affects translation.",
+    )
+    project_id: Optional[str] = Field(
+        default=None,
+        description="Optional project scope. When set, TM + FAISS + glossary lookups search the "
+                    "project's data first and fall through to org-scoped data. Translation logic "
+                    "is identical with or without it.",
     )
 
     class Config:
@@ -133,12 +139,29 @@ async def translate_document(body: TranslateRequest, current_user: CurrentUser =
     if normalized_target != body.target_lang.strip().lower():
         print(f"[glossary] Normalized target_lang '{body.target_lang}' → '{normalized_target}'")
 
+    # ── Resolve project scope (optional) ──────────────────────────────────────
+    # When a project_id is supplied, confirm it belongs to the caller's org and
+    # read its inherit_org_glossary flag so glossary enforcement respects it.
+    project_id = body.project_id or None
+    inherit_org_glossary = True
+    if project_id:
+        project = fetch_project(project_id, current_user.org_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found for this organization.")
+        inherit_org_glossary = bool(project.get("inherit_org_glossary", True))
+
     # ── Fetch verified glossary terms (non-blocking) ──────────────────────────
-    # Only VERIFIED terms are injected into the LLM prompt.
-    # PENDING terms are intentionally excluded.
+    # Only VERIFIED terms are injected into the LLM prompt. PENDING terms are
+    # excluded. With a project scope, project terms override org terms (and org
+    # terms are skipped entirely when the project opted out of inheritance).
     glossary_hints: dict = {}
     try:
-        glossary_hints = fetch_verified_glossary_terms(normalized_target, current_user.org_id)
+        glossary_hints = fetch_verified_glossary_terms(
+            normalized_target,
+            current_user.org_id,
+            project_id=project_id,
+            inherit_org_glossary=inherit_org_glossary,
+        )
         if glossary_hints:
             print(f"[glossary] Enforcing {len(glossary_hints)} verified term(s) for '{normalized_target}'")
         else:
@@ -151,6 +174,7 @@ async def translate_document(body: TranslateRequest, current_user: CurrentUser =
         "source_lang": body.source_lang,
         "target_lang": normalized_target,
         "org_id": current_user.org_id,
+        "project_id": project_id,
         "glossary_hints": glossary_hints,
     }
 

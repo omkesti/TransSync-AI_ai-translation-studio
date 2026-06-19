@@ -434,6 +434,7 @@ function ReviewPage() {
     activeDocIndex,
     setActiveDocIndex,
     updateDoc,
+    currentProjectId,
   } = useAppContext();
   const multiDoc = documents.length > 1;
   // Only docs that have been validated (or further) are relevant in Review
@@ -557,6 +558,7 @@ function ReviewPage() {
             sourceLang,
             effLang,
             doc.filename,
+            currentProjectId,
           );
           updateDoc(doc.docId, {
             results: response.results || [],
@@ -584,6 +586,7 @@ function ReviewPage() {
           sourceLang,
           effLang,
           filename,
+          currentProjectId,
         );
         activeResultsAfter = response.results || [];
         setResults(activeResultsAfter);
@@ -657,7 +660,7 @@ function ReviewPage() {
         }));
 
       if (payload.length > 0) {
-        await approveTranslations(payload);
+        await approveTranslations(payload, currentProjectId);
       }
 
       const newReviewedCount = reviewedCount + batch.length;

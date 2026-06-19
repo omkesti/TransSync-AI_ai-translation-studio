@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { uploadDocument } from "../services/api";
+import { uploadDocument, createProjectDocument } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import UserProfileBlock from "../components/UserProfileBlock";
 import NavAvatar from "../components/NavAvatar";
@@ -33,7 +33,7 @@ function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState(""); // "Uploading file 2 of 5…"
   const [error, setError] = useState("");
 
-  const { addDocuments, setActiveDocIndex, resetFlow } =
+  const { addDocuments, setActiveDocIndex, resetFlow, currentProjectId, sourceLang, documents } =
     useAppContext();
 
   const handleFileChange = (event) => {
@@ -88,7 +88,10 @@ function UploadPage() {
 
     setIsUploading(true);
     setError("");
-    resetFlow();
+    // Inside a project we APPEND to the project's existing documents (already
+    // rehydrated into context by the workspace). Only the legacy project-less
+    // flow resets the working set.
+    if (!currentProjectId) resetFlow();
 
     const uploadedDocs = [];
     const errors = [];
@@ -113,8 +116,26 @@ function UploadPage() {
           }
         }
 
+        // When inside a project, persist a DB document record so this file is
+        // tracked server-side (stage + state) and resumable from any device.
+        let documentId = null;
+        if (currentProjectId) {
+          try {
+            const created = await createProjectDocument(currentProjectId, {
+              filename: response.filename || file.name || "document",
+              raw_text: response.raw_text || "",
+              source_lang: sourceLang || "en",
+              stage: "uploaded",
+            });
+            documentId = created?.id || null;
+          } catch (docError) {
+            console.warn("Could not create project document record (non-fatal):", docError?.message || docError);
+          }
+        }
+
         uploadedDocs.push({
-          docId:    response.doc_id || "",
+          docId:    documentId || response.doc_id || "",
+          documentId,
           rawText:  response.raw_text || "",
           filename: response.filename || file.name || "document",
           originalDocxB64,
@@ -133,8 +154,11 @@ function UploadPage() {
     }
 
     if (uploadedDocs.length > 0) {
+      // In project mode we appended to existing docs — land on the first newly
+      // uploaded one. In legacy mode the working set was reset, so index 0.
+      const firstNewIndex = currentProjectId ? documents.length : 0;
       addDocuments(uploadedDocs);
-      setActiveDocIndex(0);
+      setActiveDocIndex(firstNewIndex);
     }
 
     if (errors.length > 0 && errors.length === selectedFiles.length) {

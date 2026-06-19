@@ -29,28 +29,32 @@ def _normalize(lang: str) -> str:
     return _ALIASES.get(cleaned, cleaned)
 
 
-async def exact_match_lookup(sentence: str, target_lang: str, org_id: str) -> str | None:
+def _query_exact(sentence: str, normalized: str, org_id: str, project_id: str | None, scope: str) -> str | None:
     """
-    Returns the stored translated_text for an exact (source_text, target_lang, org_id)
-    match, or None if no row exists.
+    One exact (source_text, target_lang, org_id) lookup, scoped.
 
-    Both source_text AND target_lang AND org_id must match — prevents returning
-    translations from other organizations or wrong languages.
+    scope == "project":  filter project_id == project_id
+    scope == "org":      filter project_id IS NULL  (original org-scoped rows)
+
+    Returns the stored translated_text or None. Synchronous — call inside a
+    worker thread (the Supabase client is blocking and not thread-safe across
+    connections).
     """
-    normalized = _normalize(target_lang)
-
     try:
-        response = (
+        query = (
             supabase.from_("translation_memory")
             .select("translated_text")
             .eq("source_text", sentence)
             .eq("target_lang", normalized)
             .eq("org_id", org_id)
-            .limit(1)
-            .execute()
         )
+        if scope == "project":
+            query = query.eq("project_id", project_id)
+        else:
+            query = query.is_("project_id", "null")
+        response = query.limit(1).execute()
     except Exception as e:
-        print(f"[tm] Error fetching exact match from Supabase: {e}")
+        print(f"[tm] Error fetching exact match from Supabase ({scope}): {e}")
         return None
 
     if response.data:
@@ -58,32 +62,47 @@ async def exact_match_lookup(sentence: str, target_lang: str, org_id: str) -> st
     return None
 
 
+async def exact_match_lookup(
+    sentence: str, target_lang: str, org_id: str, project_id: str | None = None
+) -> str | None:
+    """
+    Returns the stored translated_text for an exact (source_text, target_lang,
+    org_id) match, or None if no row exists.
+
+    Project-first / org-fallback: when project_id is supplied the project-scoped
+    row wins; if there is none we fall through to the org-scoped row
+    (project_id IS NULL). When project_id is None only org-scoped rows are
+    considered — the original behaviour.
+    """
+    normalized = _normalize(target_lang)
+
+    def _lookup() -> str | None:
+        if project_id:
+            hit = _query_exact(sentence, normalized, org_id, project_id, "project")
+            if hit is not None:
+                return hit
+        return _query_exact(sentence, normalized, org_id, None, "org")
+
+    return await asyncio.to_thread(_lookup)
+
+
 async def exact_match_lookup_batch(
-    sentences: list[str], target_lang: str, org_id: str
+    sentences: list[str], target_lang: str, org_id: str, project_id: str | None = None
 ) -> dict[str, str]:
     """
     Batch version of exact_match_lookup.
 
     Returns a dict { source_text: translated_text } for the sentences that have
-    an exact (source_text, target_lang, org_id) match.
+    an exact match, applying the same project-first / org-fallback resolution as
+    exact_match_lookup per sentence.
 
-    Implementation: de-duplicates the sentences, then runs each one's exact
-    lookup SEQUENTIALLY inside a SINGLE worker thread. This preserves the
-    original per-sentence `.eq(...).limit(1)` query exactly — so the translation
-    for any given sentence is identical to exact_match_lookup — while moving the
-    blocking I/O off the event loop in one `to_thread` hop.
-
-    Why sequential and not concurrent:
-        The Supabase client is synchronous and shares ONE underlying httpx
-        HTTP/2 connection that is NOT thread-safe. Firing the lookups across many
-        threads corrupted that connection ("deque mutated during iteration" /
-        "ConnectionTerminated"). Looping in one thread is safe; de-duplication
-        keeps the call count down.
-
-    Why not `.in_("source_text", [...])`:
-        PostgREST encodes `in` as a comma-separated filter list, which is
-        corrupted by source text containing commas, quotes, or parentheses
-        (→ HTTP 400). Per-sentence `.eq()` encodes each value safely.
+    Implementation notes (unchanged from the original):
+        - De-duplicates the sentences; identical sentences share one lookup.
+        - Runs SEQUENTIALLY inside a SINGLE worker thread. The Supabase client is
+          synchronous and shares one non-thread-safe httpx connection, so firing
+          lookups across threads corrupts it. Looping in one thread is safe.
+        - Uses per-sentence `.eq()` rather than `.in_(...)` because PostgREST's
+          comma-separated `in` filter breaks on text containing commas/quotes.
     """
     if not sentences:
         return {}
@@ -95,21 +114,13 @@ async def exact_match_lookup_batch(
     def _lookup_all() -> dict[str, str]:
         found: dict[str, str] = {}
         for sentence in unique_sentences:
-            try:
-                response = (
-                    supabase.from_("translation_memory")
-                    .select("translated_text")
-                    .eq("source_text", sentence)
-                    .eq("target_lang", normalized)
-                    .eq("org_id", org_id)
-                    .limit(1)
-                    .execute()
-                )
-            except Exception as e:
-                print(f"[tm] Error fetching exact match from Supabase: {e}")
-                continue
-            if response.data:
-                found[sentence] = response.data[0]["translated_text"]
+            text = None
+            if project_id:
+                text = _query_exact(sentence, normalized, org_id, project_id, "project")
+            if text is None:
+                text = _query_exact(sentence, normalized, org_id, None, "org")
+            if text is not None:
+                found[sentence] = text
         return found
 
     return await asyncio.to_thread(_lookup_all)

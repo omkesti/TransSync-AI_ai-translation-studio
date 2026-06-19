@@ -14,12 +14,17 @@ from ai.embeddings import generate_embeddings
 from ai.vector_store import add_embeddings_batch
 
 
-def index_approved_rows(rows: list[dict]) -> list[dict]:
+def index_approved_rows(rows: list[dict], project_id: str | None = None) -> list[dict]:
     """
     For each row that is missing a faiss_index:
       1. Generate source-text embedding via the shared model.
       2. Assign a faiss_index via vector_store.add_embeddings_batch()
          (adds all vectors at once, one save_index() call).
+
+    When project_id is supplied the vectors are written to that project's FAISS
+    index (so the assigned faiss_index is a position within the project index);
+    otherwise they go to the org/fallback index — the original behaviour. The
+    whole approve batch belongs to a single document, hence a single project_id.
 
     Returns the same rows list with faiss_index populated.
     Rows that already have a faiss_index are passed through unchanged.
@@ -39,8 +44,8 @@ def index_approved_rows(rows: list[dict]) -> list[dict]:
     # Generate all embeddings
     embeddings = [generate_embeddings(row["source_text"]) for _, row in to_index]
 
-    # Batch-add to FAISS — one disk write
-    assigned_indices = add_embeddings_batch(embeddings)
+    # Batch-add to FAISS (project-scoped when given) — one disk write
+    assigned_indices = add_embeddings_batch(embeddings, project_id=project_id)
 
     # Write back into the rows list
     for (i, row), faiss_idx in zip(to_index, assigned_indices):

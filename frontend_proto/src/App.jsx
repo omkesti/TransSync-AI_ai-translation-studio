@@ -7,6 +7,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import InviteAcceptPage from './pages/InviteAcceptPage';
 import DashboardPage from './pages/DashboardPage';
+import ProjectWorkspacePage from './pages/ProjectWorkspacePage';
 import UploadPage from './pages/UploadPage';
 import ValidationPage from './pages/ValidationPage';
 import ReviewPage from './pages/ReviewPage';
@@ -47,6 +48,7 @@ function App() {
 
         {/* Protected routes */}
         <Route path="/dashboard"  element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
         <Route path="/upload"     element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
         <Route path="/validation" element={<ProtectedRoute><ValidationPage /></ProtectedRoute>} />
         <Route path="/review"     element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />

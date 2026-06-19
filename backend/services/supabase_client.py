@@ -19,6 +19,7 @@ Table used:  translation_memory
 """
 
 import os
+from datetime import datetime, timezone
 from typing import Optional
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -51,16 +52,26 @@ def get_client() -> Client:
 
 # ── Read ──────────────────────────────────────────────────────────────────────
 
-def fetch_all_memory(org_id: str, target_lang: Optional[str] = None) -> list[dict]:
+def fetch_all_memory(
+    org_id: str,
+    target_lang: Optional[str] = None,
+    project_id: Optional[str] = None,
+) -> list[dict]:
     """
     Returns all rows from translation_memory for a given org.
-    Optionally filter by target_lang (e.g. "fr").
+    Optionally filter by target_lang (e.g. "fr") and/or project_id.
+
+    When project_id is provided only that project's rows are returned; otherwise
+    every org row (project-scoped and org-scoped alike) is returned, preserving
+    the original behaviour.
     """
     client = get_client()
     query = client.table("translation_memory").select("*").eq("org_id", org_id).order("created_at", desc=True)
 
     if target_lang:
         query = query.eq("target_lang", target_lang)
+    if project_id:
+        query = query.eq("project_id", project_id)
 
     response = query.execute()
     return response.data
@@ -134,6 +145,9 @@ def bulk_insert_translations(rows: list[dict]) -> list[dict]:
             "target_lang":     r["target_lang"],
             "match_type":      r["match_type"],
             "org_id":          r["org_id"],
+            # project_id is optional: present for approvals made inside a project,
+            # omitted (→ NULL) for org-scoped approvals.
+            **({"project_id": r["project_id"]} if r.get("project_id") else {}),
             **({("faiss_index"): r["faiss_index"]} if r.get("faiss_index") is not None else {}),
         }
         for r in rows
@@ -262,10 +276,16 @@ def fetch_all_glossary(
     org_id: str,
     target_lang: Optional[str] = None,
     search: Optional[str] = None,
+    project_id: Optional[str] = None,
 ) -> list[dict]:
     """
-    Returns all rows from the glossary table for a given org, newest first.
+    Returns rows from the glossary table for a given org, newest first.
     Optionally filter by target_lang and/or search term (applied to source_term).
+
+    Scoping:
+        • project_id given → only that project's terms (the project Glossary tab).
+        • project_id None  → only org-level terms (project_id IS NULL), so the
+          global Glossary page never mixes in project-specific terms.
     """
     client = get_client()
     query = client.table("glossary").select("*").eq("org_id", org_id).order("created_at", desc=True)
@@ -275,6 +295,10 @@ def fetch_all_glossary(
             query = query.eq("target_lang", normalized)
     if search:
         query = query.ilike("source_term", f"%{search}%")
+    if project_id:
+        query = query.eq("project_id", project_id)
+    else:
+        query = query.is_("project_id", "null")
     response = query.execute()
     return response.data
 
@@ -295,6 +319,10 @@ def insert_glossary_term(row: dict) -> dict:
         "status":      row.get("status", "PENDING"),
         "org_id":      row["org_id"],
     }
+    # project_id is optional: set for project-scoped terms, omitted (→ NULL) for
+    # org-level terms.
+    if row.get("project_id"):
+        payload["project_id"] = row["project_id"]
     response = client.table("glossary").insert(payload).execute()
     return response.data[0]
 
@@ -330,10 +358,34 @@ def delete_glossary_term(term_id: str) -> bool:
     return len(response.data) > 0
 
 
-def fetch_verified_glossary_terms(target_lang: str, org_id: str) -> dict:
+def _fetch_verified_terms_for_scope(
+    client, code: str, org_id: str, project_id: Optional[str], scope: str
+) -> dict:
+    """Fetch VERIFIED { source_term_lower: target_term } for one language code + scope."""
+    query = (
+        client.table("glossary")
+        .select("source_term, target_term")
+        .eq("target_lang", code)
+        .eq("status", "VERIFIED")
+        .eq("org_id", org_id)
+    )
+    if scope == "project":
+        query = query.eq("project_id", project_id)
+    else:
+        query = query.is_("project_id", "null")
+    response = query.execute()
+    return {row["source_term"].lower(): row["target_term"] for row in (response.data or [])}
+
+
+def fetch_verified_glossary_terms(
+    target_lang: str,
+    org_id: str,
+    project_id: Optional[str] = None,
+    inherit_org_glossary: bool = True,
+) -> dict:
     """
-    Returns all VERIFIED glossary terms for the given target language and org
-    as a flat dict: { source_term_lower: target_term }.
+    Returns VERIFIED glossary terms for the given target language and org as a
+    flat dict: { source_term_lower: target_term }.
 
     Keys are lowercased so callers can do case-insensitive scanning without
     repeated .lower() calls on every lookup.
@@ -341,27 +393,233 @@ def fetch_verified_glossary_terms(target_lang: str, org_id: str) -> dict:
     Only VERIFIED terms are returned — PENDING terms are intentionally excluded
     so unreviewed translations are never forced on the LLM.
 
+    Scoping (project-first / org-fallthrough):
+        • project_id None → org-level terms only (the original behaviour).
+        • project_id set, inherit_org_glossary True → org terms as the base with
+          the project's terms layered on top (a project term overrides an org
+          term for the same source word).
+        • project_id set, inherit_org_glossary False → project terms only.
+
     Called by: backend/routes/translate.py before each translation job.
     """
     try:
         client = get_client()
         codes = glossary_lookup_codes(normalize_lang_code(target_lang))
         for code in codes:
-            response = (
-                client.table("glossary")
-                .select("source_term, target_term")
-                .eq("target_lang", code)
-                .eq("status", "VERIFIED")
-                .eq("org_id", org_id)
-                .execute()
-            )
-            if response.data:
-                return {
-                    row["source_term"].lower(): row["target_term"]
-                    for row in response.data
-                }
+            merged: dict = {}
+            if not project_id or inherit_org_glossary:
+                merged.update(_fetch_verified_terms_for_scope(client, code, org_id, None, "org"))
+            if project_id:
+                merged.update(_fetch_verified_terms_for_scope(client, code, org_id, project_id, "project"))
+            if merged:
+                return merged
         return {}
     except Exception as e:
         # Glossary fetch failure must never block translation
         print(f"[glossary] fetch_verified_glossary_terms failed (non-fatal): {e}")
         return {}
+
+
+# ── Projects ──────────────────────────────────────────────────────────────────
+# Table: projects (see backend/migrations/003_projects.sql)
+#   id, org_id, created_by, name, description, source_language, target_language,
+#   domain, deadline, status, inherit_org_glossary, created_at, updated_at
+#
+# Every read/write is scoped to org_id. Routes resolve org_id from the JWT, so a
+# user can only ever touch projects belonging to their own organization.
+
+_PROJECT_INSERT_FIELDS = {
+    "name", "description", "source_language", "target_language",
+    "domain", "deadline", "status", "inherit_org_glossary",
+}
+_PROJECT_PATCH_FIELDS = _PROJECT_INSERT_FIELDS  # same updatable surface
+
+
+def create_project(org_id: str, created_by: str, fields: dict) -> dict:
+    """Insert a new project for an org and return the created row."""
+    client = get_client()
+    payload = {k: v for k, v in fields.items() if k in _PROJECT_INSERT_FIELDS and v is not None}
+    payload["org_id"] = org_id
+    payload["created_by"] = created_by
+    response = client.table("projects").insert(payload).execute()
+    return response.data[0]
+
+
+def fetch_projects(org_id: str, include_archived: bool = True) -> list[dict]:
+    """Return all projects for an org, newest first."""
+    client = get_client()
+    query = client.table("projects").select("*").eq("org_id", org_id).order("created_at", desc=True)
+    if not include_archived:
+        query = query.neq("status", "Archived")
+    return query.execute().data or []
+
+
+def fetch_project(project_id: str, org_id: str) -> Optional[dict]:
+    """Return one project scoped to org_id, or None if not found / not owned."""
+    client = get_client()
+    response = (
+        client.table("projects")
+        .select("*")
+        .eq("id", project_id)
+        .eq("org_id", org_id)
+        .limit(1)
+        .execute()
+    )
+    return response.data[0] if response.data else None
+
+
+def update_project(project_id: str, org_id: str, patch: dict) -> dict:
+    """Patch updatable project fields, scoped to org_id. Returns the updated row."""
+    client = get_client()
+    clean = {k: v for k, v in patch.items() if k in _PROJECT_PATCH_FIELDS}
+    clean["updated_at"] = datetime.now(timezone.utc).isoformat()
+    response = (
+        client.table("projects")
+        .update(clean)
+        .eq("id", project_id)
+        .eq("org_id", org_id)
+        .execute()
+    )
+    rows = response.data
+    return rows[0] if rows else {}
+
+
+# ── Project members ─────────────────────────────────────────────────────────────
+# Table: project_members (id, project_id, user_id, role, joined_at)
+
+def fetch_project_members(project_id: str) -> list[dict]:
+    """Return all member rows for a project."""
+    client = get_client()
+    return (
+        client.table("project_members")
+        .select("*")
+        .eq("project_id", project_id)
+        .order("joined_at", desc=False)
+        .execute()
+        .data
+        or []
+    )
+
+
+def add_project_member(project_id: str, user_id: str, role: str) -> dict:
+    """Add (or upsert) a project member with a per-project role override."""
+    client = get_client()
+    response = (
+        client.table("project_members")
+        .upsert(
+            {"project_id": project_id, "user_id": user_id, "role": role},
+            on_conflict="project_id,user_id",
+        )
+        .execute()
+    )
+    return response.data[0] if response.data else {}
+
+
+def remove_project_member(project_id: str, user_id: str) -> bool:
+    """Remove a project member. Returns True if a row was deleted."""
+    client = get_client()
+    response = (
+        client.table("project_members")
+        .delete()
+        .eq("project_id", project_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    return len(response.data or []) > 0
+
+
+# ── Documents ───────────────────────────────────────────────────────────────────
+# Table: documents (see backend/migrations/003_projects.sql)
+# Persists per-document stage + full working state (jsonb) so a project can be
+# resumed from any device.
+
+_DOCUMENT_PATCH_FIELDS = {
+    "filename", "source_lang", "target_lang", "stage", "sentence_count",
+    "reviewed_count", "raw_text", "sentences", "results", "validation_result",
+    "review_offsets", "error",
+}
+
+
+def create_document(project_id: str, org_id: str, created_by: str, fields: dict) -> dict:
+    """Insert a document row into a project and return it."""
+    client = get_client()
+    payload = {k: v for k, v in fields.items() if k in _DOCUMENT_PATCH_FIELDS and v is not None}
+    payload["project_id"] = project_id
+    payload["org_id"] = org_id
+    payload["created_by"] = created_by
+    response = client.table("documents").insert(payload).execute()
+    return response.data[0]
+
+
+def fetch_documents(project_id: str) -> list[dict]:
+    """Return all documents for a project, newest first."""
+    client = get_client()
+    return (
+        client.table("documents")
+        .select("*")
+        .eq("project_id", project_id)
+        .order("created_at", desc=True)
+        .execute()
+        .data
+        or []
+    )
+
+
+def fetch_document_summaries_for_org(org_id: str) -> list[dict]:
+    """
+    Lightweight per-document rows for an entire org — only the columns the
+    dashboard needs to compute per-project progress (no heavy jsonb columns).
+    Used to build project cards without an N+1 query per project.
+    """
+    client = get_client()
+    return (
+        client.table("documents")
+        .select("project_id, stage, sentence_count, reviewed_count, target_lang, updated_at")
+        .eq("org_id", org_id)
+        .execute()
+        .data
+        or []
+    )
+
+
+def fetch_document(document_id: str, org_id: str) -> Optional[dict]:
+    """Return one document scoped to org_id (defence-in-depth), or None."""
+    client = get_client()
+    response = (
+        client.table("documents")
+        .select("*")
+        .eq("id", document_id)
+        .eq("org_id", org_id)
+        .limit(1)
+        .execute()
+    )
+    return response.data[0] if response.data else None
+
+
+def update_document(document_id: str, org_id: str, patch: dict) -> dict:
+    """Patch a document (stage and/or working state), scoped to org_id."""
+    client = get_client()
+    clean = {k: v for k, v in patch.items() if k in _DOCUMENT_PATCH_FIELDS}
+    clean["updated_at"] = datetime.now(timezone.utc).isoformat()
+    response = (
+        client.table("documents")
+        .update(clean)
+        .eq("id", document_id)
+        .eq("org_id", org_id)
+        .execute()
+    )
+    rows = response.data
+    return rows[0] if rows else {}
+
+
+def delete_document(document_id: str, org_id: str) -> bool:
+    """Delete a document, scoped to org_id. Returns True if a row was deleted."""
+    client = get_client()
+    response = (
+        client.table("documents")
+        .delete()
+        .eq("id", document_id)
+        .eq("org_id", org_id)
+        .execute()
+    )
+    return len(response.data or []) > 0
