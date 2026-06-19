@@ -60,7 +60,9 @@ export function dbDocToAppDoc(row) {
     documentId: row.id,
     filename: row.filename || "document",
     rawText: row.raw_text || "",
-    originalDocxB64: null, // never persisted server-side; re-upload for format-preserving export
+    originalDocxB64: null, // not held in the DB row; the original .docx lives in
+                           // Supabase Storage and the export route restores it by
+                           // doc_id, so format-preserving export still works here.
     sentences: row.sentences || [],
     results: row.results || [],
     validationResult: row.validation_result || null,

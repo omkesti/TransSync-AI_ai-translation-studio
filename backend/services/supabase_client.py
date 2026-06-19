@@ -19,6 +19,7 @@ Table used:  translation_memory
 """
 
 import os
+import base64
 from datetime import datetime, timezone
 from typing import Optional
 from dotenv import load_dotenv
@@ -536,7 +537,7 @@ def remove_project_member(project_id: str, user_id: str) -> bool:
 _DOCUMENT_PATCH_FIELDS = {
     "filename", "source_lang", "target_lang", "stage", "sentence_count",
     "reviewed_count", "raw_text", "sentences", "results", "validation_result",
-    "review_offsets", "error",
+    "review_offsets", "error", "original_docx_path",
 }
 
 
@@ -623,3 +624,84 @@ def delete_document(document_id: str, org_id: str) -> bool:
         .execute()
     )
     return len(response.data or []) > 0
+
+
+# ── Original .docx (Supabase Storage) ─────────────────────────────────────────
+# Bucket: document-originals (private; see migration 004). Path layout:
+# {org_id}/{document_id}.docx. The original uploaded .docx is stored here so the
+# format-preserving export can be reproduced after a user leaves and returns to a
+# project — the base64 is no longer held only in the browser. All access is via
+# the service-role key, so no Storage RLS policies are needed.
+
+_ORIGINALS_BUCKET = "document-originals"
+_DOCX_CONTENT_TYPE = (
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
+
+
+def _original_docx_storage_path(org_id: str, document_id: str) -> str:
+    return f"{org_id}/{document_id}.docx"
+
+
+def upload_original_docx(document_id: str, org_id: str, raw_bytes: bytes) -> str:
+    """
+    Upload the original .docx bytes to Storage and record the path on the
+    document row. Upserts so a re-upload of the same document overwrites.
+    Returns the storage path.
+    """
+    client = get_client()
+    path = _original_docx_storage_path(org_id, document_id)
+    client.storage.from_(_ORIGINALS_BUCKET).upload(
+        path,
+        raw_bytes,
+        {"content-type": _DOCX_CONTENT_TYPE, "upsert": "true"},
+    )
+    update_document(document_id, org_id, {"original_docx_path": path})
+    return path
+
+
+def download_original_docx(path: str) -> Optional[bytes]:
+    """Download original .docx bytes from Storage by path, or None on failure."""
+    if not path:
+        return None
+    try:
+        client = get_client()
+        return client.storage.from_(_ORIGINALS_BUCKET).download(path)
+    except Exception as e:
+        print(f"[storage] download_original_docx failed (non-fatal): {e}")
+        return None
+
+
+def delete_original_docx(path: str) -> None:
+    """Best-effort removal of a stored original .docx from Storage (no raise)."""
+    if not path:
+        return
+    try:
+        client = get_client()
+        client.storage.from_(_ORIGINALS_BUCKET).remove([path])
+    except Exception as e:
+        print(f"[storage] delete_original_docx failed (non-fatal): {e}")
+
+
+def fetch_document_original_b64(document_id: str, org_id: str) -> Optional[str]:
+    """
+    Return the base64 of a document's stored original .docx, or None when the
+    document has no stored original (PDF-sourced, pre-migration, or doc_id that
+    isn't a real document — e.g. the legacy project-less flow's "unknown").
+
+    Used by the export routes to restore format-preserving export after the
+    browser's in-memory base64 is gone (e.g. the user left and returned).
+    """
+    try:
+        doc = fetch_document(document_id, org_id)
+        if not doc:
+            return None
+        path = doc.get("original_docx_path")
+        raw = download_original_docx(path) if path else None
+        if not raw:
+            return None
+        return base64.b64encode(raw).decode("ascii")
+    except Exception as e:
+        # Non-fatal: export falls back to raw reconstruction.
+        print(f"[storage] fetch_document_original_b64 failed (non-fatal): {e}")
+        return None

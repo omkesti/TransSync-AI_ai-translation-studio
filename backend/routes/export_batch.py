@@ -22,6 +22,7 @@ from backend.services.docx_builder import (
     build_translated_docx,
     make_output_filename,
 )
+from backend.services.supabase_client import fetch_document_original_b64
 from backend.auth.jwt_bearer import CurrentUser, get_current_user
 
 router = APIRouter()
@@ -61,6 +62,14 @@ async def export_batch(body: BatchExportRequest, current_user: CurrentUser = Dep
 
     with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for doc_data in body.documents:
+            # Restore the original .docx from Storage when the client didn't send
+            # it (e.g. the project was left and reopened). Keeps format-preserving
+            # export working per-document across sessions/devices.
+            if not doc_data.original_docx_b64 and doc_data.doc_id:
+                doc_data.original_docx_b64 = fetch_document_original_b64(
+                    doc_data.doc_id, current_user.org_id
+                )
+
             # Build the DOCX in memory. DOCX-sourced docs (original_docx_b64
             # present) get format-preserving OOXML injection; PDF-sourced docs
             # fall back to from-scratch reconstruction. A bad b64 for one doc

@@ -33,8 +33,15 @@ def _query_exact(sentence: str, normalized: str, org_id: str, project_id: str | 
     """
     One exact (source_text, target_lang, org_id) lookup, scoped.
 
-    scope == "project":  filter project_id == project_id
-    scope == "org":      filter project_id IS NULL  (original org-scoped rows)
+    scope == "project":  filter project_id == project_id (this project only).
+    scope == "org_any":  no project filter — ANY approved row in the org for this
+                         (source_text, target_lang), most recently approved first.
+                         This includes org-level rows (project_id IS NULL) AND
+                         rows approved under a different project, so the SAME
+                         sentence is reused across projects instead of being
+                         re-sent to the LLM. An exact full-sentence match is safe
+                         to reuse org-wide (unlike fuzzy/glossary scoping, which
+                         stays project-isolated).
 
     Returns the stored translated_text or None. Synchronous — call inside a
     worker thread (the Supabase client is blocking and not thread-safe across
@@ -50,8 +57,8 @@ def _query_exact(sentence: str, normalized: str, org_id: str, project_id: str | 
         )
         if scope == "project":
             query = query.eq("project_id", project_id)
-        else:
-            query = query.is_("project_id", "null")
+        else:  # "org_any" — any project (incl. NULL); newest approval wins
+            query = query.order("created_at", desc=True)
         response = query.limit(1).execute()
     except Exception as e:
         print(f"[tm] Error fetching exact match from Supabase ({scope}): {e}")
@@ -69,10 +76,12 @@ async def exact_match_lookup(
     Returns the stored translated_text for an exact (source_text, target_lang,
     org_id) match, or None if no row exists.
 
-    Project-first / org-fallback: when project_id is supplied the project-scoped
-    row wins; if there is none we fall through to the org-scoped row
-    (project_id IS NULL). When project_id is None only org-scoped rows are
-    considered — the original behaviour.
+    Project-first / org-wide fallback: when project_id is supplied the
+    project-scoped row wins; if there is none we fall through to ANY approved row
+    in the org for the same (source_text, target_lang) — org-level rows and rows
+    from sibling projects alike. This means re-translating the same content under
+    a different project still reuses the existing exact translation instead of
+    going cold to the LLM.
     """
     normalized = _normalize(target_lang)
 
@@ -81,7 +90,7 @@ async def exact_match_lookup(
             hit = _query_exact(sentence, normalized, org_id, project_id, "project")
             if hit is not None:
                 return hit
-        return _query_exact(sentence, normalized, org_id, None, "org")
+        return _query_exact(sentence, normalized, org_id, None, "org_any")
 
     return await asyncio.to_thread(_lookup)
 
@@ -93,8 +102,8 @@ async def exact_match_lookup_batch(
     Batch version of exact_match_lookup.
 
     Returns a dict { source_text: translated_text } for the sentences that have
-    an exact match, applying the same project-first / org-fallback resolution as
-    exact_match_lookup per sentence.
+    an exact match, applying the same project-first / org-wide fallback
+    resolution as exact_match_lookup per sentence.
 
     Implementation notes (unchanged from the original):
         - De-duplicates the sentences; identical sentences share one lookup.
@@ -118,7 +127,7 @@ async def exact_match_lookup_batch(
             if project_id:
                 text = _query_exact(sentence, normalized, org_id, project_id, "project")
             if text is None:
-                text = _query_exact(sentence, normalized, org_id, None, "org")
+                text = _query_exact(sentence, normalized, org_id, None, "org_any")
             if text is not None:
                 found[sentence] = text
         return found

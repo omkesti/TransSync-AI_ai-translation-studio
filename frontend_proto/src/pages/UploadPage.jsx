@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { uploadDocument, createProjectDocument } from "../services/api";
+import { uploadDocument, createProjectDocument, uploadDocumentOriginal } from "../services/api";
 import { useAppContext } from "../context/AppContext";
 import UserProfileBlock from "../components/UserProfileBlock";
 import NavAvatar from "../components/NavAvatar";
@@ -131,6 +131,18 @@ function UploadPage() {
             documentId = created?.id || null;
           } catch (docError) {
             console.warn("Could not create project document record (non-fatal):", docError?.message || docError);
+          }
+
+          // Persist the original .docx server-side (Supabase Storage) so a
+          // format-preserving export still works after leaving and returning to
+          // the project. Best-effort — export falls back to raw reconstruction
+          // if this fails.
+          if (documentId && originalDocxB64) {
+            try {
+              await uploadDocumentOriginal(documentId, originalDocxB64);
+            } catch (storeError) {
+              console.warn("Could not store original .docx for format-preserving export (non-fatal):", storeError?.message || storeError);
+            }
           }
         }
 

@@ -16,6 +16,7 @@ from backend.services.docx_builder import (
     build_translated_docx,
     make_output_filename,
 )
+from backend.services.supabase_client import fetch_document_original_b64
 from backend.auth.jwt_bearer import CurrentUser, get_current_user
 
 router = APIRouter()
@@ -53,6 +54,12 @@ async def export_document(body: DocExportData, current_user: CurrentUser = Depen
     Response:
         Binary DOCX stream (Content-Disposition: attachment)
     """
+    # When the client no longer holds the original .docx (e.g. it left and
+    # returned to the project, so the in-memory base64 is gone), restore it from
+    # Supabase Storage by document id so format-preserving export still works.
+    if not body.original_docx_b64 and body.doc_id:
+        body.original_docx_b64 = fetch_document_original_b64(body.doc_id, current_user.org_id)
+
     if body.original_docx_b64:
         try:
             docx_buf = build_translated_docx(body)

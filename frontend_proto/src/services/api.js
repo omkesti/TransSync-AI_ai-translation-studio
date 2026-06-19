@@ -413,6 +413,21 @@ export async function createProjectDocument(projectId, payload) {
   return handleResponse(response);
 }
 
+/**
+ * POST /api/documents/{id}/original — store the original .docx (base64) in
+ * Supabase Storage so format-preserving export survives leaving/returning to the
+ * project. Best-effort: callers swallow failures (export degrades to raw).
+ */
+export async function uploadDocumentOriginal(documentId, originalDocxB64) {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}/original`, {
+    method: "POST",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify({ original_docx_b64: originalDocxB64 }),
+  });
+  return handleResponse(response);
+}
+
 /** GET /api/documents/{id} — fetch one document with full persisted state. */
 export async function getDocument(documentId) {
   const authHeaders = await getAuthHeaders();
