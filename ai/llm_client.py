@@ -17,6 +17,23 @@ client = OpenAI(
 
 MODEL_NAME = "gemini-2.5-flash"
 
+# Max items per batched LLM request. Bounding the batch keeps the JSON response
+# under the model's output-token cap so it parses reliably instead of getting
+# truncated — a truncated batch would force a per-item fallback (many requests
+# instead of few), the opposite of what we want. Tunable via env.
+try:
+    LLM_BATCH_CHUNK_SIZE = int(os.environ.get("LLM_BATCH_CHUNK_SIZE", "25"))
+    if LLM_BATCH_CHUNK_SIZE < 1:
+        LLM_BATCH_CHUNK_SIZE = 25
+except (TypeError, ValueError):
+    LLM_BATCH_CHUNK_SIZE = 25
+
+
+def _chunk(items: list, size: int):
+    """Yield successive `size`-length slices of `items`."""
+    for start in range(0, len(items), size):
+        yield items[start:start + size]
+
 # ── Fallback: Llama 3.3 70B via Groq ──────────────────────────────────────────
 # When Gemini errors (e.g. rate limits on large documents), we transparently
 # retry the same request against Groq's Llama 3.3 70B. The Groq SDK mirrors the
@@ -188,6 +205,69 @@ Text: {text}"""
         return None
 
 
+def back_translate_batch(items: list[dict], source_lang: str) -> list[dict]:
+    """
+    Back-translate MANY texts into `source_lang` in bounded batched calls, using
+    Groq's Llama 3.3 70B DIRECTLY (separation of duties — never Gemini).
+
+    This collapses what used to be one Groq request PER sentence into one request
+    per chunk (LLM_BATCH_CHUNK_SIZE), which is the main lever for staying under
+    the fallback model's rate limits during back-translation QA.
+
+    Args:
+        items: [{"index": <int>, "text": <forward translation to translate back>}]
+        source_lang: language to translate back into.
+    Returns:
+        [{"index": <int>, "translation": <back-translation>}] for the items that
+        were successfully back-translated. Missing/failed items are simply absent
+        (callers treat absence as "skip verification for this sentence").
+    """
+    if not items or not source_lang:
+        return []
+
+    groq_client = _get_groq_client()
+    if groq_client is None:
+        print("[back_translate_batch] No GROQ_API_KEY configured — verification skipped.")
+        return []
+
+    results: list[dict] = []
+    for chunk in _chunk(items, LLM_BATCH_CHUNK_SIZE):
+        prompt = f"""Translate each item's text into {source_lang}.
+
+Rules:
+- Preserve the meaning exactly.
+- Do not add explanations, notes, quotes, or alternatives.
+
+Return ONLY valid JSON (no markdown, no explanation) with this schema:
+{{
+  "translations": [
+    {{"index": 0, "translation": "..."}},
+    {{"index": 1, "translation": "..."}}
+  ]
+}}
+
+Items:
+{json.dumps(chunk, ensure_ascii=False)}
+"""
+        try:
+            response = groq_client.chat.completions.create(
+                model=FALLBACK_MODEL_NAME,
+                messages=[
+                    {"role": "system", "content": "You are a professional translator."},
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=8192,
+                temperature=0.0,
+            )
+            content = response.choices[0].message.content if response.choices else None
+        except Exception as e:
+            print(f"[back_translate_batch] Groq error: {e} — chunk skipped.")
+            continue
+        results.extend(_parse_batch_response(content))
+
+    return results
+
+
 def _build_glossary_block(hints: dict) -> str:
     """
     Builds a formatted 'Mandatory Terminology' constraint block for LLM prompts.
@@ -332,18 +412,25 @@ Translation:"""
 
 async def llm_guided_batch(items: list[dict], target_lang: str) -> list[dict]:
     """
-    Translate ALL mid-similarity sentences in a single API call.
+    Translate mid-similarity sentences with TM references.
+
+    Items are processed in bounded chunks (LLM_BATCH_CHUNK_SIZE) — one API call
+    per chunk — so each JSON response stays under the output-token cap and parses
+    reliably. Results from all chunks are merged; indices are preserved because
+    each item carries its own `index` that the model echoes back.
     """
     if not items:
         return []
 
-    all_hints: dict = {}
-    for item in items:
-        all_hints.update(item.get("glossary_hints") or {})
-    glossary_block = _build_glossary_block(all_hints)
-    system_content = f"You are a professional translator.{glossary_block}"
+    results: list[dict] = []
+    for chunk in _chunk(items, LLM_BATCH_CHUNK_SIZE):
+        all_hints: dict = {}
+        for item in chunk:
+            all_hints.update(item.get("glossary_hints") or {})
+        glossary_block = _build_glossary_block(all_hints)
+        system_content = f"You are a professional translator.{glossary_block}"
 
-    prompt = f"""Translate each item to {target_lang}.
+        prompt = f"""Translate each item to {target_lang}.
 
 Each item includes a reference translation to enforce terminology and style consistency.
 You MUST strictly obey all Mandatory Terminology in the system instructions — no exceptions.
@@ -357,35 +444,44 @@ Return ONLY valid JSON (no markdown, no explanation) with this schema:
 }}
 
 Items:
-{json.dumps(items, ensure_ascii=False)}
+{json.dumps(chunk, ensure_ascii=False)}
 """
 
-    answer = _chat_completion(
-        [
-            {"role": "system", "content": system_content},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=8192,
-        temperature=0.2,
-        label="llm_guided_batch",
-    )
-    return _parse_batch_response(answer)
+        answer = _chat_completion(
+            [
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=8192,
+            temperature=0.2,
+            label="llm_guided_batch",
+        )
+        results.extend(_parse_batch_response(answer))
+
+    return results
 
 
 async def cold_llm_batch(items: list[dict], target_lang: str) -> list[dict]:
     """
-    Translate ALL cold sentences in a single API call.
+    Translate cold sentences (no TM reference).
+
+    Items are processed in bounded chunks (LLM_BATCH_CHUNK_SIZE) — one API call
+    per chunk — so each JSON response stays under the output-token cap and parses
+    reliably. Results from all chunks are merged; indices are preserved because
+    each item carries its own `index` that the model echoes back.
     """
     if not items:
         return []
 
-    all_hints: dict = {}
-    for item in items:
-        all_hints.update(item.get("glossary_hints") or {})
-    glossary_block = _build_glossary_block(all_hints)
-    system_content = f"You are a professional translator.{glossary_block}"
+    results: list[dict] = []
+    for chunk in _chunk(items, LLM_BATCH_CHUNK_SIZE):
+        all_hints: dict = {}
+        for item in chunk:
+            all_hints.update(item.get("glossary_hints") or {})
+        glossary_block = _build_glossary_block(all_hints)
+        system_content = f"You are a professional translator.{glossary_block}"
 
-    prompt = f"""Translate each sentence into {target_lang}.
+        prompt = f"""Translate each sentence into {target_lang}.
 
 You MUST strictly obey all Mandatory Terminology in the system instructions — no exceptions.
 
@@ -398,16 +494,18 @@ Return ONLY valid JSON (no markdown, no explanation) with this schema:
 }}
 
 Items:
-{json.dumps(items, ensure_ascii=False)}
+{json.dumps(chunk, ensure_ascii=False)}
 """
 
-    answer = _chat_completion(
-        [
-            {"role": "system", "content": system_content},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=8192,
-        temperature=0.2,
-        label="cold_llm_batch",
-    )
-    return _parse_batch_response(answer)
+        answer = _chat_completion(
+            [
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=8192,
+            temperature=0.2,
+            label="cold_llm_batch",
+        )
+        results.extend(_parse_batch_response(answer))
+
+    return results

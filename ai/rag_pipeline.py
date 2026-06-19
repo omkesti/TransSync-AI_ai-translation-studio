@@ -190,81 +190,114 @@ async def translate_pipeline(obj: dict) -> list[dict]:
                 "glossary_hints": sentence_hints,
             })
 
-    # ── Guided LLM — ONE single API call for the entire guided queue ────────────
-    # Previously: ceil(len(guided_queue) / 15) calls
-    # Now:        1 call regardless of queue size
+    # ── Guided LLM ──────────────────────────────────────────────────────────────
+    # Identical sentences are de-duplicated: each UNIQUE sentence is translated
+    # once (smaller request, fewer tokens) and the result fanned back out to every
+    # index that shares that sentence. Identical sentences also share the same
+    # FAISS reference + glossary hints (both deterministic on the text), so the
+    # output is identical to translating each occurrence separately.
     if guided_queue:
+        # sentence -> {indices, reference_source, reference_translation, hints, faiss_score}
+        guided_groups: dict[str, dict] = {}
+        for item in guided_queue:
+            group = guided_groups.get(item["sentence"])
+            if group is None:
+                guided_groups[item["sentence"]] = {
+                    "rep_index": item["index"],
+                    "indices": [item["index"]],
+                    "reference_source": item["reference_source"],
+                    "reference_translation": item["reference_translation"],
+                    "glossary_hints": item.get("glossary_hints") or {},
+                    "faiss_score": item.get("faiss_score"),
+                }
+            else:
+                group["indices"].append(item["index"])
+
         llm_items = [
             {
-                "index": item["index"],
-                "sentence": item["sentence"],
-                "reference_source": item["reference_source"],
-                "reference_translation": item["reference_translation"],
-                "glossary_hints": item.get("glossary_hints") or {},
+                "index": group["rep_index"],
+                "sentence": sentence,
+                "reference_source": group["reference_source"],
+                "reference_translation": group["reference_translation"],
+                "glossary_hints": group["glossary_hints"],
             }
-            for item in guided_queue
+            for sentence, group in guided_groups.items()
         ]
         responses = await llm_guided_batch(llm_items, target_lang)
         response_map = {r["index"]: r["translation"] for r in responses}
 
-        for item in guided_queue:
-            idx = item["index"]
-            item_hints = item.get("glossary_hints") or {}
-            if idx in response_map:
-                raw = response_map[idx]
-                enforced = _apply_glossary_posthoc(item["sentence"], raw, item_hints)
-                results[idx] = _build_result(item["sentence"], enforced, "llm_guided", score=item.get("faiss_score"))
-                continue
+        for sentence, group in guided_groups.items():
+            rep = group["rep_index"]
+            hints = group["glossary_hints"]
+            score = group["faiss_score"]
 
-            # Per-item fallback: single-sentence call if batch JSON parse failed for this item
-            fallback = await llm_guided_search(
-                item["sentence"],
-                item["reference_source"],
-                item["reference_translation"],
-                target_lang,
-                glossary_hints=item_hints,
-            )
-            if fallback:
-                enforced = _apply_glossary_posthoc(item["sentence"], fallback["translation"], item_hints)
-                results[idx] = _build_result(item["sentence"], enforced, "llm_guided", score=item.get("faiss_score"))
+            raw = response_map.get(rep)
+            if raw is None:
+                # Per-item fallback: single call if this sentence missed the batch
+                fallback = await llm_guided_search(
+                    sentence,
+                    group["reference_source"],
+                    group["reference_translation"],
+                    target_lang,
+                    glossary_hints=hints,
+                )
+                raw = fallback["translation"] if fallback else None
+
+            if raw is not None:
+                enforced = _apply_glossary_posthoc(sentence, raw, hints)
+                for idx in group["indices"]:
+                    results[idx] = _build_result(sentence, enforced, "llm_guided", score=score)
             else:
-                results[idx] = _build_result(item["sentence"], f"[Translation failed for: {item['sentence']}]", "error")
+                for idx in group["indices"]:
+                    results[idx] = _build_result(sentence, f"[Translation failed for: {sentence}]", "error")
 
-    # ── Cold LLM — ONE single API call for the entire cold queue ────────────────
-    # Previously: ceil(len(cold_queue) / 15) calls
-    # Now:        1 call regardless of queue size
+    # ── Cold LLM ────────────────────────────────────────────────────────────────
+    # De-duplicated the same way as the guided queue.
     if cold_queue:
+        cold_groups: dict[str, dict] = {}
+        for item in cold_queue:
+            group = cold_groups.get(item["sentence"])
+            if group is None:
+                cold_groups[item["sentence"]] = {
+                    "rep_index": item["index"],
+                    "indices": [item["index"]],
+                    "glossary_hints": item.get("glossary_hints") or {},
+                }
+            else:
+                group["indices"].append(item["index"])
+
         llm_items = [
             {
-                "index": item["index"],
-                "sentence": item["sentence"],
-                "glossary_hints": item.get("glossary_hints") or {},
+                "index": group["rep_index"],
+                "sentence": sentence,
+                "glossary_hints": group["glossary_hints"],
             }
-            for item in cold_queue
+            for sentence, group in cold_groups.items()
         ]
         responses = await cold_llm_batch(llm_items, target_lang)
         response_map = {r["index"]: r["translation"] for r in responses}
 
-        for item in cold_queue:
-            idx = item["index"]
-            item_hints = item.get("glossary_hints") or {}
-            if idx in response_map:
-                raw = response_map[idx]
-                enforced = _apply_glossary_posthoc(item["sentence"], raw, item_hints)
-                results[idx] = _build_result(item["sentence"], enforced, "llm_cold")
-                continue
+        for sentence, group in cold_groups.items():
+            rep = group["rep_index"]
+            hints = group["glossary_hints"]
 
-            # Per-item fallback: single-sentence call if batch JSON parse failed for this item
-            fallback = await cold_llm_search(
-                item["sentence"],
-                target_lang,
-                glossary_hints=item_hints,
-            )
-            if fallback:
-                enforced = _apply_glossary_posthoc(item["sentence"], fallback["translation"], item_hints)
-                results[idx] = _build_result(item["sentence"], enforced, "llm_cold")
+            raw = response_map.get(rep)
+            if raw is None:
+                # Per-item fallback: single call if this sentence missed the batch
+                fallback = await cold_llm_search(
+                    sentence,
+                    target_lang,
+                    glossary_hints=hints,
+                )
+                raw = fallback["translation"] if fallback else None
+
+            if raw is not None:
+                enforced = _apply_glossary_posthoc(sentence, raw, hints)
+                for idx in group["indices"]:
+                    results[idx] = _build_result(sentence, enforced, "llm_cold")
             else:
-                results[idx] = _build_result(item["sentence"], f"[Translation failed for: {item['sentence']}]", "error")
+                for idx in group["indices"]:
+                    results[idx] = _build_result(sentence, f"[Translation failed for: {sentence}]", "error")
 
     # Ensure every slot is filled.
     for idx, item in enumerate(results):

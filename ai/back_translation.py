@@ -29,7 +29,7 @@ import os
 import numpy as np
 
 from ai.embeddings import generate_embeddings, generate_embeddings_batch
-from ai.llm_client import back_translate
+from ai.llm_client import back_translate_batch
 
 # Only these tiers are verified. tm_exact / faiss_direct came from
 # human-approved translation memory and are trusted as-is.
@@ -94,22 +94,25 @@ async def verify_back_translations(results: list[dict], source_lang: str) -> Non
     if not targets:
         return
 
-    # ── Phase 1: concurrent back-translation (network bound) ──────────────────
-    backs = await asyncio.gather(
-        *[asyncio.to_thread(back_translate, r["translation"], source_lang) for r in targets],
-        return_exceptions=True,
-    )
+    # ── Phase 1: batched back-translation (ONE request per chunk, not per sentence) ─
+    # Each target gets a positional index so the batch response maps cleanly back.
+    items = [{"index": i, "text": r["translation"]} for i, r in enumerate(targets)]
+    try:
+        responses = await asyncio.to_thread(back_translate_batch, items, source_lang)
+    except Exception as e:
+        # Best-effort layer — any failure leaves everything un-annotated.
+        print(f"[back_translation] batch back-translation failed — skipping: {e}")
+        return
+    back_map = {r["index"]: r["translation"] for r in (responses or [])}
 
     # ── Phase 2: embeddings + cosine scoring ──────────────────────────────────
     threshold = _threshold()
 
     # Collect the (result, back-translation) pairs that actually need scoring,
-    # filtering out failed / empty back-translations exactly as before.
+    # filtering out targets the validator didn't return a back-translation for.
     scored_pairs: list[tuple[dict, str]] = []
-    for result, back in zip(targets, backs):
-        if isinstance(back, Exception):
-            print(f"[back_translation] back-translation failed — skipping: {back}")
-            continue
+    for i, result in enumerate(targets):
+        back = back_map.get(i)
         if not back:
             continue  # validator unavailable / empty output → skip silently
         scored_pairs.append((result, back))
