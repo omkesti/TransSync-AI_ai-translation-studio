@@ -223,12 +223,17 @@ def _resolve_candidates(
     org_id: str,
     project_id: str | None,
     scope: str,
+    source_lang: str,
 ) -> dict[int, dict]:
     """
     Resolve a set of faiss_index positions against Supabase for one scope.
 
     scope == "project":  filter project_id == project_id
     scope == "org":      filter project_id IS NULL  (the original org-scoped rows)
+
+    The source_lang filter restricts a neighbour to the SAME language pair, so a
+    Hindi→fr query cannot resolve a stored English→fr row (the English-centric
+    embedder otherwise yields loose cross-language neighbours).
 
     Returns { faiss_index: row } with the first row per index winning (mirrors
     the original `.limit(1)` semantics).
@@ -240,6 +245,7 @@ def _resolve_candidates(
             supabase.from_("translation_memory")
             .select("source_text, translated_text, faiss_index")
             .in_("faiss_index", list(candidates))
+            .eq("source_lang", source_lang)
             .eq("target_lang", normalized)
             .eq("org_id", org_id)
         )
@@ -267,6 +273,7 @@ def _search_with_index(
     org_id: str,
     project_id: str | None,
     scope: str,
+    source_lang: str,
 ) -> list[dict | None]:
     """
     Run one batched FAISS search against `idx` and resolve the neighbours against
@@ -296,7 +303,7 @@ def _search_with_index(
     if not candidates:
         return results
 
-    row_by_index = _resolve_candidates(candidates, normalized, org_id, project_id, scope)
+    row_by_index = _resolve_candidates(candidates, normalized, org_id, project_id, scope, source_lang)
 
     for i, (row_scores, row_indices) in enumerate(zip(scores, indices)):
         for score, f_index in zip(row_scores, row_indices):
@@ -322,6 +329,7 @@ def faiss_search_batch(
     target_lang: str,
     org_id: str,
     project_id: str | None = None,
+    source_lang: str = "en",
 ) -> list[dict | None]:
     """
     Batched nearest-neighbour search with project-first / org-fallback scoping.
@@ -341,20 +349,21 @@ def faiss_search_batch(
         return []
 
     normalized = _normalize_lang(target_lang)
+    normalized_source = _normalize_lang(source_lang) or "en"
     matrix = embeddings.astype("float32")
     results: list[dict | None] = [None] * n
 
     # ── Project-scoped pass ────────────────────────────────────────────────────
     if project_id:
         proj_idx = _get_index(project_id)
-        results = _search_with_index(proj_idx, matrix, normalized, org_id, project_id, "project")
+        results = _search_with_index(proj_idx, matrix, normalized, org_id, project_id, "project", normalized_source)
 
     # ── Org-scoped fallthrough for any query still unmatched ───────────────────
     missing = [i for i, r in enumerate(results) if r is None]
     if missing:
         org_idx = _get_index(None)
         sub_matrix = matrix[missing]
-        org_results = _search_with_index(org_idx, sub_matrix, normalized, org_id, None, "org")
+        org_results = _search_with_index(org_idx, sub_matrix, normalized, org_id, None, "org", normalized_source)
         for position, i in enumerate(missing):
             results[i] = org_results[position]
 
@@ -366,6 +375,7 @@ def faiss_search(
     target_lang: str,
     org_id: str,
     project_id: str | None = None,
+    source_lang: str = "en",
 ) -> dict | None:
     """
     Single-query convenience wrapper around faiss_search_batch.
@@ -376,5 +386,5 @@ def faiss_search(
         None                                   — no hit above threshold
     """
     vector = embedding.reshape(1, -1).astype("float32")
-    results = faiss_search_batch(vector, target_lang, org_id, project_id)
+    results = faiss_search_batch(vector, target_lang, org_id, project_id, source_lang)
     return results[0] if results else None

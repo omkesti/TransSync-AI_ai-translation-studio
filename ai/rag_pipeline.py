@@ -127,6 +127,10 @@ async def translate_pipeline(obj: dict) -> list[dict]:
 
     sentences = obj.get("sentences", [])
     target_lang = obj.get("target_lang")
+    # Source language scopes TM + FAISS reuse to the SAME language pair, so a
+    # Hindi→fr job never reuses an English→fr row (exact string collision) or a
+    # loosely-similar English→fr neighbour. Defaults to "en" for back-compat.
+    source_lang = obj.get("source_lang") or "en"
     org_id = obj.get("org_id", "")
     # Optional project scope. When present, TM + FAISS lookups search the
     # project's data first and fall through to org-scoped data. Pure pass-through
@@ -144,7 +148,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
     # ── Stage 1: Exact TM lookup for ALL sentences in one Supabase query ────────
     # Behaviour is identical to a per-sentence exact_match_lookup loop; this just
     # collapses N round-trips into one (and is language-aware + org-scoped).
-    exact_map = await exact_match_lookup_batch(sentences, target_lang, org_id, project_id)
+    exact_map = await exact_match_lookup_batch(sentences, target_lang, org_id, project_id, source_lang)
 
     remaining_indices: list[int] = []
     for index, sentence in enumerate(sentences):
@@ -163,7 +167,7 @@ async def translate_pipeline(obj: dict) -> list[dict]:
     if remaining_indices:
         remaining_sentences = [sentences[i] for i in remaining_indices]
         embeddings = generate_embeddings_batch(remaining_sentences)
-        faiss_results = faiss_search_batch(embeddings, target_lang, org_id, project_id)
+        faiss_results = faiss_search_batch(embeddings, target_lang, org_id, project_id, source_lang)
 
         for position, index in enumerate(remaining_indices):
             sentence = sentences[index]

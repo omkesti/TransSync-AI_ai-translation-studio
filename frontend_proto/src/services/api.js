@@ -136,7 +136,7 @@ export async function translateSentences(
 
 // ── Approve ─────────────────────────────────────────────────────────────────
 
-export async function approveTranslations(reviewed, projectId = null) {
+export async function approveTranslations(reviewed, projectId = null, sourceLang = "en") {
   const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/approve`, {
     method: "POST",
@@ -146,6 +146,9 @@ export async function approveTranslations(reviewed, projectId = null) {
     },
     body: JSON.stringify({
       reviewed,
+      // Source language is stored on every TM row so later exact/FAISS reuse is
+      // scoped to the same language pair.
+      source_lang: sourceLang || "en",
       // Optional project scope — approved rows are stored + indexed per project.
       project_id: projectId || null,
     }),

@@ -153,8 +153,33 @@ def bulk_insert_translations(rows: list[dict]) -> list[dict]:
         }
         for r in rows
     ]
-    response = client.table("translation_memory").insert(formatted).execute()
-    return response.data
+
+    try:
+        response = client.table("translation_memory").insert(formatted).execute()
+    except Exception as e:
+        # Surface the real PostgREST error (RLS denial, missing column, bad key,
+        # constraint violation) instead of letting it bubble up unlabelled.
+        print(f"[tm] bulk_insert_translations FAILED ({len(formatted)} rows): {e}")
+        raise
+
+    saved = response.data or []
+    print(f"[tm] bulk_insert_translations: attempted={len(formatted)} persisted={len(saved)}")
+
+    # A successful insert under the service-role key RETURNS the inserted rows.
+    # Zero rows back for a non-empty insert almost always means SUPABASE_KEY is
+    # NOT the service-role key: an RLS policy allowed the INSERT (the row may
+    # still persist) but blocked the RETURNING SELECT, so the API hands back an
+    # empty array. We warn loudly (rather than raise) because the row CAN persist
+    # in that case — the log line above is the definitive attempted-vs-persisted
+    # signal for diagnosing "approve says OK but I see no rows".
+    if formatted and not saved:
+        print(
+            "[tm] WARNING: insert returned 0 rows. SUPABASE_KEY is likely the anon "
+            "key, not the service-role key — RLS is hiding the result (and may be "
+            "dropping the write). Set SUPABASE_KEY to the service-role key."
+        )
+
+    return saved
 
 
 # ── Pipeline events (analytics) ───────────────────────────────────────────────

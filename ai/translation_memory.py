@@ -29,19 +29,23 @@ def _normalize(lang: str) -> str:
     return _ALIASES.get(cleaned, cleaned)
 
 
-def _query_exact(sentence: str, normalized: str, org_id: str, project_id: str | None, scope: str) -> str | None:
+def _query_exact(sentence: str, normalized: str, org_id: str, project_id: str | None, scope: str, source_lang: str) -> str | None:
     """
-    One exact (source_text, target_lang, org_id) lookup, scoped.
+    One exact (source_text, source_lang, target_lang, org_id) lookup, scoped.
 
     scope == "project":  filter project_id == project_id (this project only).
     scope == "org_any":  no project filter — ANY approved row in the org for this
-                         (source_text, target_lang), most recently approved first.
-                         This includes org-level rows (project_id IS NULL) AND
-                         rows approved under a different project, so the SAME
-                         sentence is reused across projects instead of being
-                         re-sent to the LLM. An exact full-sentence match is safe
-                         to reuse org-wide (unlike fuzzy/glossary scoping, which
-                         stays project-isolated).
+                         (source_text, source_lang, target_lang), most recently
+                         approved first. This includes org-level rows
+                         (project_id IS NULL) AND rows approved under a different
+                         project, so the SAME sentence is reused across projects
+                         instead of being re-sent to the LLM. An exact
+                         full-sentence match is safe to reuse org-wide (unlike
+                         fuzzy/glossary scoping, which stays project-isolated).
+
+    The source_lang filter keeps reuse within the SAME language pair: a Hindi→fr
+    job must not pick up an English→fr row that happens to share an identical
+    (often language-neutral) source string.
 
     Returns the stored translated_text or None. Synchronous — call inside a
     worker thread (the Supabase client is blocking and not thread-safe across
@@ -52,6 +56,7 @@ def _query_exact(sentence: str, normalized: str, org_id: str, project_id: str | 
             supabase.from_("translation_memory")
             .select("translated_text")
             .eq("source_text", sentence)
+            .eq("source_lang", source_lang)
             .eq("target_lang", normalized)
             .eq("org_id", org_id)
         )
@@ -70,33 +75,37 @@ def _query_exact(sentence: str, normalized: str, org_id: str, project_id: str | 
 
 
 async def exact_match_lookup(
-    sentence: str, target_lang: str, org_id: str, project_id: str | None = None
+    sentence: str, target_lang: str, org_id: str, project_id: str | None = None,
+    source_lang: str = "en",
 ) -> str | None:
     """
-    Returns the stored translated_text for an exact (source_text, target_lang,
-    org_id) match, or None if no row exists.
+    Returns the stored translated_text for an exact (source_text, source_lang,
+    target_lang, org_id) match, or None if no row exists.
 
     Project-first / org-wide fallback: when project_id is supplied the
     project-scoped row wins; if there is none we fall through to ANY approved row
-    in the org for the same (source_text, target_lang) — org-level rows and rows
-    from sibling projects alike. This means re-translating the same content under
-    a different project still reuses the existing exact translation instead of
-    going cold to the LLM.
+    in the org for the same (source_text, source_lang, target_lang) — org-level
+    rows and rows from sibling projects alike. This means re-translating the same
+    content under a different project still reuses the existing exact translation
+    instead of going cold to the LLM. Reuse is restricted to the same language
+    pair via source_lang.
     """
     normalized = _normalize(target_lang)
+    normalized_source = _normalize(source_lang) or "en"
 
     def _lookup() -> str | None:
         if project_id:
-            hit = _query_exact(sentence, normalized, org_id, project_id, "project")
+            hit = _query_exact(sentence, normalized, org_id, project_id, "project", normalized_source)
             if hit is not None:
                 return hit
-        return _query_exact(sentence, normalized, org_id, None, "org_any")
+        return _query_exact(sentence, normalized, org_id, None, "org_any", normalized_source)
 
     return await asyncio.to_thread(_lookup)
 
 
 async def exact_match_lookup_batch(
-    sentences: list[str], target_lang: str, org_id: str, project_id: str | None = None
+    sentences: list[str], target_lang: str, org_id: str, project_id: str | None = None,
+    source_lang: str = "en",
 ) -> dict[str, str]:
     """
     Batch version of exact_match_lookup.
@@ -117,6 +126,7 @@ async def exact_match_lookup_batch(
         return {}
 
     normalized = _normalize(target_lang)
+    normalized_source = _normalize(source_lang) or "en"
     # De-duplicate while preserving order; identical sentences share one lookup.
     unique_sentences = list(dict.fromkeys(sentences))
 
@@ -125,9 +135,9 @@ async def exact_match_lookup_batch(
         for sentence in unique_sentences:
             text = None
             if project_id:
-                text = _query_exact(sentence, normalized, org_id, project_id, "project")
+                text = _query_exact(sentence, normalized, org_id, project_id, "project", normalized_source)
             if text is None:
-                text = _query_exact(sentence, normalized, org_id, None, "org_any")
+                text = _query_exact(sentence, normalized, org_id, None, "org_any", normalized_source)
             if text is not None:
                 found[sentence] = text
         return found

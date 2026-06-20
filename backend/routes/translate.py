@@ -136,6 +136,10 @@ async def translate_document(body: TranslateRequest, current_user: CurrentUser =
     if not normalized_target:
         raise HTTPException(status_code=400, detail="target_lang is invalid or empty.")
 
+    # Normalize the source language too — it scopes TM/FAISS reuse to the same
+    # language pair in the pipeline (defaults to "en" if blank/unknown).
+    normalized_source = normalize_lang_code(body.source_lang) or "en"
+
     if normalized_target != body.target_lang.strip().lower():
         print(f"[glossary] Normalized target_lang '{body.target_lang}' → '{normalized_target}'")
 
@@ -171,7 +175,7 @@ async def translate_document(body: TranslateRequest, current_user: CurrentUser =
 
     input_json = {
         "sentences": body.sentences,
-        "source_lang": body.source_lang,
+        "source_lang": normalized_source,
         "target_lang": normalized_target,
         "org_id": current_user.org_id,
         "project_id": project_id,
@@ -197,7 +201,7 @@ async def translate_document(body: TranslateRequest, current_user: CurrentUser =
             "user_id":         current_user.user_id,
             "source_text":     r.get("source", ""),
             "translated_text": r.get("translation", ""),
-            "source_lang":     body.source_lang,
+            "source_lang":     normalized_source,
             "target_lang":     normalized_target,
             "match_type":      r.get("match_type", ""),
             "source_document": body.source_document or "",

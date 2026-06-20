@@ -674,7 +674,7 @@ function ReviewPage() {
         }));
 
       if (payload.length > 0) {
-        await approveTranslations(payload, currentProjectId);
+        await approveTranslations(payload, currentProjectId, docSourceLang || sourceLang);
       }
 
       const newReviewedCount = reviewedCount + batch.length;

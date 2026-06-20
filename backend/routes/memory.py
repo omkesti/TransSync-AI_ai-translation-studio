@@ -72,6 +72,11 @@ class ApproveRequest(BaseModel):
         ...,
         description="Full list of reviewed sentences. Rejected ones are filtered server-side.",
     )
+    source_lang: str = Field(
+        default="en",
+        description="BCP-47 source language for this batch. Stored on every TM row so "
+                    "later exact/FAISS reuse is scoped to the same language pair.",
+    )
     project_id: Optional[str] = Field(
         default=None,
         description="Optional project scope. When set, approved rows are stored with this "
@@ -328,6 +333,9 @@ async def approve_translations(body: ApproveRequest, current_user: CurrentUser =
     # the vector lands in. A blank/None project_id keeps the original org-scoped
     # behaviour (row.project_id stays NULL, vector goes to the org index).
     project_id = body.project_id or None
+    # Normalize the batch source language once; stored on every row so exact/FAISS
+    # reuse later resolves within the same language pair (defaults to "en").
+    normalized_source = normalize_lang_code(body.source_lang) or "en"
     rows = [
         {
             "source_text":     s.source_text,
@@ -335,7 +343,7 @@ async def approve_translations(body: ApproveRequest, current_user: CurrentUser =
             "target_lang":     lang,
             "match_type":      s.match_type,
             "faiss_index":     s.faiss_index,  # None for new LLM translations
-            "source_lang":     "en",
+            "source_lang":     normalized_source,
             "org_id":          current_user.org_id,
             "project_id":      project_id,
         }
@@ -360,19 +368,20 @@ async def approve_translations(body: ApproveRequest, current_user: CurrentUser =
 
     # ── Write to Supabase ─────────────────────────────────────────────────────
     try:
-        bulk_insert_translations(rows)
+        saved = bulk_insert_translations(rows)
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to save translations to Supabase: {str(e)}",
         )
 
+    saved_count = len(saved)
     return ApproveResponse(
-        saved_count=len(to_save),
+        saved_count=saved_count,
         indexed_count=indexed_count,
         rejected_count=len(rejected),
         message=(
-            f"{len(to_save)} translations saved, {indexed_count} indexed in FAISS. "
+            f"{saved_count} translations saved, {indexed_count} indexed in FAISS. "
             f"{len(rejected)} rejected (not stored)."
         ),
     )
