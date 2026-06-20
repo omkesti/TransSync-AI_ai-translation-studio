@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { validateText } from "../services/api";
 import { useAppContext } from "../context/AppContext";
+import { SOURCE_LANGUAGES } from "../constants/languages";
 import UserProfileBlock from "../components/UserProfileBlock";
 import NavAvatar from "../components/NavAvatar";
 import {
@@ -193,18 +194,18 @@ function ValidationPage() {
         
         for (let i = 0; i < pendingDocs.length; i++) {
           const doc = pendingDocs[i];
-          const result = await validateText(doc.rawText, doc.docId);
+          const result = await validateText(doc.rawText, doc.docId, doc.sourceLang);
           if (result.status === "ok") {
-            updateDoc(doc.docId, { sentences: result.sentences || [], status: "validated", validationResult: result, error: null });
+            updateDoc(doc.docId, { sentences: result.sentences || [], status: "validated", validationResult: result, error: null, sourceLang: result.source_lang || doc.sourceLang });
           } else {
             updateDoc(doc.docId, { status: "error", error: (result.errors || []).join(", "), validationResult: result });
           }
         }
       } else {
         updateDoc(docId, { status: "validating", error: null, validationResult: null });
-        const result = await validateText(rawText, docId);
+        const result = await validateText(rawText, docId, activeDoc?.sourceLang);
         if (result.status === "ok") {
-          updateDoc(docId, { sentences: result.sentences || [], status: "validated", validationResult: result, error: null });
+          updateDoc(docId, { sentences: result.sentences || [], status: "validated", validationResult: result, error: null, sourceLang: result.source_lang || activeDoc?.sourceLang });
         } else {
           updateDoc(docId, { status: "error", error: (result.errors || []).join(", "), validationResult: result });
         }
@@ -410,6 +411,27 @@ function ValidationPage() {
                         ? "The NLP pipeline will check your document for encoding issues, empty sections, sentence quality, and more."
                         : "Please upload a document first before running validation."}
                     </p>
+                    {docId && (
+                      <div className="flex flex-col items-center gap-2 mb-8">
+                        <label className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                          Source Language
+                        </label>
+                        <select
+                          value={activeDoc?.sourceLang || "en"}
+                          onChange={(e) => updateDoc(docId, { sourceLang: e.target.value })}
+                          className="bg-[#111111] border border-[#262626] hover:border-[#c5fe00]/40 text-white text-[13px] font-medium rounded-full px-5 py-2.5 outline-none focus:border-[#c5fe00] transition-colors cursor-pointer"
+                        >
+                          {SOURCE_LANGUAGES.map((lang) => (
+                            <option key={lang.code} value={lang.code} className="bg-[#111111]">
+                              {lang.label}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="text-[#555555] text-[10px] tracking-wide">
+                          Auto-detected — change it if the document is in another language.
+                        </span>
+                      </div>
+                    )}
                     {docId ? (
                       <div className="flex flex-row gap-4 items-center">
                         {multiDoc && pendingDocsCount > 1 && (

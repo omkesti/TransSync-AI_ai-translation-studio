@@ -5,6 +5,8 @@ import time
 from openai import OpenAI
 from dotenv import load_dotenv
 
+from backend.utils.language_codes import language_name
+
 load_dotenv()
 
 # ── Primary: Gemini 2.5 Flash via Google's OpenAI-compatible API ──────────────
@@ -179,7 +181,7 @@ def back_translate(text: str, source_lang: str) -> str | None:
         print("[back_translate] No GROQ_API_KEY configured — verification skipped.")
         return None
 
-    prompt = f"""Translate the following text into {source_lang}.
+    prompt = f"""Translate the following text into {language_name(source_lang)}.
 
 Rules:
 - Output ONLY the translated text — nothing else
@@ -232,7 +234,7 @@ def back_translate_batch(items: list[dict], source_lang: str) -> list[dict]:
 
     results: list[dict] = []
     for chunk in _chunk(items, LLM_BATCH_CHUNK_SIZE):
-        prompt = f"""Translate each item's text into {source_lang}.
+        prompt = f"""Translate each item's text into {language_name(source_lang)}.
 
 Rules:
 - Preserve the meaning exactly.
@@ -339,7 +341,7 @@ async def llm_guided_search(
     glossary_block = _build_glossary_block(glossary_hints or {})
     system_content = f"You are a professional translator.{glossary_block}"
 
-    prompt = f"""Translate the following sentence to {target_lang}.
+    prompt = f"""Translate the following sentence to {language_name(target_lang)}.
 
 A similar sentence was previously translated as a reference for terminology and style:
   Source:      "{matched_source}"
@@ -381,7 +383,7 @@ async def cold_llm_search(
     glossary_block = _build_glossary_block(glossary_hints or {})
     system_content = f"You are a professional translator.{glossary_block}"
 
-    prompt = f"""Translate the following sentence into {target_lang}.
+    prompt = f"""Translate the following sentence into {language_name(target_lang)}.
 
 Rules:
 - Output ONLY the translated sentence — nothing else
@@ -430,7 +432,7 @@ async def llm_guided_batch(items: list[dict], target_lang: str) -> list[dict]:
         glossary_block = _build_glossary_block(all_hints)
         system_content = f"You are a professional translator.{glossary_block}"
 
-        prompt = f"""Translate each item to {target_lang}.
+        prompt = f"""Translate each item to {language_name(target_lang)}.
 
 Each item includes a reference translation to enforce terminology and style consistency.
 You MUST strictly obey all Mandatory Terminology in the system instructions — no exceptions.
@@ -481,7 +483,7 @@ async def cold_llm_batch(items: list[dict], target_lang: str) -> list[dict]:
         glossary_block = _build_glossary_block(all_hints)
         system_content = f"You are a professional translator.{glossary_block}"
 
-        prompt = f"""Translate each sentence into {target_lang}.
+        prompt = f"""Translate each sentence into {language_name(target_lang)}.
 
 You MUST strictly obey all Mandatory Terminology in the system instructions — no exceptions.
 

@@ -42,6 +42,29 @@ _LANG_ALIASES: dict[str, str] = {
 }
 
 
+# Canonical code → human-readable language name. Passed to the LLM instead of a
+# bare code so prompts are unambiguous for every source/target (e.g. "en" →
+# "English", "mar" → "Marathi") regardless of pair direction.
+LANGUAGE_NAMES: dict[str, str] = {
+    "en": "English",
+    "de": "German",
+    "fr": "French",
+    "es": "Spanish",
+    "ja": "Japanese",
+    "hi": "Hindi",
+    "mar": "Marathi",
+}
+
+
+def language_name(code: str) -> str:
+    """Return the human-readable name for a language code, falling back to the
+    normalized code itself when unknown (so the LLM still gets *something*)."""
+    if not code:
+        return ""
+    normalized = normalize_lang_code(code)
+    return LANGUAGE_NAMES.get(normalized, normalized or code)
+
+
 def normalize_lang_code(raw: str) -> str:
     """
     Return canonical BCP-47 base code (lowercase).

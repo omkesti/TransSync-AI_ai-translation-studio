@@ -1,4 +1,5 @@
 export const TARGET_LANGUAGES = [
+  { code: "en", label: "English" },
   { code: "de", label: "German" },
   { code: "ja", label: "Japanese" },
   { code: "es", label: "Spanish (LATAM)" },
@@ -6,6 +7,9 @@ export const TARGET_LANGUAGES = [
   { code: "hi", label: "Hindi" },
   { code: "mar", label: "Marathi" },
 ];
+
+// Source languages are the same set — any supported language can be a source.
+export const SOURCE_LANGUAGES = TARGET_LANGUAGES;
 
 export function languageLabel(code) {
   if (!code) return "—";

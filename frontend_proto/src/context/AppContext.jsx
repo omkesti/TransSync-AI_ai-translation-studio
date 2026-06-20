@@ -68,6 +68,7 @@ export function dbDocToAppDoc(row) {
     validationResult: row.validation_result || null,
     status: DB_TO_STAGE[row.stage] || "uploaded",
     error: row.error || null,
+    sourceLang: row.source_lang || "en",
     targetLang: row.target_lang || "",
     reviewOffsets:
       row.review_offsets && Object.keys(row.review_offsets).length
@@ -189,6 +190,7 @@ export function AppProvider({ children }) {
     if ("validationResult" in patch) dbPatch.validation_result = patch.validationResult;
     if ("reviewOffsets" in patch) dbPatch.review_offsets = patch.reviewOffsets || {};
     if ("reviewedCount" in patch) dbPatch.reviewed_count = patch.reviewedCount ?? 0;
+    if ("sourceLang" in patch) dbPatch.source_lang = patch.sourceLang || null;
     if ("targetLang" in patch) dbPatch.target_lang = patch.targetLang || null;
     if ("filename" in patch) dbPatch.filename = patch.filename || "document";
     if ("error" in patch && patch.error) dbPatch.error = patch.error;
@@ -215,6 +217,7 @@ export function AppProvider({ children }) {
         validationResult: d.validationResult || null,
         status:    d.status    || "uploaded",
         error:     d.error     || null,
+        sourceLang: d.sourceLang || "en",
         targetLang: d.targetLang || "",
         reviewOffsets: d.reviewOffsets || { ...EMPTY_OFFSETS },
         reviewedCount: d.reviewedCount ?? 0,
@@ -273,6 +276,7 @@ export function AppProvider({ children }) {
   const results   = activeDoc?.results   ?? [];
   const validationResult = activeDoc?.validationResult ?? null;
   const docTargetLang = activeDoc?.targetLang ?? "";
+  const docSourceLang = activeDoc?.sourceLang ?? "en";
   const filename  = activeDoc?.filename  ?? "";
 
   const setDocId = useCallback((v) => {
@@ -297,6 +301,10 @@ export function AppProvider({ children }) {
 
   const setDocTargetLang = useCallback((v) => {
     if (activeDoc) updateDoc(activeDoc.docId, { targetLang: v });
+  }, [activeDoc, updateDoc]);
+
+  const setDocSourceLang = useCallback((v) => {
+    if (activeDoc) updateDoc(activeDoc.docId, { sourceLang: v });
   }, [activeDoc, updateDoc]);
 
   const setFilename = useCallback((v) => {
@@ -337,6 +345,8 @@ export function AppProvider({ children }) {
       setFilename,
       docTargetLang,
       setDocTargetLang,
+      docSourceLang,
+      setDocSourceLang,
 
       // Global settings
       sourceLang,
@@ -352,6 +362,7 @@ export function AppProvider({ children }) {
       docId, setDocId, documentId, rawText, setRawText, sentences, setSentences,
       results, setResults, validationResult, setValidationResult, filename, setFilename,
       docTargetLang, setDocTargetLang,
+      docSourceLang, setDocSourceLang,
       sourceLang, targetLang, resetFlow,
     ],
   );

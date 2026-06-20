@@ -70,7 +70,11 @@ def _is_mostly_noise(text: str) -> bool:
     if not non_space:
         return True
 
-    alpha = len(re.findall(r"[A-Za-z]", non_space))
+    # Count letters in a SCRIPT-AGNOSTIC way. str.isalpha() is Unicode-aware and
+    # returns True for Devanagari, CJK, Arabic, Cyrillic, etc. — using a Latin-only
+    # [A-Za-z] regex here would treat every non-Latin character as a "symbol" and
+    # wrongly discard whole paragraphs of Hindi/Japanese/etc. as noise.
+    alpha = sum(1 for c in non_space if c.isalpha())
     digits = len(re.findall(r"\d", non_space))
     symbols = len(non_space) - alpha - digits
 

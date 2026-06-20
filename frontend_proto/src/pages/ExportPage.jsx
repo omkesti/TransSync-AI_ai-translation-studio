@@ -72,6 +72,7 @@ function ExportPage() {
   const {
     results,
     sourceLang,
+    docSourceLang,
     docTargetLang,
     targetLang,
     filename,
@@ -83,6 +84,7 @@ function ExportPage() {
     setActiveDocIndex,
   } = useAppContext();
 
+  const effectiveSourceLang = docSourceLang || sourceLang || "en";
   const multiDoc = documents.length > 1;
   // Only show approved documents on the export page
   const approvedDocs = documents.filter(d => d.status === "approved" && d.results && d.results.length > 0);
@@ -125,7 +127,7 @@ function ExportPage() {
       await exportDocument({
         doc_id:      docId || "unknown",
         filename:    filename || "document",
-        source_lang: sourceLang || "en",
+        source_lang: effectiveSourceLang,
         target_lang: effectiveTargetLang || "xx",
         raw_text:    rawText || "",
         original_docx_b64: documents[activeDocIndex]?.originalDocxB64 || null,
@@ -157,7 +159,7 @@ function ExportPage() {
         docsWithResults.map(doc => ({
           doc_id:      doc.docId || "unknown",
           filename:    doc.filename || "document",
-          source_lang: sourceLang || "en",
+          source_lang: doc.sourceLang || sourceLang || "en",
           target_lang: doc.targetLang || targetLang || "xx",
           raw_text:    doc.rawText || "",
           original_docx_b64: doc.originalDocxB64 || null,
@@ -181,7 +183,7 @@ function ExportPage() {
       await exportDocument({
         doc_id:      doc.docId || "unknown",
         filename:    doc.filename || "document",
-        source_lang: sourceLang || "en",
+        source_lang: doc.sourceLang || sourceLang || "en",
         target_lang: doc.targetLang || targetLang || "xx",
         raw_text:    doc.rawText || "",
         original_docx_b64: doc.originalDocxB64 || null,
@@ -356,7 +358,7 @@ function ExportPage() {
               />
               <StatCard
                 label="Language Pair"
-                value={`${(sourceLang || "en").toUpperCase()} → ${(effectiveTargetLang || "—").toUpperCase()}`}
+                value={`${effectiveSourceLang.toUpperCase()} → ${(effectiveTargetLang || "—").toUpperCase()}`}
                 sub={filename || "document"}
               />
             </div>
@@ -463,7 +465,7 @@ function ExportPage() {
                   </div>
                   <div className="flex items-center gap-2 text-[#555555] text-[11px] font-bold">
                     <Languages size={14} />
-                    <span>{(sourceLang || "EN").toUpperCase()} → {(effectiveTargetLang || "—").toUpperCase()}</span>
+                    <span>{effectiveSourceLang.toUpperCase()} → {(effectiveTargetLang || "—").toUpperCase()}</span>
                   </div>
                 </div>
 

@@ -21,6 +21,7 @@ import shutil
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from backend.services.document_parser import parse_document
+from backend.utils.language_detect import detect_source_lang
 from backend.auth.jwt_bearer import CurrentUser, get_current_user, require_role
 
 router = APIRouter()
@@ -93,9 +94,12 @@ async def upload_document(
     os.remove(save_path)
 
     # ── 5. Return extracted text ─────────────────────────────────────────────
+    # Auto-detect the source language so the UI can pre-fill the selector; the
+    # user can still override it before validation. Best-effort (defaults "en").
     return JSONResponse(content={
-        "filename":   original_name,
-        "doc_id":     doc_id,
-        "raw_text":   raw_text,
-        "char_count": len(raw_text),
+        "filename":             original_name,
+        "doc_id":               doc_id,
+        "raw_text":             raw_text,
+        "char_count":           len(raw_text),
+        "detected_source_lang": detect_source_lang(raw_text),
     })

@@ -441,6 +441,7 @@ function ReviewPage() {
     results,
     setResults,
     sourceLang,
+    docSourceLang,
     docTargetLang,
     targetLang,
     documents,
@@ -568,7 +569,7 @@ function ReviewPage() {
           const effLang = doc.targetLang || targetLang;
           const response = await translateSentences(
             doc.sentences,
-            sourceLang,
+            doc.sourceLang || sourceLang,
             effLang,
             doc.filename,
             currentProjectId,
@@ -596,7 +597,7 @@ function ReviewPage() {
         const effLang = docTargetLang || targetLang;
         const response = await translateSentences(
           sentences,
-          sourceLang,
+          docSourceLang || sourceLang,
           effLang,
           filename,
           currentProjectId,
@@ -954,7 +955,7 @@ function ReviewPage() {
                     onApprove={handleApproveBatch}
                     onDiscard={handleDiscardBatch}
                     isApproving={isApproving}
-                    sourceLang={sourceLang}
+                    sourceLang={docSourceLang || sourceLang}
                     targetLang={docTargetLang}
                   />
                 </div>

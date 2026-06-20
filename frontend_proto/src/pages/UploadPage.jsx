@@ -34,7 +34,7 @@ function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState(""); // "Uploading file 2 of 5…"
   const [error, setError] = useState("");
 
-  const { addDocuments, setActiveDocIndex, resetFlow, currentProjectId, sourceLang, documents } =
+  const { addDocuments, setActiveDocIndex, resetFlow, currentProjectId, documents } =
     useAppContext();
 
   const handleFileChange = (event) => {
@@ -104,6 +104,10 @@ function UploadPage() {
       try {
         const response = await uploadDocument(file);
 
+        // Source language auto-detected by the backend; the user can override it
+        // on the Validation page before validating/translating.
+        const detectedSourceLang = response.detected_source_lang || "en";
+
         // Retain the original .docx (base64) so export can preserve formatting
         // via OOXML run-level injection. PDFs are read-only — no retention.
         let originalDocxB64 = null;
@@ -125,7 +129,7 @@ function UploadPage() {
             const created = await createProjectDocument(currentProjectId, {
               filename: response.filename || file.name || "document",
               raw_text: response.raw_text || "",
-              source_lang: sourceLang || "en",
+              source_lang: detectedSourceLang,
               stage: "uploaded",
             });
             documentId = created?.id || null;
@@ -152,6 +156,7 @@ function UploadPage() {
           rawText:  response.raw_text || "",
           filename: response.filename || file.name || "document",
           originalDocxB64,
+          sourceLang: detectedSourceLang,
           status:   "uploaded",
         });
       } catch (uploadError) {

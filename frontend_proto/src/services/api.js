@@ -84,7 +84,7 @@ export async function uploadDocument(file) {
 
 // ── Validate ────────────────────────────────────────────────────────────────
 
-export async function validateText(rawText, docId) {
+export async function validateText(rawText, docId, sourceLang = null) {
   const authHeaders = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/api/validate`, {
     method: "POST",
@@ -95,6 +95,9 @@ export async function validateText(rawText, docId) {
     body: JSON.stringify({
       raw_text: rawText,
       doc_id: docId,
+      // Source language for sentencization/validation. Omitted → backend
+      // auto-detects. The response echoes back the language actually used.
+      source_lang: sourceLang || null,
     }),
   });
 
