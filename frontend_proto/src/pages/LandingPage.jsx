@@ -268,8 +268,11 @@ function MarqueeRow({ items, ghost = false, reverse = false, slow = false }) {
             aria-hidden={i >= items.length}
             className="flex items-center gap-10 whitespace-nowrap"
           >
+            {/* leading-normal: Devanagari/CJK glyphs paint beyond the latin
+                em-box; with the default line-height of 1 the row's
+                overflow-hidden clips them top and bottom. */}
             <span
-              className={`font-hero text-4xl font-bold uppercase tracking-tight md:text-6xl ${
+              className={`font-hero text-4xl font-bold uppercase leading-normal tracking-tight md:text-6xl ${
                 ghost ? "text-ghost" : "text-on-surface"
               }`}
             >
@@ -460,7 +463,7 @@ function Hero() {
 function MarqueeBand() {
   return (
     <section className="overflow-hidden py-14 md:py-20" aria-hidden="true">
-      <div className="-mx-[3%] w-[106%] -rotate-[1.2deg] space-y-6">
+      <div className="-mx-[3%] w-[106%] -rotate-[1.2deg] space-y-1">
         <MarqueeRow
           items={[
             "English",
