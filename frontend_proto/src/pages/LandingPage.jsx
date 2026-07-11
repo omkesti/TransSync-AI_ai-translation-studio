@@ -1,366 +1,921 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Bell,
-  Settings,
-  User,
-  Shield,
+  ArrowDown,
+  ArrowRight,
+  ArrowUpRight,
+  BookMarked,
+  Database,
+  EyeOff,
+  FileText,
   Lock,
-  Globe,
-  Sparkles,
+  ScanSearch,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useInView,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "motion/react";
 
-function LandingPage() {
+const EASE = [0.22, 1, 0.36, 1];
+
+/* ----------------------------------------------------------------------- */
+/* Motion primitives                                                       */
+/* ----------------------------------------------------------------------- */
+
+/** Line of display type revealed from behind a mask.
+ *  The viewport observer lives on the outer (unclipped) mask: the inner span
+ *  starts fully clipped by overflow-hidden, so IntersectionObserver would
+ *  never see it intersect. The reveal is propagated down via variants. */
+function MaskLine({ children, delay = 0, className = "", once = true }) {
   return (
-    <div className="min-h-screen bg-background text-on-surface font-sans selection:bg-primary-container selection:text-background">
-      {/* Navigation */}
-      <nav className="flex items-center justify-between px-8 py-5 border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-md z-50">
-        <div className="flex items-center">
-          <span className="font-display font-bold text-xl tracking-tight text-primary-container">
-            TransSync <span className="text-on-surface">AI</span>
-          </span>
+    <motion.span
+      className={`block overflow-hidden ${className}`}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once, margin: "-8% 0px" }}
+    >
+      <motion.span
+        className="block will-change-transform"
+        variants={{
+          hidden: { y: "115%" },
+          visible: { y: 0, transition: { duration: 1, ease: EASE, delay } },
+        }}
+      >
+        {children}
+      </motion.span>
+    </motion.span>
+  );
+}
+
+/** Generic fade-and-rise on scroll. */
+function Reveal({ children, delay = 0, y = 36, className = "" }) {
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-10% 0px" }}
+      transition={{ duration: 0.9, ease: EASE, delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** Word that flips through its translations. */
+function CyclingWord({ words, interval = 2400, className = "" }) {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIndex((i) => (i + 1) % words.length), interval);
+    return () => clearInterval(t);
+  }, [words.length, interval]);
+
+  return (
+    <span className={`inline-grid overflow-hidden align-bottom ${className}`}>
+      <AnimatePresence mode="wait" initial>
+        <motion.span
+          key={words[index]}
+          className="inline-block whitespace-nowrap [grid-area:1/1]"
+          initial={{ y: "105%", opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: "-105%", opacity: 0 }}
+          transition={{ duration: 0.55, ease: EASE }}
+        >
+          {words[index]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
+
+/** Element that magnetically follows the cursor. */
+function Magnetic({ children, strength = 0.3, className = "" }) {
+  const ref = useRef(null);
+  const x = useSpring(0, { stiffness: 220, damping: 16 });
+  const y = useSpring(0, { stiffness: 220, damping: 16 });
+
+  const onMove = (e) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    x.set((e.clientX - rect.left - rect.width / 2) * strength);
+    y.set((e.clientY - rect.top - rect.height / 2) * strength);
+  };
+  const onLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{ x, y }}
+      className={`inline-block ${className}`}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** Rotating "scroll to explore" badge. */
+function ScrollBadge() {
+  return (
+    <div className="relative h-28 w-28 md:h-32 md:w-32 shrink-0" aria-hidden="true">
+      <svg viewBox="0 0 100 100" className="h-full w-full animate-spin-slow">
+        <defs>
+          <path
+            id="scroll-circle"
+            d="M 50,50 m -40,0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0"
+          />
+        </defs>
+        <text
+          fill="#adaaaa"
+          style={{ fontSize: "8px", fontFamily: '"Space Mono", monospace', letterSpacing: "0.18em" }}
+        >
+          <textPath href="#scroll-circle">
+            SCROLL TO EXPLORE · SCROLL TO EXPLORE ·
+          </textPath>
+        </text>
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <ArrowDown size={18} className="text-primary-container" />
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+/** Count-up statistic. */
+function Stat({ value, label, delay = 0 }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-15% 0px" });
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    const controls = animate(0, value, {
+      duration: 1.6,
+      delay,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [inView, value, delay]);
+
+  return (
+    <div ref={ref} className="flex flex-col items-center gap-3 py-10 text-center">
+      <span className="font-hero text-6xl font-black leading-none tracking-tight md:text-7xl">
+        {display}
+      </span>
+      <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-on-surface-variant">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/** Showcase card with scroll parallax + hover zoom, reference style. */
+function ShowcaseCard({ img, title, tag, className = "", delay = 0 }) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const y = useTransform(scrollYProgress, [0, 1], ["-9%", "9%"]);
+
+  return (
+    <Reveal delay={delay} className={className}>
+      <Link
+        to="/login"
+        className="group relative block h-full w-full overflow-hidden rounded-2xl bg-surface-container-low"
+      >
+        <div ref={ref} className="h-full w-full">
+          <motion.div style={{ y }} className="h-full w-full scale-[1.18]">
+            <img
+              src={img}
+              alt={title}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
+            />
+          </motion.div>
         </div>
 
-        <ul className="hidden md:flex gap-8 text-sm font-medium text-on-surface-variant">
-          <li className="text-primary-container cursor-pointer">Solutions</li>
-          <li className="hover:text-on-surface cursor-pointer transition-colors">
-            Technology
-          </li>
-          <li className="hover:text-on-surface cursor-pointer transition-colors">
-            Security
-          </li>
-          <li className="hover:text-on-surface cursor-pointer transition-colors">
-            Pricing
-          </li>
-        </ul>
+        {/* Caption bar */}
+        <div className="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-xl bg-black/55 px-5 py-4 backdrop-blur-md">
+          <p className="font-grotesk text-sm text-on-surface md:text-base">
+            {title}{" "}
+            <span className="text-on-surface-variant">/ {tag}</span>
+          </p>
+          <ArrowRight
+            size={18}
+            className="shrink-0 text-primary-container transition-transform duration-300 group-hover:translate-x-1.5"
+          />
+        </div>
+      </Link>
+    </Reveal>
+  );
+}
 
-        <div className="flex items-center gap-4 text-on-surface-variant">
-          <button className="hover:text-on-surface transition-colors p-1">
-            <Bell size={18} />
-          </button>
-          <button className="hover:text-on-surface transition-colors p-1">
-            <Settings size={18} />
-          </button>
+/** Feature card for the staggered grid. */
+function FeatureCard({ icon: Icon, title, copy, delay = 0, className = "" }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-8% 0px" }}
+      transition={{ duration: 0.8, ease: EASE, delay }}
+      className={`group flex min-h-[280px] flex-col justify-between rounded-2xl bg-surface-container-low p-7 transition-colors duration-500 hover:bg-[#181818] ${className}`}
+    >
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.05] text-primary-container transition-all duration-500 group-hover:rotate-[360deg] group-hover:shadow-[0_0_24px_rgba(197,254,0,0.25)]">
+        <Icon size={18} />
+      </div>
+      <div className="space-y-3 pt-14">
+        <h3 className="font-grotesk text-xl font-semibold tracking-tight text-on-surface">
+          {title}
+        </h3>
+        <p className="text-sm leading-relaxed text-on-surface-variant">{copy}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+/** Full-bleed marquee row. */
+function MarqueeRow({ items, ghost = false, reverse = false, slow = false }) {
+  const anim = reverse
+    ? "animate-marquee-reverse"
+    : slow
+      ? "animate-marquee-slow"
+      : "animate-marquee";
+  const doubled = [...items, ...items];
+  return (
+    <div className="flex overflow-hidden">
+      <div className={`flex w-max shrink-0 items-center gap-10 pr-10 ${anim}`}>
+        {doubled.map((item, i) => (
+          <span
+            key={i}
+            aria-hidden={i >= items.length}
+            className="flex items-center gap-10 whitespace-nowrap"
+          >
+            <span
+              className={`font-hero text-4xl font-bold uppercase tracking-tight md:text-6xl ${
+                ghost ? "text-ghost" : "text-on-surface"
+              }`}
+            >
+              {item}
+            </span>
+            <span className="text-2xl text-primary-container md:text-3xl">✳</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Sections                                                                */
+/* ----------------------------------------------------------------------- */
+
+function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <motion.nav
+      initial={{ y: -80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.9, ease: EASE, delay: 0.15 }}
+      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${
+        scrolled ? "bg-background/75 backdrop-blur-md" : "bg-transparent"
+      }`}
+    >
+      <div className="relative mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6 md:px-10">
+        <div className="hidden gap-8 font-mono text-[11px] uppercase tracking-[0.2em] text-on-surface-variant md:flex">
+          <a href="#features" className="transition-colors hover:text-on-surface">
+            Platform
+          </a>
+          <a href="#workflow" className="transition-colors hover:text-on-surface">
+            Workflow
+          </a>
+        </div>
+
+        <Link
+          to="/"
+          className="absolute left-1/2 -translate-x-1/2 font-hero text-sm font-bold uppercase tracking-[0.35em] text-on-surface"
+        >
+          TransSync <span className="text-primary-container">AI</span>
+        </Link>
+
+        <div className="ml-auto flex items-center gap-8">
+          <a
+            href="#security"
+            className="hidden font-mono text-[11px] uppercase tracking-[0.2em] text-on-surface-variant transition-colors hover:text-on-surface md:block"
+          >
+            Security
+          </a>
           <Link
             to="/login"
-            className="bg-surface-container-highest border border-outline-variant/30 text-on-surface hover:bg-surface-variant transition-colors px-4 py-1.5 rounded-full text-sm font-semibold ml-2"
+            className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary-container transition-colors hover:text-primary"
           >
             Login
           </Link>
         </div>
-      </nav>
+      </div>
+    </motion.nav>
+  );
+}
 
-      <main className="max-w-7xl mx-auto px-6">
-        {/* Hero Section */}
-        <section className="pt-24 pb-16 text-center space-y-8 flex flex-col items-center">
-          <h1 className="font-display text-6xl md:text-8xl font-black tracking-tight leading-[0.9]">
-            Translate documents.
-            <br />
-            <span className="text-primary-container">
-              Preserve every detail.
-            </span>
-          </h1>
-          <p className="text-on-surface-variant max-w-xl mx-auto font-sans leading-relaxed text-sm md:text-base">
-            RAG-powered translation that reuses your approved memory and enforces
-            your glossary —
-            <br /> reviewed by a human and exported with the original formatting
-            intact.
-          </p>
-          <Link
-            to="/dashboard"
-            className="mt-4 bg-primary-container text-background font-bold px-8 py-3 rounded-xl hover:bg-primary hover:shadow-[0_0_20px_rgba(197,254,0,0.3)] transition-all flex items-center gap-2"
+function Hero() {
+  return (
+    <header className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden px-6 pt-28 pb-16 md:px-10">
+      {/* Light spill from above, reference style */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_50%_-8%,rgba(255,255,255,0.09),transparent_65%)]"
+      />
+      <div aria-hidden="true" className="dot-grid pointer-events-none absolute inset-0 opacity-[0.05]" />
+
+      {/* Ambient drifting glows */}
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-44 left-[18%] h-[520px] w-[520px] rounded-full bg-primary-container/[0.07] blur-[140px]"
+        animate={{ x: [0, 70, -40, 0], y: [0, 50, 15, 0] }}
+        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-56 right-[8%] h-[460px] w-[460px] rounded-full bg-secondary/[0.05] blur-[140px]"
+        animate={{ x: [0, -60, 30, 0], y: [0, -40, -10, 0] }}
+        transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div className="relative mx-auto w-full max-w-[1400px]">
+        {/* Top meta row */}
+        <div className="mb-10 flex items-start justify-between md:mb-4">
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: EASE, delay: 0.5 }}
+            className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-on-surface-variant"
           >
-            Start Translating{" "}
-            <span className="text-lg leading-none">&rarr;</span>
-          </Link>
-
-          <div className="w-full mt-16 flex justify-center">
-            {/* The generated image contains the 3 angled devices */}
-            <div className="relative w-full max-w-4xl opacity-90 hover:opacity-100 transition-opacity duration-700">
-              <div className="absolute inset-0 bg-primary-container/10 blur-[100px] rounded-full z-0 pointer-events-none"></div>
-              <img
-                src="/hero_devices.png"
-                className="w-full h-auto relative z-10 rounded-3xl"
-                alt="TransSync AI Platform Interface On Devices"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Feature Section - The Liquid Workflow */}
-        <section className="py-24 space-y-12">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div>
-              <p className="text-primary-container font-bold text-xs tracking-widest uppercase mb-3">
-                How it works
-              </p>
-              <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight">
-                From upload to download
-              </h2>
-            </div>
-            <p className="text-on-surface-variant text-sm max-w-xs md:text-right">
-              Every document flows through validation, memory-aware translation,
-              human review, and a format-true export.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1 */}
-            <div className="bg-surface-container-low rounded-3xl flex flex-col overflow-hidden relative group">
-              <div className="p-8 pb-0 flex-1 space-y-4">
-                <div className="w-10 h-10 rounded-full bg-surface-container-highest border border-outline-variant/15 flex items-center justify-center text-primary-container mb-6 shadow-[0_0_15px_rgba(197,254,0,0.1)]">
-                  <Sparkles size={18} />
-                </div>
-                <h3 className="font-display text-xl font-bold">
-                  Translation Memory
-                </h3>
-                <p className="text-on-surface-variant text-sm leading-relaxed pb-8">
-                  Exact and semantic matches reuse the translations you've
-                  already approved — consistent terminology with fewer LLM calls
-                  over time.
-                </p>
-              </div>
-              <div className="h-40 w-full overflow-hidden shrink-0 mt-auto px-4 pb-4">
-                <img
-                  src="/feature_neural.png"
-                  className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-700 opacity-60"
-                  alt="Neural Adaptation"
-                />
-              </div>
-            </div>
-
-            {/* Card 2 */}
-            <div className="bg-surface-container-low rounded-3xl flex flex-col overflow-hidden relative group">
-              <div className="p-8 pb-0 flex-1 space-y-4">
-                <div className="w-10 h-10 rounded-full bg-surface-container-highest border border-outline-variant/15 flex items-center justify-center text-secondary mb-6 shadow-[0_0_15px_rgba(0,227,253,0.1)]">
-                  <Sparkles size={18} />
-                </div>
-                <h3 className="font-display text-xl font-bold">
-                  Glossary Enforcement
-                </h3>
-                <p className="text-on-surface-variant text-sm leading-relaxed pb-8">
-                  Verified glossary terms are injected into every prompt and
-                  re-checked after translation, so your domain language stays
-                  exact.
-                </p>
-              </div>
-              <div className="h-40 w-full overflow-hidden shrink-0 mt-auto px-4 pb-4">
-                <img
-                  src="/feature_transsync.png"
-                  className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-700 opacity-80"
-                  alt="TransSync Engine"
-                />
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className="bg-surface-container-low rounded-3xl flex flex-col overflow-hidden relative group">
-              <div className="p-8 pb-0 flex-1 space-y-4">
-                <div className="w-10 h-10 rounded-full bg-surface-container-highest border border-outline-variant/15 flex items-center justify-center text-on-surface mb-6 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
-                  <Globe size={18} />
-                </div>
-                <h3 className="font-display text-xl font-bold">
-                  Format-Preserving Export
-                </h3>
-                <p className="text-on-surface-variant text-sm leading-relaxed pb-8">
-                  Translations are injected back into your original DOCX at the
-                  run level — fonts, tables, and styles survive untouched.
-                </p>
-              </div>
-              <div className="h-40 w-full overflow-hidden shrink-0 mt-auto px-4 pb-4">
-                <img
-                  src="/feature_global.png"
-                  className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-700 opacity-70"
-                  alt="Global Context"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Security / Compliance Section */}
-        <section className="py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Visual Side */}
-          <div className="rounded-3xl border border-outline-variant/15 bg-surface-container-low/50 aspect-square max-w-md mx-auto w-full relative flex items-center justify-center overflow-hidden">
-            {/* Suble grid background using an inline SVG pattern */}
-            <div
-              className="absolute inset-0 opacity-5"
-              style={{
-                backgroundImage:
-                  "radial-gradient(#ffffff 1px, transparent 1px)",
-                backgroundSize: "20px 20px",
-              }}
-            ></div>
-            <img
-              src="/security_shield.png"
-              className="w-3/4 h-3/4 object-contain opacity-90 mix-blend-screen"
-              alt="Security Shield"
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary-container" />
+            Translation studio
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, rotate: -30, scale: 0.6 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            transition={{ duration: 0.9, ease: EASE, delay: 0.6 }}
+          >
+            <ArrowUpRight
+              size={44}
+              strokeWidth={1.5}
+              className="text-primary-container"
             />
-          </div>
+          </motion.div>
+        </div>
 
-          {/* Text Side */}
-          <div className="space-y-8">
-            <div>
-              <p className="text-primary-container font-bold text-xs tracking-widest uppercase mb-3">
-                Privacy
-              </p>
-              <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight">
-                Private by
+        {/* Headline */}
+        <h1 className="text-center font-hero font-black uppercase leading-[0.88] tracking-[-0.02em] text-on-surface">
+          <MaskLine delay={0.2}>
+            <span className="text-[clamp(2.6rem,8vw,7.5rem)]">Translate once.</span>
+          </MaskLine>
+          <MaskLine delay={0.32}>
+            <span className="text-[clamp(3rem,10.5vw,10rem)]">Remember</span>
+          </MaskLine>
+        </h1>
+        <div className="mt-1 text-center font-serif text-[clamp(2.2rem,6.5vw,5.8rem)] font-medium italic leading-[1.15] text-on-surface">
+          <Reveal delay={0.5} y={24}>
+            <CyclingWord
+              words={[
+                "forever.",
+                "pour toujours.",
+                "para siempre.",
+                "für immer.",
+                "per sempre.",
+              ]}
+            />
+          </Reveal>
+        </div>
+
+        {/* Sub row: meta / badge / paragraph */}
+        <div className="mt-14 flex flex-col items-center gap-10 md:mt-16 md:flex-row md:items-end md:justify-between">
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: EASE, delay: 0.9 }}
+            className="order-3 hidden font-mono text-[11px] uppercase tracking-[0.25em] text-on-surface-variant md:order-1 md:block"
+          >
+            (01) — The precision engine
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.9, ease: EASE, delay: 1 }}
+            className="order-1 md:order-2"
+          >
+            <ScrollBadge />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: EASE, delay: 0.9 }}
+            className="order-2 max-w-xs space-y-5 text-center md:order-3 md:text-left"
+          >
+            <p className="text-sm leading-relaxed text-on-surface-variant">
+              The AI translation studio with memory — every approved sentence is
+              reused, your glossary is enforced, and documents export with their
+              original formatting intact.
+            </p>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-primary-container px-6 py-3 text-sm font-bold text-background transition-all hover:bg-primary hover:shadow-[0_0_28px_rgba(197,254,0,0.35)]"
+            >
+              Start translating <ArrowRight size={15} />
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function MarqueeBand() {
+  return (
+    <section className="overflow-hidden py-14 md:py-20" aria-hidden="true">
+      <div className="-mx-[3%] w-[106%] -rotate-[1.2deg] space-y-6">
+        <MarqueeRow
+          items={[
+            "English",
+            "Español",
+            "Français",
+            "Deutsch",
+            "日本語",
+            "हिन्दी",
+            "मराठी",
+          ]}
+        />
+        <MarqueeRow
+          ghost
+          reverse
+          items={["Upload", "Validate", "Translate", "Review", "Approve", "Export"]}
+        />
+      </div>
+    </section>
+  );
+}
+
+function Features() {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const headingX = useTransform(scrollYProgress, [0, 1], [0, -60]);
+
+  return (
+    <section id="features" ref={ref} className="scroll-mt-24 px-6 py-24 md:px-10 md:py-32">
+      <div className="mx-auto max-w-[1400px]">
+        <motion.h2
+          style={{ x: headingX }}
+          className="font-hero text-[clamp(3.4rem,11vw,9.5rem)] font-black uppercase leading-none tracking-tight text-on-surface"
+        >
+          <MaskLine>Features</MaskLine>
+        </motion.h2>
+
+        <div className="mt-14 grid grid-cols-1 gap-3 md:grid-cols-4">
+          {/* Left rail */}
+          <div className="flex flex-col justify-between gap-16 p-2 md:row-span-2">
+            <Reveal delay={0.1}>
+              <p className="max-w-[180px] font-grotesk text-lg leading-snug text-on-surface">
+                Consistency,
                 <br />
-                architecture
-              </h2>
-            </div>
-
-            <p className="text-on-surface-variant text-sm leading-relaxed">
-              Your data stays yours. The backend is stateless — uploaded files
-              are parsed in memory and never written to disk. Only the
-              translations you explicitly approve are saved, scoped to your
-              organization.
-            </p>
-
-            <div className="space-y-6 pt-4">
-              <div className="flex gap-4">
-                <div className="mt-1 text-primary-container">
-                  <Shield
-                    size={20}
-                    fill="currentColor"
-                    className="opacity-80"
-                  />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-lg mb-1 relative after:content-[''] after:inline-block after:w-2 after:h-2 after:bg-primary-container after:rounded-full after:ml-2 after:mb-1 after:animate-pulse">
-                    Stateless Document Handling
-                  </h4>
-                  <p className="text-on-surface-variant text-sm">
-                    Uploaded PDFs and Word files are parsed in memory and never
-                    persisted to disk.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="mt-1 text-primary-container">
-                  <Lock size={20} fill="currentColor" className="opacity-80" />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-lg mb-1 relative after:content-[''] after:inline-block after:w-2 after:h-2 after:bg-primary-container after:rounded-full after:ml-2 after:mb-1 after:animate-pulse">
-                    Organization-Scoped Access
-                  </h4>
-                  <p className="text-on-surface-variant text-sm">
-                    Supabase-backed role control ties every translation, glossary
-                    term, and memory entry to your org.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Bottom CTA Block */}
-        <section className="py-16 my-12">
-          <div className="bg-surface-dim border border-outline-variant/10 rounded-3xl p-12 md:p-24 text-center space-y-8 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
-            <h2 className="font-display text-4xl md:text-6xl font-black italic tracking-tighter">
-              Bring your documents.
-            </h2>
-            <p className="text-on-surface-variant max-w-lg mx-auto text-sm">
-              From validation to a polished, format-true download — TransSync
-              handles the workflow so your team can focus on the words that
-              matter.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
-              <Link
-                to="/login"
-                className="bg-primary-container text-background font-bold px-8 py-3 rounded-xl hover:bg-primary transition-colors w-full sm:w-auto text-center"
-              >
-                Get Started Free
-              </Link>
-              <button className="bg-transparent border border-outline-variant/30 text-on-surface font-bold px-8 py-3 rounded-xl hover:bg-surface-container-highest transition-colors w-full sm:w-auto">
-                Contact Sales
-              </button>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-outline-variant/10 py-12 px-8 mt-12 bg-background">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-          <div className="col-span-1 border-r border-outline-variant/10 pr-8 hidden md:block">
-            <div className="font-display font-bold text-xl tracking-tight text-primary-container mb-4">
-              TransSync <span className="text-on-surface">AI</span>
-            </div>
-            <p className="text-on-surface-variant text-xs leading-relaxed max-w-xs">
-              Context-aware document translation with memory, glossary control,
-              and human review.
-            </p>
+                by design
+              </p>
+            </Reveal>
+            <Reveal delay={0.25}>
+              <ArrowUpRight
+                size={40}
+                strokeWidth={1.5}
+                className="text-primary-container"
+              />
+            </Reveal>
           </div>
 
-          <div className="space-y-4">
-            <h5 className="font-display text-primary-container text-xs font-bold uppercase tracking-widest">
-              Product
-            </h5>
-            <ul className="text-on-surface-variant text-xs space-y-3 font-medium">
-              <li className="hover:text-on-surface cursor-pointer">
-                Translation Memory
-              </li>
-              <li className="hover:text-on-surface cursor-pointer">
-                Glossary Control
-              </li>
-              <li className="hover:text-on-surface cursor-pointer">
-                Review Workflow
-              </li>
-              <li className="hover:text-on-surface cursor-pointer">
-                Format-Preserving Export
-              </li>
-            </ul>
-          </div>
-
-          <div className="space-y-4">
-            <h5 className="font-display text-primary-container text-xs font-bold uppercase tracking-widest">
-              Company
-            </h5>
-            <ul className="text-on-surface-variant text-xs space-y-3 font-medium">
-              <li className="hover:text-on-surface cursor-pointer">About Us</li>
-              <li className="hover:text-on-surface cursor-pointer">Careers</li>
-              <li className="hover:text-on-surface cursor-pointer">
-                Global Impact
-              </li>
-              <li className="hover:text-on-surface cursor-pointer">Contact</li>
-            </ul>
-          </div>
-
-          <div className="space-y-4">
-            <h5 className="font-display text-primary-container text-xs font-bold uppercase tracking-widest">
-              Legal
-            </h5>
-            <ul className="text-on-surface-variant text-xs space-y-3 font-medium">
-              <li className="hover:text-on-surface cursor-pointer">
-                Privacy Policy
-              </li>
-              <li className="hover:text-on-surface cursor-pointer">
-                Terms of Service
-              </li>
-              <li className="hover:text-on-surface cursor-pointer">
-                Security Audit
-              </li>
-              <li className="hover:text-on-surface cursor-pointer">
-                Cookie Policy
-              </li>
-            </ul>
-          </div>
+          <FeatureCard
+            icon={Database}
+            title="Translation Memory"
+            copy="Every approved sentence is stored in your organization's memory. Exact matches return instantly — before a model is ever called."
+            delay={0.05}
+            className="md:col-start-3"
+          />
+          <FeatureCard
+            icon={ScanSearch}
+            title="Semantic Recall"
+            copy="Vector search finds near-identical sentences you've already translated and hands them to the model as guidance."
+            delay={0.15}
+          />
+          <FeatureCard
+            icon={BookMarked}
+            title="Glossary Enforcement"
+            copy="Verified terminology is injected into every prompt and re-checked after translation, so domain language stays exact."
+            delay={0.1}
+            className="md:col-start-2"
+          />
+          <FeatureCard
+            icon={ShieldCheck}
+            title="Back-Translation QA"
+            copy="An independent model translates every AI result back to the source and flags anything that drifts in meaning."
+            delay={0.2}
+          />
+          <FeatureCard
+            icon={FileText}
+            title="Format-True Export"
+            copy="Translations are injected into your original DOCX at the run level — fonts, tables and styles survive untouched."
+            delay={0.3}
+          />
         </div>
+      </div>
+    </section>
+  );
+}
 
-        <div className="max-w-7xl mx-auto flex justify-between items-center pt-8 border-t border-outline-variant/10 text-[10px] text-on-surface-variant">
-          <p>&copy; 2026 TransSync AI. Translate with context, memory, and confidence.</p>
-          <div className="flex gap-4">
-            <Globe size={14} className="hover:text-on-surface cursor-pointer" />
-            <Settings
-              size={14}
-              className="hover:text-on-surface cursor-pointer"
+function Showcase() {
+  return (
+    <section id="studio" className="scroll-mt-24 px-6 py-24 md:px-10 md:py-32">
+      <div className="mx-auto max-w-[1400px]">
+        <h2 className="text-center leading-none">
+          <MaskLine>
+            <span className="font-serif text-[clamp(2.8rem,8vw,6.5rem)] italic text-on-surface">
+              Inside{" "}
+            </span>
+            <span className="font-hero text-[clamp(2.8rem,8vw,6.5rem)] font-black uppercase tracking-tight text-on-surface">
+              the Studio
+            </span>
+          </MaskLine>
+        </h2>
+
+        <div className="mt-16 space-y-4">
+          <ShowcaseCard
+            img="/hero_devices.png"
+            title="Review Studio"
+            tag="Human-in-the-loop approval"
+            className="aspect-[16/10] md:aspect-[21/9]"
+          />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <ShowcaseCard
+              img="/feature_neural.png"
+              title="Translation Memory"
+              tag="Approved once, reused forever"
+              className="aspect-[4/5] md:aspect-[4/4.4]"
+              delay={0.1}
             />
-            <User size={14} className="hover:text-on-surface cursor-pointer" />
+            <ShowcaseCard
+              img="/feature_transsync.png"
+              title="Glossary Engine"
+              tag="Terminology under control"
+              className="aspect-[4/5] md:aspect-[4/4.4]"
+              delay={0.2}
+            />
           </div>
+          <ShowcaseCard
+            img="/feature_global.png"
+            title="Format-True Export"
+            tag="Every run, every style, intact"
+            className="aspect-[16/10] md:aspect-[21/9]"
+            delay={0.1}
+          />
         </div>
-      </footer>
+      </div>
+    </section>
+  );
+}
+
+const WORKFLOW_STEPS = [
+  {
+    n: "01",
+    title: "Upload & Validate",
+    copy: "PDF or DOCX in. Sentences are cleaned, split and grammar-checked by the NLP pipeline — before a single token is spent.",
+  },
+  {
+    n: "02",
+    title: "Translate with Memory",
+    copy: "Exact memory hits return instantly. Semantic recall guides the model on near-matches; only genuinely new sentences go cold.",
+  },
+  {
+    n: "03",
+    title: "Review & Approve",
+    copy: "Editors refine and approve line by line. Every approval is indexed straight back into your organization's memory.",
+  },
+  {
+    n: "04",
+    title: "Export Format-True",
+    copy: "Translations are injected into the original document at the run level — layout, tables and styles come out untouched.",
+  },
+];
+
+function Workflow() {
+  return (
+    <section id="workflow" className="scroll-mt-24 px-6 py-24 md:px-10 md:py-32">
+      <div className="mx-auto max-w-[1400px]">
+        <div className="mb-16 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <h2 className="font-hero text-[clamp(3rem,9vw,8rem)] font-black uppercase leading-none tracking-tight text-on-surface">
+            <MaskLine>Workflow</MaskLine>
+          </h2>
+          <Reveal delay={0.2}>
+            <p className="max-w-xs font-mono text-[11px] uppercase leading-relaxed tracking-[0.2em] text-on-surface-variant md:text-right">
+              (02) — From upload
+              <br />
+              to download
+            </p>
+          </Reveal>
+        </div>
+
+        <div>
+          {WORKFLOW_STEPS.map((step, i) => (
+            <Reveal key={step.n} delay={i * 0.08}>
+              <div className="group grid grid-cols-[auto_1fr] items-baseline gap-6 border-t border-white/5 py-10 transition-colors duration-500 hover:bg-surface-container-low md:grid-cols-[100px_1fr_minmax(0,380px)_40px] md:gap-10 md:px-6">
+                <span className="font-mono text-sm text-primary-container">
+                  {step.n}
+                </span>
+                <h3 className="font-hero text-2xl font-bold uppercase tracking-tight text-on-surface md:text-4xl">
+                  {step.title}
+                </h3>
+                <p className="col-span-2 text-sm leading-relaxed text-on-surface-variant md:col-span-1">
+                  {step.copy}
+                </p>
+                <ArrowUpRight
+                  size={22}
+                  className="hidden text-on-surface-variant opacity-0 transition-all duration-500 group-hover:translate-x-1 group-hover:text-primary-container group-hover:opacity-100 md:block"
+                />
+              </div>
+            </Reveal>
+          ))}
+          <div className="border-t border-white/5" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Stats() {
+  return (
+    <section className="px-6 py-10 md:px-10">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-2 rounded-2xl bg-surface-container-low md:grid-cols-4">
+        <Stat value={7} label="Languages" />
+        <Stat value={4} label="Tiers of recall" delay={0.1} />
+        <Stat value={2} label="Independent models" delay={0.2} />
+        <Stat value={0} label="Files kept on disk" delay={0.3} />
+      </div>
+    </section>
+  );
+}
+
+const SECURITY_ITEMS = [
+  {
+    icon: EyeOff,
+    title: "Stateless by default",
+    copy: "Documents are parsed in memory and never written to disk. Nothing persists unless you approve it.",
+  },
+  {
+    icon: Lock,
+    title: "Organization-scoped",
+    copy: "Role-based access is resolved on every request. Memory, glossary and analytics never leave your org.",
+  },
+  {
+    icon: Users,
+    title: "Invitation-only",
+    copy: "No public signups. Your workspace grows only when an owner or admin extends an invite.",
+  },
+];
+
+function Security() {
+  return (
+    <section id="security" className="scroll-mt-24 px-6 py-24 md:px-10 md:py-32">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-16 md:grid-cols-2">
+        <div>
+          <Reveal>
+            <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.25em] text-on-surface-variant">
+              (03) — Security
+            </p>
+          </Reveal>
+          <h2 className="leading-[0.95]">
+            <MaskLine>
+              <span className="font-hero text-[clamp(2.6rem,6.5vw,5.5rem)] font-black uppercase tracking-tight text-on-surface">
+                Private by
+              </span>
+            </MaskLine>
+            <MaskLine delay={0.12}>
+              <span className="font-serif text-[clamp(2.6rem,6.5vw,5.5rem)] italic text-primary-container">
+                architecture.
+              </span>
+            </MaskLine>
+          </h2>
+        </div>
+
+        <div className="space-y-2 self-center">
+          {SECURITY_ITEMS.map((item, i) => (
+            <Reveal key={item.title} delay={i * 0.1}>
+              <div className="group flex gap-6 rounded-2xl p-6 transition-colors duration-500 hover:bg-surface-container-low">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-primary-container">
+                  <item.icon size={18} />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="font-grotesk text-lg font-semibold text-on-surface">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-on-surface-variant">
+                    {item.copy}
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CTA() {
+  return (
+    <section className="relative overflow-hidden px-6 py-32 md:px-10 md:py-44">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center"
+      >
+        <span className="text-ghost font-hero text-[22vw] font-black uppercase leading-none tracking-tight opacity-60">
+          Memory
+        </span>
+      </div>
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-container/[0.06] blur-[130px]"
+        animate={{ scale: [1, 1.25, 1] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div className="relative mx-auto flex max-w-[1400px] flex-col items-center gap-10 text-center">
+        <Reveal>
+          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-on-surface-variant">
+            ( Ready when you are )
+          </p>
+        </Reveal>
+        <h2 className="leading-[0.95]">
+          <MaskLine>
+            <span className="font-hero text-[clamp(3rem,10vw,8.5rem)] font-black uppercase tracking-tight text-on-surface">
+              Start
+            </span>
+          </MaskLine>
+        </h2>
+        <div className="-mt-6 font-serif text-[clamp(2.2rem,6vw,5rem)] italic leading-[1.15] text-on-surface">
+          <Reveal delay={0.15}>
+            <CyclingWord
+              words={[
+                "translating.",
+                "traduire.",
+                "traducir.",
+                "übersetzen.",
+                "tradurre.",
+              ]}
+              interval={2200}
+            />
+          </Reveal>
+        </div>
+
+        <Reveal delay={0.25}>
+          <Magnetic strength={0.35}>
+            <Link
+              to="/login"
+              className="group inline-flex items-center gap-3 rounded-full bg-primary-container px-10 py-5 font-grotesk text-base font-bold text-background transition-all hover:bg-primary hover:shadow-[0_0_40px_rgba(197,254,0,0.4)]"
+            >
+              Enter the studio
+              <ArrowRight
+                size={18}
+                className="transition-transform duration-300 group-hover:translate-x-1.5"
+              />
+            </Link>
+          </Magnetic>
+        </Reveal>
+
+        <Reveal delay={0.35}>
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-on-surface-variant">
+            Invitation-only onboarding · ask your workspace admin
+          </p>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+const FOOTER_COLUMNS = [
+  {
+    heading: "Product",
+    items: [
+      "Translation Memory",
+      "Glossary Control",
+      "Review Workflow",
+      "Format-True Export",
+    ],
+  },
+  {
+    heading: "Company",
+    items: ["About Us", "Careers", "Global Impact", "Contact"],
+  },
+  {
+    heading: "Legal",
+    items: ["Privacy Policy", "Terms of Service", "Security Audit", "Cookie Policy"],
+  },
+];
+
+function Footer() {
+  return (
+    <footer className="overflow-hidden border-t border-white/5 px-6 pb-10 pt-20 md:px-10">
+      <div className="mx-auto max-w-[1400px]">
+        <Reveal>
+          <p className="font-hero text-[clamp(2.6rem,9.5vw,9rem)] font-black uppercase leading-none tracking-tight text-on-surface">
+            TransSync <span className="text-primary-container">AI</span>
+          </p>
+        </Reveal>
+
+        <div className="mt-16 grid grid-cols-1 gap-12 md:grid-cols-4">
+          <p className="max-w-xs text-sm leading-relaxed text-on-surface-variant">
+            Context-aware document translation with memory, glossary control,
+            and human review — built for teams that translate the same domain
+            every day.
+          </p>
+          {FOOTER_COLUMNS.map((col) => (
+            <div key={col.heading} className="space-y-4">
+              <h5 className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-primary-container">
+                {col.heading}
+              </h5>
+              <ul className="space-y-3 font-grotesk text-sm text-on-surface-variant">
+                {col.items.map((item) => (
+                  <li
+                    key={item}
+                    className="cursor-pointer transition-colors hover:text-on-surface"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 font-mono text-[10px] uppercase tracking-[0.2em] text-on-surface-variant md:flex-row">
+          <p>© 2026 TransSync AI</p>
+          <p>Translate with context, memory, and confidence.</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Page                                                                    */
+/* ----------------------------------------------------------------------- */
+
+function LandingPage() {
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 24 });
+
+  return (
+    <div className="min-h-screen bg-background font-grotesk text-on-surface selection:bg-primary-container selection:text-background">
+      {/* Scroll progress bar */}
+      <motion.div
+        style={{ scaleX: progress }}
+        className="fixed inset-x-0 top-0 z-[60] h-[2px] origin-left bg-primary-container"
+      />
+      <div className="noise-overlay" aria-hidden="true" />
+
+      <Navbar />
+      <Hero />
+      <MarqueeBand />
+      <Features />
+      <Showcase />
+      <Workflow />
+      <Stats />
+      <Security />
+      <CTA />
+      <Footer />
     </div>
   );
 }
