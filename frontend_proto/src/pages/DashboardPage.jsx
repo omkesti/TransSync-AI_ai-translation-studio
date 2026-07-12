@@ -48,7 +48,7 @@ const TIER_META = [
 function matchTypeBadgeStyle(mt) {
   switch (mt) {
     case 'tm_exact':
-      return 'bg-[#1a2010] text-[#c5fe00] border border-[#2a2e16]';
+      return 'bg-[#1a2010] text-primary-container border border-primary-container/20';
     case 'faiss_direct':
       return 'bg-[#101820] text-[#00c5fe] border border-[#162030]';
     case 'llm_guided':
@@ -74,7 +74,7 @@ function MemberAvatars({ members = [] }) {
         <div
           key={m.id || m.user_id || i}
           title={`${(m.role || 'Member')}`}
-          className="w-7 h-7 rounded-full border-2 border-[#131313] flex items-center justify-center text-[10px] font-black text-[#0a0a0a]"
+          className="w-7 h-7 rounded-full border-2 border-[#131313] flex items-center justify-center text-[10px] font-black text-background"
           style={{ backgroundColor: MEMBER_COLORS[i % MEMBER_COLORS.length] }}
         >
           {(m.role || 'M').charAt(0).toUpperCase()}
@@ -99,36 +99,36 @@ function ProjectCard({ project, onOpen }) {
   return (
     <button
       onClick={() => onOpen(project)}
-      className="text-left bg-[#131313] border border-[#262626] hover:border-[#3a3a3a] rounded-[24px] p-7 transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_40px_rgba(0,0,0,0.4)] group flex flex-col"
+      className="text-left bg-surface-container-low hover:bg-[#181818] rounded-2xl p-7 transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_40px_rgba(0,0,0,0.4)] group flex flex-col"
     >
       {/* Header: name + status */}
       <div className="flex items-start justify-between mb-4 gap-3">
         <div className="min-w-0">
-          <h3 className="font-display font-bold text-lg tracking-tight truncate group-hover:text-[#c5fe00] transition-colors">
+          <h3 className="font-grotesk font-bold text-lg tracking-tight truncate group-hover:text-primary-container transition-colors">
             {project.name}
           </h3>
           {project.description && (
             <p className="text-[#8c8c8b] text-[12px] mt-1 line-clamp-2 leading-relaxed">{project.description}</p>
           )}
         </div>
-        <span className={`shrink-0 text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${statusStyle(project.status)}`}>
+        <span className={`shrink-0 text-[9px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${statusStyle(project.status)}`}>
           {project.status}
         </span>
       </div>
 
       {/* Meta chips */}
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-[#262626] text-[#a0a09f] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
-          <Globe size={11} className="text-[#c5fe00]" />
+        <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#a0a09f] text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
+          <Globe size={11} className="text-primary-container" />
           {project.target_language ? languageLabel(project.target_language) : '—'}
         </span>
         {project.domain && (
-          <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-[#262626] text-[#a0a09f] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#a0a09f] text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
             <Tag size={11} className="text-[#00c5fe]" />
             {project.domain}
           </span>
         )}
-        <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-[#262626] text-[#a0a09f] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
+        <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#a0a09f] text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
           <FileText size={11} />
           {docCount} doc{docCount !== 1 ? 's' : ''}
         </span>
@@ -137,18 +137,18 @@ function ProjectCard({ project, onOpen }) {
       {/* Progress */}
       <div className="mb-5">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">Progress</span>
+          <span className="text-[#555555] text-[10px] font-mono font-bold uppercase tracking-widest">Progress</span>
           <span className="text-white text-[12px] font-bold">{progress}%</span>
         </div>
-        <div className="h-1.5 rounded-full bg-[#1a1a1a] overflow-hidden">
-          <div className="h-full bg-[#c5fe00] rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
+        <div className="h-1.5 rounded-full bg-[#1c1c1c] overflow-hidden">
+          <div className="h-full bg-primary-container rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {/* Footer: members + last activity */}
       <div className="mt-auto flex items-center justify-between pt-1">
         <MemberAvatars members={project.members} />
-        <span className="flex items-center gap-1.5 text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+        <span className="flex items-center gap-1.5 text-[#555555] text-[10px] font-mono font-bold uppercase tracking-widest">
           <Clock size={11} />
           {timeAgo(stats.last_activity)}
         </span>
@@ -160,28 +160,28 @@ function ProjectCard({ project, onOpen }) {
 // ── Sidebar ─────────────────────────────────────────────────────────────────
 
 function SidebarButton({ Icon, label, active, onClick }) {
-  const base = "w-full flex items-center gap-4 px-4 py-3 rounded-[12px] cursor-pointer transition-colors";
+  const base = "w-full flex items-center gap-4 px-4 py-3 rounded-xl cursor-pointer transition-colors";
   if (active) {
     return (
-      <button onClick={onClick} className={`${base} bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16]`}>
+      <button onClick={onClick} className={`${base} bg-[#1a1c10] text-primary-container`}>
         <Icon size={18} />
-        <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
+        <span className="text-[11px] font-mono font-bold uppercase tracking-widest">{label}</span>
       </button>
     );
   }
   return (
-    <button onClick={onClick} className={`${base} text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313]`}>
+    <button onClick={onClick} className={`${base} text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low`}>
       <Icon size={18} />
-      <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
+      <span className="text-[11px] font-mono font-bold uppercase tracking-widest">{label}</span>
     </button>
   );
 }
 
 function SidebarLink({ to, Icon, label }) {
   return (
-    <Link to={to} className="w-full flex items-center gap-4 px-4 py-3 rounded-[12px] cursor-pointer transition-colors text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313]">
+    <Link to={to} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl cursor-pointer transition-colors text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low">
       <Icon size={18} />
-      <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
+      <span className="text-[11px] font-mono font-bold uppercase tracking-widest">{label}</span>
     </Link>
   );
 }
@@ -190,7 +190,7 @@ function SidebarLink({ to, Icon, label }) {
 
 function SkeletonProjectCard() {
   return (
-    <div className="bg-[#131313] border border-[#262626] rounded-[24px] p-7 animate-pulse">
+    <div className="bg-surface-container-low rounded-2xl p-7 animate-pulse">
       <div className="h-4 w-32 bg-[#1e1e1e] rounded mb-4" />
       <div className="flex gap-2 mb-5">
         <div className="h-5 w-16 bg-[#1e1e1e] rounded-full" />
@@ -204,7 +204,7 @@ function SkeletonProjectCard() {
 
 function SkeletonCard() {
   return (
-    <div className="bg-[#131313] border border-[#262626] border-opacity-50 rounded-[28px] p-8 animate-pulse">
+    <div className="bg-surface-container-low rounded-3xl p-8 animate-pulse">
       <div className="h-3 w-24 bg-[#262626] rounded mb-6"></div>
       <div className="h-12 w-32 bg-[#1e1e1e] rounded"></div>
     </div>
@@ -213,7 +213,7 @@ function SkeletonCard() {
 
 function SkeletonInsight() {
   return (
-    <div className="bg-[#151515] border border-[#262626] border-opacity-70 rounded-[24px] p-6 space-y-3 animate-pulse">
+    <div className="bg-[#161616] rounded-2xl p-6 space-y-3 animate-pulse">
       <div className="flex items-center gap-3">
         <div className="w-4 h-4 rounded bg-[#262626]"></div>
         <div className="h-3 w-36 bg-[#262626] rounded"></div>
@@ -226,7 +226,7 @@ function SkeletonInsight() {
 
 function SkeletonDocRow() {
   return (
-    <tr className="border-b border-[#262626] animate-pulse">
+    <tr className="border-b border-white/8 animate-pulse">
       <td className="py-6 px-8"><div className="h-3 w-48 bg-[#1e1e1e] rounded"></div></td>
       <td className="py-6 px-8"><div className="h-5 w-12 bg-[#1e1e1e] rounded-full"></div></td>
       <td className="py-6 px-8"><div className="h-2 w-28 bg-[#1e1e1e] rounded-full"></div></td>
@@ -246,24 +246,24 @@ function RecentProjectCard({ project, onOpen }) {
   return (
     <button
       onClick={() => onOpen(project)}
-      className="text-left bg-[#131313] border border-[#262626] hover:border-[#3a3a3a] rounded-[20px] p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] group flex flex-col"
+      className="text-left bg-surface-container-low hover:bg-[#181818] rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] group flex flex-col"
     >
       <div className="flex items-start justify-between mb-3 gap-2">
-        <h3 className="font-display font-bold text-[15px] tracking-tight truncate group-hover:text-[#c5fe00] transition-colors min-w-0">
+        <h3 className="font-grotesk font-bold text-[15px] tracking-tight truncate group-hover:text-primary-container transition-colors min-w-0">
           {project.name}
         </h3>
-        <span className={`shrink-0 text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${statusStyle(project.status)}`}>
+        <span className={`shrink-0 text-[8px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${statusStyle(project.status)}`}>
           {project.status}
         </span>
       </div>
 
       <div className="flex items-center gap-2 mb-4 text-[#8c8c8b]">
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest">
-          <Globe size={11} className="text-[#c5fe00]" />
+        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-widest">
+          <Globe size={11} className="text-primary-container" />
           {project.target_language ? languageLabel(project.target_language) : '—'}
         </span>
         <span className="text-[#262626]">•</span>
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest">
+        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-widest">
           <FileText size={11} />
           {docCount} doc{docCount !== 1 ? 's' : ''}
         </span>
@@ -272,13 +272,13 @@ function RecentProjectCard({ project, onOpen }) {
       <div className="mt-auto">
         <div className="flex justify-between items-center mb-1.5">
           <span className="text-white text-[11px] font-bold">{progress}%</span>
-          <span className="flex items-center gap-1 text-[#555555] text-[9px] font-bold uppercase tracking-widest">
+          <span className="flex items-center gap-1 text-[#555555] text-[9px] font-mono font-bold uppercase tracking-widest">
             <Clock size={10} />
             {timeAgo(stats.last_activity)}
           </span>
         </div>
-        <div className="h-1 rounded-full bg-[#1a1a1a] overflow-hidden">
-          <div className="h-full bg-[#c5fe00] rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
+        <div className="h-1 rounded-full bg-[#1c1c1c] overflow-hidden">
+          <div className="h-full bg-primary-container rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
         </div>
       </div>
     </button>
@@ -287,7 +287,7 @@ function RecentProjectCard({ project, onOpen }) {
 
 function SkeletonRecentProject() {
   return (
-    <div className="bg-[#131313] border border-[#262626] rounded-[20px] p-5 animate-pulse">
+    <div className="bg-surface-container-low rounded-2xl p-5 animate-pulse">
       <div className="h-3 w-24 bg-[#1e1e1e] rounded mb-4" />
       <div className="h-3 w-20 bg-[#1e1e1e] rounded mb-5" />
       <div className="h-1 w-full bg-[#1e1e1e] rounded-full" />
@@ -316,11 +316,12 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
     .slice(0, 4);
 
   return (
-    <div className="p-8 lg:p-12 max-w-7xl mx-auto space-y-12">
+    <div className="animate-rise p-8 lg:p-12 max-w-7xl mx-auto space-y-12">
 
       {/* Header */}
       <div>
-        <h1 className="font-display font-bold text-4xl mb-3 tracking-tight">Overview</h1>
+        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-on-surface-variant mb-3">(01) — Your studio</p>
+        <h1 className="font-hero font-black uppercase text-4xl md:text-5xl mb-3 tracking-tight leading-none">Overview</h1>
         <p className="text-[#8c8c8b] text-[15px]">
           Your translation activity at a glance — memory reuse, LLM usage,<br />
           and the most recent documents across your organization.
@@ -329,9 +330,9 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-[#1a0a0a] border border-[#4a1010] rounded-[16px] px-6 py-4 flex items-center justify-between">
-          <span className="text-[#ff6b6b] text-sm font-medium">{error}</span>
-          <button onClick={onRetry} className="text-[#ff6b6b] hover:text-white text-[11px] font-bold uppercase tracking-widest border border-[#4a1010] px-3 py-1.5 rounded-full transition-colors">
+        <div className="bg-[#1c0f0c] rounded-2xl px-6 py-4 flex items-center justify-between">
+          <span className="text-error text-sm font-medium">{error}</span>
+          <button onClick={onRetry} className="text-error hover:text-white text-[11px] font-mono font-bold uppercase tracking-widest border border-error/25 px-3 py-1.5 rounded-full transition-colors">
             Retry
           </button>
         </div>
@@ -341,22 +342,22 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {loading ? <SkeletonCard /> : (
-          <div className="bg-[#131313] border border-[#262626] border-opacity-50 rounded-[28px] p-8 relative overflow-hidden">
-            <p className="text-[#555555] font-bold text-[11px] uppercase tracking-widest mb-6">Total Translations</p>
+          <div className="bg-surface-container-low rounded-3xl p-8 relative overflow-hidden">
+            <p className="text-[#555555] font-mono font-bold text-[11px] uppercase tracking-widest mb-6">Total Translations</p>
             <div className="flex items-baseline gap-3">
-              <span className="font-display font-bold text-5xl tracking-tight">{total.toLocaleString()}</span>
-              {total > 0 && <span className="text-[#c5fe00] font-bold text-sm tracking-widest">Active</span>}
+              <span className="font-hero font-black text-5xl tracking-tight">{total.toLocaleString()}</span>
+              {total > 0 && <span className="text-primary-container font-bold text-sm tracking-widest">Active</span>}
             </div>
           </div>
         )}
 
         {loading ? <SkeletonCard /> : (
-          <div className="bg-[#131313] border border-[#262626] border-opacity-50 rounded-[28px] p-8 relative overflow-hidden">
-            <p className="text-[#555555] font-bold text-[11px] uppercase tracking-widest mb-6">Memory Hits</p>
+          <div className="bg-surface-container-low rounded-3xl p-8 relative overflow-hidden">
+            <p className="text-[#555555] font-mono font-bold text-[11px] uppercase tracking-widest mb-6">Memory Hits</p>
             <div className="flex items-baseline gap-3">
-              <span className="font-display font-bold text-5xl tracking-tight">{tmHits.toLocaleString()}</span>
+              <span className="font-hero font-black text-5xl tracking-tight">{tmHits.toLocaleString()}</span>
               <div className="flex gap-[3px] items-center h-5">
-                <Zap size={14} className="text-[#c5fe00]" />
+                <Zap size={14} className="text-primary-container" />
               </div>
             </div>
             <p className="text-[#555555] text-[11px] mt-3">TM Exact + FAISS direct lookups</p>
@@ -364,10 +365,10 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
         )}
 
         {loading ? <SkeletonCard /> : (
-          <div className="bg-[#131313] border border-[#262626] border-opacity-50 rounded-[28px] p-8 relative overflow-hidden">
-            <p className="text-[#555555] font-bold text-[11px] uppercase tracking-widest mb-6">LLM Calls</p>
+          <div className="bg-surface-container-low rounded-3xl p-8 relative overflow-hidden">
+            <p className="text-[#555555] font-mono font-bold text-[11px] uppercase tracking-widest mb-6">LLM Calls</p>
             <div className="flex items-baseline gap-3">
-              <span className="font-display font-bold text-5xl tracking-tight">{llmCalls.toLocaleString()}</span>
+              <span className="font-hero font-black text-5xl tracking-tight">{llmCalls.toLocaleString()}</span>
               <Brain size={16} className="text-[#8c8c8b] mb-1" />
             </div>
             <p className="text-[#555555] text-[11px] mt-3">Guided + cold LLM invocations</p>
@@ -380,12 +381,12 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
       <div className="space-y-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h3 className="font-display font-bold text-[22px] tracking-tight mb-1">Recently Worked On</h3>
+            <h3 className="font-grotesk font-bold text-[22px] tracking-tight mb-1">Recently Worked On</h3>
             <p className="text-[#8c8c8b] text-[13px]">Jump back into the projects you touched most recently</p>
           </div>
           <button
             onClick={onViewAllProjects}
-            className="shrink-0 text-[#c5fe00] hover:text-white text-[11px] font-bold uppercase tracking-widest border border-[#2a2e16] hover:border-[#c5fe00] bg-[#1a1c10] px-4 py-2 rounded-full transition-colors"
+            className="shrink-0 text-primary-container hover:text-white text-[11px] font-mono font-bold uppercase tracking-widest border border-primary-container/20 hover:border-primary-container bg-[#1a1c10] px-4 py-2 rounded-full transition-colors"
           >
             View all →
           </button>
@@ -402,11 +403,11 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
             ))}
           </div>
         ) : (
-          <div className="bg-[#131313] border border-[#262626] rounded-[20px] px-6 py-8 flex items-center justify-between gap-4 flex-wrap">
+          <div className="bg-surface-container-low rounded-2xl px-6 py-8 flex items-center justify-between gap-4 flex-wrap">
             <p className="text-[#8c8c8b] text-sm">No projects yet — create one to get started.</p>
             <button
               onClick={onCreateProject}
-              className="bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full px-5 py-2.5 flex items-center gap-2 font-black text-[11px] uppercase tracking-widest"
+              className="bg-primary-container text-background hover:bg-primary transition-colors rounded-full px-5 py-2.5 flex items-center gap-2 font-black text-[11px] uppercase tracking-widest"
             >
               <Plus size={14} strokeWidth={3} /> Create Project
             </button>
@@ -421,15 +422,15 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
         <div className="lg:col-span-2 flex flex-col space-y-6">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="font-display font-bold text-[22px] tracking-tight mb-1">Pipeline Breakdown</h3>
+              <h3 className="font-grotesk font-bold text-[22px] tracking-tight mb-1">Pipeline Breakdown</h3>
               <p className="text-[#8c8c8b] text-[13px]">Translation tier distribution across all processed sentences</p>
             </div>
-            <div className="border border-[#262626] bg-[#1a1a1a] px-3 py-1.5 rounded-[8px] text-[#555555] font-bold text-[9px] uppercase tracking-widest">
+            <div className="border border-white/8 bg-[#1c1c1c] px-3 py-1.5 rounded-[8px] text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest">
               All Time
             </div>
           </div>
 
-          <div className="bg-[#10130a] border border-[#1a2010] rounded-[24px] p-8 space-y-5">
+          <div className="bg-[#10130a] rounded-2xl p-8 space-y-5">
             {[
               { key: 'tm_exact',     label: 'TM Exact',     color: '#c5fe00' },
               { key: 'faiss_direct', label: 'FAISS Direct', color: '#00c5fe' },
@@ -447,7 +448,7 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
                       <span className="text-[#555555] text-[11px] w-8 text-right">{pct}%</span>
                     </div>
                   </div>
-                  <div className="h-2 rounded-full bg-[#1a1a1a] overflow-hidden">
+                  <div className="h-2 rounded-full bg-[#1c1c1c] overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
                   </div>
                 </div>
@@ -461,7 +462,7 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
                       <div className="h-3 w-24 bg-[#1e1e1e] rounded"></div>
                       <div className="h-3 w-16 bg-[#1e1e1e] rounded"></div>
                     </div>
-                    <div className="h-2 bg-[#1a1a1a] rounded-full"></div>
+                    <div className="h-2 bg-[#1c1c1c] rounded-full"></div>
                   </div>
                 ))}
               </div>
@@ -471,14 +472,14 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
 
         {/* Right Col (Span 1): Recent Translations */}
         <div className="space-y-6">
-          <h3 className="font-display font-bold text-[22px] tracking-tight mb-2">Recent Translations</h3>
+          <h3 className="font-grotesk font-bold text-[22px] tracking-tight mb-2">Recent Translations</h3>
 
           <div className="space-y-4">
             {loading
               ? [1, 2, 3].map(i => <SkeletonInsight key={i} />)
               : recent.slice(0, 3).length > 0
                 ? recent.slice(0, 3).map((r, i) => (
-                    <div key={i} className="bg-[#151515] border border-[#262626] border-opacity-70 rounded-[24px] p-6 space-y-4 hover:border-[#333333] transition-colors cursor-pointer group">
+                    <div key={i} className="bg-[#161616] rounded-2xl p-6 space-y-4 hover:border-white/12 transition-colors cursor-pointer group">
                       <div className="flex items-center gap-3">
                         <FileText size={16} className="text-[#a0a09f] shrink-0" />
                         <span className="font-bold text-[13px] truncate">{r.source_text}</span>
@@ -487,15 +488,15 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
                         "{r.translated_text}"
                       </p>
                       <div className="flex justify-between items-center pt-1">
-                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full ${matchTypeBadgeStyle(r.match_type)}`}>
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-1 rounded-full ${matchTypeBadgeStyle(r.match_type)}`}>
                           {matchTypeLabel(r.match_type)}
                         </span>
-                        <span className="text-[#555555] text-[10px] font-bold tracking-widest uppercase">{timeAgo(r.created_at)}</span>
+                        <span className="text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase">{timeAgo(r.created_at)}</span>
                       </div>
                     </div>
                   ))
                 : (
-                  <div className="bg-[#151515] border border-[#262626] border-opacity-70 rounded-[24px] p-6 text-center">
+                  <div className="bg-[#161616] rounded-2xl p-6 text-center">
                     <p className="text-[#555555] text-sm">No translations yet.</p>
                   </div>
                 )
@@ -505,10 +506,10 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
       </div>
 
       {/* Bottom Row: Recent Activity — recently translated DOCUMENTS */}
-      <div className="border border-[#262626] border-opacity-80 rounded-[28px] overflow-hidden">
-        <div className="p-8 border-b border-[#262626] flex justify-between items-end">
+      <div className="border border-white/8 border-opacity-80 rounded-3xl overflow-hidden">
+        <div className="p-8 border-b border-white/8 flex justify-between items-end">
           <div>
-            <h3 className="font-display font-bold text-[22px] tracking-tight">Recent Activity</h3>
+            <h3 className="font-grotesk font-bold text-[22px] tracking-tight">Recent Activity</h3>
             <p className="text-[#8c8c8b] text-[13px] mt-1">Documents translated recently across your organization</p>
           </div>
         </div>
@@ -517,11 +518,11 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
           <table className="w-full text-left border-collapse">
             <thead>
               <tr>
-                <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] w-2/5">Document</th>
-                <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Lang</th>
-                <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] w-1/3">Tier Mix</th>
-                <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] text-right">Sentences</th>
-                <th className="py-4 px-8 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] text-right">Last Activity</th>
+                <th className="py-4 px-8 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8 w-2/5">Document</th>
+                <th className="py-4 px-8 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8">Lang</th>
+                <th className="py-4 px-8 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8 w-1/3">Tier Mix</th>
+                <th className="py-4 px-8 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8 text-right">Sentences</th>
+                <th className="py-4 px-8 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8 text-right">Last Activity</th>
               </tr>
             </thead>
             <tbody className="text-[13px]">
@@ -532,20 +533,20 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
                       const count = d.sentence_count || 0;
                       const bdown = d.breakdown || {};
                       return (
-                        <tr key={i} className={`border-b border-[#262626] hover:bg-[#131313] transition-colors ${i === recentDocuments.length - 1 ? 'border-b-0' : ''}`}>
+                        <tr key={i} className={`border-b border-white/8 hover:bg-surface-container-low transition-colors ${i === recentDocuments.length - 1 ? 'border-b-0' : ''}`}>
                           <td className="py-5 px-8 font-medium max-w-0">
                             <div className="flex items-center gap-3 min-w-0">
                               <FileText size={15} className="text-[#a0a09f] shrink-0" />
-                              <p className="truncate text-[#ffffff]">{d.source_document}</p>
+                              <p className="truncate text-on-surface">{d.source_document}</p>
                             </div>
                           </td>
                           <td className="py-5 px-8">
-                            <span className="bg-[#1a1a1a] border border-[#262626] text-[#8c8c8b] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
+                            <span className="bg-[#1c1c1c] text-[#8c8c8b] text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-1 rounded-full">
                               {d.target_lang || '—'}
                             </span>
                           </td>
                           <td className="py-5 px-8">
-                            <div className="flex h-2 w-full max-w-[220px] rounded-full overflow-hidden bg-[#1a1a1a]">
+                            <div className="flex h-2 w-full max-w-[220px] rounded-full overflow-hidden bg-[#1c1c1c]">
                               {TIER_META.map(({ key, color }) => {
                                 const c = bdown[key] ?? 0;
                                 const pct = count > 0 ? (c / count) * 100 : 0;
@@ -556,10 +557,10 @@ function HomeView({ stats, loading, error, onRetry, projects, projectsLoading, o
                               })}
                             </div>
                           </td>
-                          <td className="py-5 px-8 text-right font-bold text-[#ffffff] whitespace-nowrap">
+                          <td className="py-5 px-8 text-right font-bold text-on-surface whitespace-nowrap">
                             {count.toLocaleString()}
                           </td>
-                          <td className="py-5 px-8 text-right text-[#555555] text-[11px] font-bold uppercase tracking-widest whitespace-nowrap">
+                          <td className="py-5 px-8 text-right text-[#555555] text-[11px] font-mono font-bold uppercase tracking-widest whitespace-nowrap">
                             {timeAgo(d.last_activity)}
                           </td>
                         </tr>
@@ -589,11 +590,12 @@ function ProjectsView({ projects, loading, error, onRetry, onOpen, onCreate }) {
   const archivedProjects = projects.filter((p) => p.status === 'Archived');
 
   return (
-    <div className="p-8 lg:p-12 max-w-7xl mx-auto space-y-10">
+    <div className="animate-rise p-8 lg:p-12 max-w-7xl mx-auto space-y-10">
 
       <div className="flex items-end justify-between gap-6 flex-wrap">
         <div>
-          <h1 className="font-display font-bold text-4xl mb-3 tracking-tight">Projects</h1>
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-on-surface-variant mb-3">(02) — Workspaces</p>
+          <h1 className="font-hero font-black uppercase text-4xl md:text-5xl mb-3 tracking-tight leading-none">Projects</h1>
           <p className="text-[#8c8c8b] text-[15px]">
             Every translation effort lives in a project — its documents, memory,<br />
             glossary and progress all scoped together.
@@ -601,16 +603,16 @@ function ProjectsView({ projects, loading, error, onRetry, onOpen, onCreate }) {
         </div>
         <button
           onClick={onCreate}
-          className="bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full px-6 py-3.5 flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
+          className="bg-primary-container text-background hover:bg-primary transition-colors rounded-full px-6 py-3.5 flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
         >
           <Plus size={16} strokeWidth={3} /> Create Project
         </button>
       </div>
 
       {error && (
-        <div className="bg-[#1a0a0a] border border-[#4a1010] rounded-[16px] px-6 py-4 flex items-center justify-between">
-          <span className="text-[#ff6b6b] text-sm font-medium">{error}</span>
-          <button onClick={onRetry} className="text-[#ff6b6b] hover:text-white text-[11px] font-bold uppercase tracking-widest border border-[#4a1010] px-3 py-1.5 rounded-full transition-colors">
+        <div className="bg-[#1c0f0c] rounded-2xl px-6 py-4 flex items-center justify-between">
+          <span className="text-error text-sm font-medium">{error}</span>
+          <button onClick={onRetry} className="text-error hover:text-white text-[11px] font-mono font-bold uppercase tracking-widest border border-error/25 px-3 py-1.5 rounded-full transition-colors">
             Retry
           </button>
         </div>
@@ -623,16 +625,16 @@ function ProjectsView({ projects, loading, error, onRetry, onOpen, onCreate }) {
         </div>
       ) : activeProjects.length === 0 && archivedProjects.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8">
-            <FolderOpen size={32} className="text-[#c5fe00]" />
+          <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-primary-container/20 flex items-center justify-center mb-8">
+            <FolderOpen size={32} className="text-primary-container" />
           </div>
-          <h3 className="font-display font-bold text-2xl tracking-tight mb-3">No projects yet</h3>
+          <h3 className="font-grotesk font-bold text-2xl tracking-tight mb-3">No projects yet</h3>
           <p className="text-[#8c8c8b] text-[14px] max-w-sm leading-relaxed mb-8">
             Create your first project to start uploading and translating documents.
           </p>
           <button
             onClick={onCreate}
-            className="bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full px-8 py-4 flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)]"
+            className="bg-primary-container text-background hover:bg-primary transition-colors rounded-full px-8 py-4 flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)]"
           >
             <Plus size={16} strokeWidth={3} /> Create Project
           </button>
@@ -647,7 +649,7 @@ function ProjectsView({ projects, loading, error, onRetry, onOpen, onCreate }) {
 
           {archivedProjects.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-[#555555] font-bold text-[11px] uppercase tracking-[0.2em]">Archived</h2>
+              <h2 className="text-[#555555] font-mono font-bold text-[11px] uppercase tracking-[0.2em]">Archived</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 opacity-60">
                 {archivedProjects.map((p) => (
                   <ProjectCard key={p.id} project={p} onOpen={onOpen} />
@@ -733,14 +735,14 @@ function DashboardPage() {
   };
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex flex-col overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="h-screen bg-background text-on-surface font-grotesk flex flex-col overflow-hidden selection:bg-primary-container selection:text-background">
 
       {/* Top Navigation */}
-      <nav className="h-[72px] border-b border-[#262626] border-opacity-50 flex items-center justify-between px-8 bg-[#0a0a0a] shrink-0 z-20">
+      <nav className="h-[72px] border-b border-white/8 border-opacity-50 flex items-center justify-between px-8 bg-background shrink-0 z-20">
         <div className="flex items-center gap-16">
           <Link to="/" className="inline-block">
-            <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] block leading-none">
-              TransSync <span className="text-[#ffffff]">AI</span>
+            <span className="font-hero text-[13px] font-bold uppercase tracking-[0.3em] text-on-surface block leading-none">
+              TransSync <span className="text-primary-container">AI</span>
             </span>
           </Link>
           <ul className="hidden md:flex items-center gap-2">
@@ -749,8 +751,8 @@ function DashboardPage() {
                 onClick={() => setView('home')}
                 className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full text-[14px] font-bold tracking-tight transition-colors ${
                   view === 'home'
-                    ? 'bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16]'
-                    : 'text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] border border-transparent'
+                    ? 'bg-[#1a1c10] text-primary-container'
+                    : 'text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low border border-transparent'
                 }`}
               >
                 <Home size={18} strokeWidth={2.2} /> Home
@@ -761,8 +763,8 @@ function DashboardPage() {
                 onClick={() => setView('projects')}
                 className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full text-[14px] font-bold tracking-tight transition-colors ${
                   view === 'projects'
-                    ? 'bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16]'
-                    : 'text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] border border-transparent'
+                    ? 'bg-[#1a1c10] text-primary-container'
+                    : 'text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low border border-transparent'
                 }`}
               >
                 <LayoutDashboard size={18} strokeWidth={2.2} /> Projects
@@ -771,23 +773,23 @@ function DashboardPage() {
           </ul>
         </div>
         <div className="flex items-center gap-6 text-[#8c8c8b]">
-          <button onClick={refreshActive} title="Refresh" className={`hover:text-[#ffffff] transition-colors ${activeLoading ? 'animate-spin text-[#c5fe00]' : ''}`}>
+          <button onClick={refreshActive} title="Refresh" className={`hover:text-on-surface transition-colors ${activeLoading ? 'animate-spin text-primary-container' : ''}`}>
             <RefreshCw size={16} />
           </button>
-          <button className="hover:text-[#ffffff] transition-colors"><Bell size={18} /></button>
-          <button className="hover:text-[#ffffff] transition-colors"><HelpCircle size={18} /></button>
-          <button className="hover:text-[#ffffff] transition-colors"><Settings size={18} /></button>
+          <button className="hover:text-on-surface transition-colors"><Bell size={18} /></button>
+          <button className="hover:text-on-surface transition-colors"><HelpCircle size={18} /></button>
+          <button className="hover:text-on-surface transition-colors"><Settings size={18} /></button>
           <NavAvatar />
         </div>
       </nav>
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Sidebar */}
-        <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex overflow-y-auto layout-scrollbar">
+        <aside className="w-[260px] border-r border-white/8 border-opacity-50 flex flex-col shrink-0 bg-background hidden md:flex overflow-y-auto layout-scrollbar">
           <div className="p-6 pb-2 flex-1 flex flex-col">
             <button
               onClick={() => setModalOpen(true)}
-              className="w-full bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors rounded-full py-3.5 flex items-center justify-center gap-2 font-bold text-sm shadow-[0_0_15px_rgba(197,254,0,0.15)] mb-8"
+              className="w-full bg-primary-container text-background hover:bg-primary transition-colors rounded-full py-3.5 flex items-center justify-center gap-2 font-bold text-sm shadow-[0_0_15px_rgba(197,254,0,0.15)] mb-8"
             >
               <Plus size={18} strokeWidth={2.5} /> Create Project
             </button>
@@ -803,7 +805,7 @@ function DashboardPage() {
         </aside>
 
         {/* Main */}
-        <main className="flex-1 overflow-y-auto bg-[#0a0a0a] relative layout-scrollbar">
+        <main className="flex-1 overflow-y-auto bg-background relative layout-scrollbar">
           {view === 'home' ? (
             <HomeView
               stats={stats}

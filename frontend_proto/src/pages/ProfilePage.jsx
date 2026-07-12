@@ -112,9 +112,9 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="min-h-screen bg-background text-on-surface font-grotesk selection:bg-primary-container selection:text-background">
       {/* Top nav */}
-      <nav className="h-[72px] border-b border-[#262626] border-opacity-50 flex items-center justify-between px-8">
+      <nav className="h-[72px] border-b border-white/8 border-opacity-50 flex items-center justify-between px-8">
         <div className="flex items-center gap-6">
           <Link to="/dashboard" className="flex items-center gap-2 text-[#8c8c8b] hover:text-white transition-colors text-sm font-semibold">
             <ArrowLeft size={18} />
@@ -127,17 +127,17 @@ export default function ProfilePage() {
             </Link>
           )}
           <Link to="/" className="inline-block">
-            <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] block leading-none">
-              TransSync <span className="text-white">AI</span>
+            <span className="font-hero text-[13px] font-bold uppercase tracking-[0.3em] text-on-surface block leading-none">
+              TransSync <span className="text-primary-container">AI</span>
             </span>
           </Link>
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-6 py-12 space-y-10">
+      <div className="animate-rise max-w-4xl mx-auto px-6 py-12 space-y-10">
 
         {/* Identity card */}
-        <section className="bg-[#131313] border border-[#262626] border-opacity-70 rounded-[28px] p-8">
+        <section className="bg-surface-container-low rounded-3xl p-8">
           <div className="flex items-start gap-6">
             <Avatar name={displayName} email={email} size={88} />
 
@@ -151,12 +151,12 @@ export default function ProfilePage() {
                     onChange={(e) => setNameDraft(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
                     maxLength={80}
-                    className="bg-[#0a0a0a] border border-[#333] focus:border-[#c5fe00] outline-none rounded-lg px-3 py-2 text-2xl font-display font-bold text-white w-full max-w-xs transition-colors"
+                    className="bg-background border border-[#333] focus:border-primary-container outline-none rounded-lg px-3 py-2 text-2xl font-grotesk font-bold text-white w-full max-w-xs transition-colors"
                   />
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="p-2 rounded-lg bg-[#c5fe00] text-[#0a0a0a] hover:bg-[#b9ef00] transition-colors disabled:opacity-50"
+                    className="p-2 rounded-lg bg-primary-container text-background hover:bg-primary transition-colors disabled:opacity-50"
                     title="Save"
                   >
                     <Check size={18} />
@@ -171,12 +171,12 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <h1 className="font-display font-bold text-3xl tracking-tight truncate">
+                  <h1 className="font-hero font-black text-3xl tracking-tight truncate">
                     {displayName || 'User'}
                   </h1>
                   <button
                     onClick={() => setEditing(true)}
-                    className="p-2 rounded-lg text-[#666] hover:text-[#c5fe00] hover:bg-[#1a1a1a] transition-colors"
+                    className="p-2 rounded-lg text-[#666] hover:text-primary-container hover:bg-[#1c1c1c] transition-colors"
                     title="Edit name"
                   >
                     <Pencil size={16} />
@@ -186,7 +186,7 @@ export default function ProfilePage() {
 
               {saveError && <p className="text-red-400 text-xs mt-2">{saveError}</p>}
 
-              <span className={`inline-block text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full mt-3 ${roleColor}`}>
+              <span className={`inline-block text-[10px] uppercase tracking-wider font-mono font-bold px-2.5 py-1 rounded-full mt-3 ${roleColor}`}>
                 {role || 'member'}
               </span>
             </div>
@@ -194,7 +194,7 @@ export default function ProfilePage() {
             {/* Logout */}
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-2 text-[#999] hover:text-red-400 border border-[#2a2a2a] hover:border-red-500/40 px-4 py-2 rounded-full transition-colors text-sm font-semibold"
+              className="flex items-center gap-2 text-[#999] hover:text-red-400 border border-white/8 hover:border-red-500/40 px-4 py-2 rounded-full transition-colors text-sm font-semibold"
             >
               <LogOut size={16} />
               Log out
@@ -202,7 +202,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Detail rows */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-8 border-t border-[#262626]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-8 border-t border-white/8">
             <Detail icon={<Mail size={15} />} label="Email" value={email} />
             <Detail icon={<Building2 size={15} />} label="Organization" value={org?.name || '—'} />
             <Detail icon={<ShieldCheck size={15} />} label="Role" value={role || 'member'} />
@@ -213,17 +213,17 @@ export default function ProfilePage() {
         <section>
           <div className="flex items-end justify-between mb-5">
             <div>
-              <h2 className="font-display font-bold text-[22px] tracking-tight">Your Translations</h2>
+              <h2 className="font-grotesk font-bold text-[22px] tracking-tight">Your Translations</h2>
               <p className="text-[#8c8c8b] text-[13px] mt-1">Documents you have translated</p>
             </div>
-            <Link to="/upload" className="text-[#c5fe00] text-[11px] font-bold uppercase tracking-widest hover:underline">
+            <Link to="/upload" className="text-primary-container text-[11px] font-mono font-bold uppercase tracking-widest hover:underline">
               New Project →
             </Link>
           </div>
 
-          <div className="border border-[#262626] border-opacity-80 rounded-[24px] overflow-hidden">
+          <div className="border border-white/8 border-opacity-80 rounded-2xl overflow-hidden">
             {docsLoading ? (
-              <div className="divide-y divide-[#1c1c1c]">
+              <div className="divide-y divide-white/5">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-4 px-6 py-5 animate-pulse">
                     <div className="w-4 h-4 rounded bg-[#1e1e1e]" />
@@ -235,23 +235,23 @@ export default function ProfilePage() {
             ) : docs.length === 0 ? (
               <div className="px-6 py-14 text-center">
                 <p className="text-[#555] text-sm">You haven't translated any documents yet.</p>
-                <Link to="/upload" className="text-[#c5fe00] text-[11px] font-bold uppercase tracking-widest mt-2 inline-block hover:underline">
+                <Link to="/upload" className="text-primary-container text-[11px] font-mono font-bold uppercase tracking-widest mt-2 inline-block hover:underline">
                   Upload a document →
                 </Link>
               </div>
             ) : (
-              <div className="divide-y divide-[#1c1c1c]">
+              <div className="divide-y divide-white/5">
                 {docs.map((d, i) => (
-                  <div key={i} className="flex items-center gap-4 px-6 py-5 hover:bg-[#131313] transition-colors">
+                  <div key={i} className="flex items-center gap-4 px-6 py-5 hover:bg-surface-container-low transition-colors">
                     <FileText size={16} className="text-[#a0a09f] shrink-0" />
                     <p className="truncate text-sm text-white flex-1 min-w-0">{d.source_document}</p>
-                    <span className="bg-[#1a1a1a] border border-[#262626] text-[#8c8c8b] text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
+                    <span className="bg-[#1c1c1c] text-[#8c8c8b] text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-1 rounded-full">
                       {d.target_lang || '—'}
                     </span>
                     <span className="text-[#8c8c8b] text-xs font-medium whitespace-nowrap w-20 text-right">
                       {d.sentence_count} {d.sentence_count === 1 ? 'sentence' : 'sentences'}
                     </span>
-                    <span className="text-[#555] text-[10px] font-bold uppercase tracking-widest whitespace-nowrap w-20 text-right">
+                    <span className="text-[#555] text-[10px] font-mono font-bold uppercase tracking-widest whitespace-nowrap w-20 text-right">
                       {timeAgo(d.last_activity)}
                     </span>
                   </div>
@@ -270,7 +270,7 @@ function Detail({ icon, label, value }) {
     <div className="flex items-start gap-3">
       <div className="text-[#666] mt-0.5">{icon}</div>
       <div className="min-w-0">
-        <p className="text-[#555] text-[10px] font-bold uppercase tracking-widest mb-1">{label}</p>
+        <p className="text-[#555] text-[10px] font-mono font-bold uppercase tracking-widest mb-1">{label}</p>
         <p className="text-white text-sm truncate">{value}</p>
       </div>
     </div>

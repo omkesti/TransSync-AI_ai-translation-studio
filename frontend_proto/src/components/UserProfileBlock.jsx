@@ -59,7 +59,7 @@ export default function UserProfileBlock() {
   };
 
   return (
-    <div ref={ref} className="border-t border-[#2a2a2a] pt-4 mt-4 relative">
+    <div ref={ref} className="border-t border-white/8 pt-4 mt-4 relative">
       {/* Org name */}
       {org?.name && (
         <p className="text-[#555] text-[10px] uppercase tracking-widest font-bold mb-3 truncate">
@@ -69,7 +69,7 @@ export default function UserProfileBlock() {
 
       {/* Dropdown menu (opens upward, above the trigger) */}
       {open && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#151515] border border-[#2a2a2a] rounded-xl shadow-xl overflow-hidden z-30">
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#1c1c1c] rounded-xl shadow-xl overflow-hidden z-30">
           <button
             onClick={() => { setOpen(false); navigate('/profile'); }}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#cfcfcf] hover:bg-[#1f1f1f] hover:text-white transition-colors"
@@ -79,7 +79,7 @@ export default function UserProfileBlock() {
           </button>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#cfcfcf] hover:bg-[#1f1f1f] hover:text-red-400 transition-colors border-t border-[#2a2a2a]"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#cfcfcf] hover:bg-[#1f1f1f] hover:text-red-400 transition-colors border-t border-white/8"
           >
             <LogOut size={16} />
             Log out
@@ -90,14 +90,14 @@ export default function UserProfileBlock() {
       {/* Trigger */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-3 rounded-xl px-1.5 py-1.5 transition-colors ${open ? 'bg-[#1a1a1a]' : 'hover:bg-[#161616]'}`}
+        className={`w-full flex items-center gap-3 rounded-xl px-1.5 py-1.5 transition-colors ${open ? 'bg-[#1c1c1c]' : 'hover:bg-[#161616]'}`}
         title="Account"
       >
         <Avatar name={displayName} email={user.email} size={36} />
 
         <div className="flex-1 min-w-0 text-left">
           <p className="text-white text-sm truncate">{displayName || 'User'}</p>
-          <span className={`inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full mt-0.5 ${roleColor}`}>
+          <span className={`inline-block text-[10px] uppercase tracking-wider font-mono font-bold px-2 py-0.5 rounded-full mt-0.5 ${roleColor}`}>
             {role || 'member'}
           </span>
         </div>

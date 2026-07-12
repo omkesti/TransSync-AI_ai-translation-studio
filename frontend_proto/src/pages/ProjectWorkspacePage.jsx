@@ -58,12 +58,12 @@ function DocumentsTab({ documents, onOpen, onUpload, onDelete }) {
   if (!documents.length) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-6">
-          <FileText size={28} className="text-[#c5fe00]" />
+        <div className="w-16 h-16 rounded-full bg-[#1a1c10] border border-primary-container/20 flex items-center justify-center mb-6">
+          <FileText size={28} className="text-primary-container" />
         </div>
-        <h3 className="font-display font-bold text-xl tracking-tight mb-2">No documents yet</h3>
+        <h3 className="font-grotesk font-bold text-xl tracking-tight mb-2">No documents yet</h3>
         <p className="text-[#8c8c8b] text-[13px] max-w-sm mb-8">Upload PDFs or DOCX files to start translating inside this project.</p>
-        <button onClick={onUpload} className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-8 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)]">
+        <button onClick={onUpload} className="bg-primary-container hover:bg-primary text-background rounded-full px-8 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)]">
           <FileUp size={14} /> Upload Documents
         </button>
       </div>
@@ -71,15 +71,15 @@ function DocumentsTab({ documents, onOpen, onUpload, onDelete }) {
   }
 
   return (
-    <div className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden">
+    <div className="bg-[#121212] rounded-2xl overflow-hidden">
       <table className="w-full text-left">
         <thead>
           <tr>
-            <th className="py-4 px-6 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] w-2/5">Document</th>
-            <th className="py-4 px-6 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Stage</th>
-            <th className="py-4 px-6 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Progress</th>
-            <th className="py-4 px-6 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626] text-right">Updated</th>
-            <th className="py-4 px-6 border-b border-[#262626]" />
+            <th className="py-4 px-6 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8 w-2/5">Document</th>
+            <th className="py-4 px-6 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8">Stage</th>
+            <th className="py-4 px-6 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8">Progress</th>
+            <th className="py-4 px-6 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8 text-right">Updated</th>
+            <th className="py-4 px-6 border-b border-white/8" />
           </tr>
         </thead>
         <tbody className="text-[13px]">
@@ -89,7 +89,7 @@ function DocumentsTab({ documents, onOpen, onUpload, onDelete }) {
             const reviewed = d.reviewed_count || 0;
             const pct = total > 0 ? Math.round((reviewed / total) * 100) : 0;
             return (
-              <tr key={d.id} className={`border-b border-[#262626] hover:bg-[#161616] transition-colors ${i === documents.length - 1 ? "border-b-0" : ""}`}>
+              <tr key={d.id} className={`border-b border-white/8 hover:bg-[#161616] transition-colors ${i === documents.length - 1 ? "border-b-0" : ""}`}>
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3 min-w-0">
                     <FileText size={15} className="text-[#a0a09f] shrink-0" />
@@ -98,7 +98,7 @@ function DocumentsTab({ documents, onOpen, onUpload, onDelete }) {
                 </td>
                 <td className="py-4 px-6">
                   <span
-                    className="text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border"
+                    className="text-[9px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border"
                     style={{ color: meta.color, borderColor: `${meta.color}33`, backgroundColor: `${meta.color}11` }}
                   >
                     {meta.label}
@@ -106,26 +106,26 @@ function DocumentsTab({ documents, onOpen, onUpload, onDelete }) {
                 </td>
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-24 h-1.5 rounded-full bg-[#1a1a1a] overflow-hidden">
-                      <div className="h-full bg-[#c5fe00] rounded-full" style={{ width: `${pct}%` }} />
+                    <div className="w-24 h-1.5 rounded-full bg-[#1c1c1c] overflow-hidden">
+                      <div className="h-full bg-primary-container rounded-full" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="text-[#8c8c8b] text-[11px] font-bold">{pct}%</span>
                   </div>
                 </td>
-                <td className="py-4 px-6 text-right text-[#555555] text-[11px] font-bold uppercase tracking-widest whitespace-nowrap">
+                <td className="py-4 px-6 text-right text-[#555555] text-[11px] font-mono font-bold uppercase tracking-widest whitespace-nowrap">
                   {timeAgo(d.updated_at)}
                 </td>
                 <td className="py-4 px-6 text-right whitespace-nowrap">
                   <button
                     onClick={() => onOpen(d)}
-                    className="text-[#c5fe00] hover:text-[#b9ef00] text-[10px] font-bold uppercase tracking-widest border border-[#2a2e16] bg-[#1a1c10] rounded-full px-4 py-2 transition-colors"
+                    className="text-primary-container hover:text-primary text-[10px] font-mono font-bold uppercase tracking-widest border border-primary-container/20 bg-[#1a1c10] rounded-full px-4 py-2 transition-colors"
                   >
                     Continue
                   </button>
                   <button
                     onClick={() => onDelete(d)}
                     title="Delete document"
-                    className="ml-2 text-[#555555] hover:text-[#ff6b6b] transition-colors align-middle"
+                    className="ml-2 text-[#555555] hover:text-error transition-colors align-middle"
                   >
                     <Trash2 size={15} />
                   </button>
@@ -188,26 +188,26 @@ function GlossaryTab({ projectId, targetLang }) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleAdd} className="bg-[#111111] border border-[#262626] rounded-[20px] p-5 flex flex-col sm:flex-row gap-3 items-end">
+      <form onSubmit={handleAdd} className="bg-[#121212] rounded-2xl p-5 flex flex-col sm:flex-row gap-3 items-end">
         <div className="flex-1 w-full">
-          <label className="text-[#555555] font-bold text-[9px] uppercase tracking-widest mb-1.5 block">Source Term</label>
+          <label className="text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest mb-1.5 block">Source Term</label>
           <input value={src} onChange={(e) => setSrc(e.target.value)} placeholder="Neural Interface"
-            className="w-full bg-[#0e0e0e] border border-[#262626] focus:border-[#c5fe00] rounded-[12px] px-3 py-2.5 text-[13px] text-white placeholder-[#555555] outline-none" />
+            className="w-full bg-[#1c1c1c] border border-transparent focus:border-primary-container/50 rounded-xl px-3 py-2.5 text-[13px] text-white placeholder-[#555555] outline-none" />
         </div>
         <div className="flex-1 w-full">
-          <label className="text-[#555555] font-bold text-[9px] uppercase tracking-widest mb-1.5 block">Target Term ({targetLang ? languageLabel(targetLang) : "—"})</label>
+          <label className="text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest mb-1.5 block">Target Term ({targetLang ? languageLabel(targetLang) : "—"})</label>
           <input value={tgt} onChange={(e) => setTgt(e.target.value)} placeholder="Interface Neurale"
-            className="w-full bg-[#0e0e0e] border border-[#262626] focus:border-[#c5fe00] rounded-[12px] px-3 py-2.5 text-[13px] text-white placeholder-[#555555] outline-none" />
+            className="w-full bg-[#1c1c1c] border border-transparent focus:border-primary-container/50 rounded-xl px-3 py-2.5 text-[13px] text-white placeholder-[#555555] outline-none" />
         </div>
         <button type="submit" disabled={adding}
-          className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-5 py-2.5 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-colors disabled:opacity-60 shrink-0">
+          className="bg-primary-container hover:bg-primary text-background rounded-full px-5 py-2.5 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-colors disabled:opacity-60 shrink-0">
           {adding ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Add
         </button>
       </form>
 
-      {error && <div className="bg-[#2a1313] border border-[#4a2020] rounded-[12px] px-4 py-3 text-[#ff6b6b] text-[12px]">{error}</div>}
+      {error && <div className="bg-[#1c0f0c] rounded-xl px-4 py-3 text-error text-[12px]">{error}</div>}
 
-      <div className="bg-[#111111] border border-[#262626] rounded-[20px] overflow-hidden">
+      <div className="bg-[#121212] rounded-2xl overflow-hidden">
         {loading ? (
           <div className="p-10 text-center text-[#555555] text-sm"><Loader2 size={20} className="animate-spin mx-auto" /></div>
         ) : terms.length === 0 ? (
@@ -216,20 +216,20 @@ function GlossaryTab({ projectId, targetLang }) {
           <table className="w-full text-left text-[13px]">
             <thead>
               <tr>
-                <th className="py-3 px-6 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Source</th>
-                <th className="py-3 px-6 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Target</th>
-                <th className="py-3 px-6 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Lang</th>
-                <th className="py-3 px-6 text-[#555555] text-[10px] font-bold tracking-widest uppercase border-b border-[#262626]">Status</th>
+                <th className="py-3 px-6 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8">Source</th>
+                <th className="py-3 px-6 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8">Target</th>
+                <th className="py-3 px-6 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8">Lang</th>
+                <th className="py-3 px-6 text-[#555555] text-[10px] font-mono font-bold tracking-widest uppercase border-b border-white/8">Status</th>
               </tr>
             </thead>
             <tbody>
               {terms.map((t) => (
-                <tr key={t.id} className="border-b border-[#262626] last:border-b-0">
+                <tr key={t.id} className="border-b border-white/8 last:border-b-0">
                   <td className="py-3 px-6 font-medium">{t.source_term}</td>
                   <td className="py-3 px-6 text-[#a0a09f]">{t.target_term}</td>
                   <td className="py-3 px-6 text-[#8c8c8b] text-[11px] uppercase">{t.target_lang}</td>
                   <td className="py-3 px-6">
-                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full ${t.status === "VERIFIED" ? "bg-[#1a2010] text-[#c5fe00] border border-[#2a2e16]" : "bg-[#201c00] text-[#ffcc00] border border-[#3a3000]"}`}>
+                    <span className={`text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-1 rounded-full ${t.status === "VERIFIED" ? "bg-[#1a2010] text-primary-container border border-primary-container/20" : "bg-[#201c00] text-[#ffcc00] border border-[#3a3000]"}`}>
                       {t.status}
                     </span>
                   </td>
@@ -257,16 +257,16 @@ function StatsTab({ stats }) {
           { label: "Reviewed", value: stats?.reviewed_count ?? 0, accent: "#c500fe" },
           { label: "Progress", value: `${stats?.progress_percent ?? 0}%`, accent: "#ffcc00" },
         ].map((s) => (
-          <div key={s.label} className="bg-[#111111] border border-[#262626] rounded-[20px] p-6">
-            <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest mb-3 block">{s.label}</span>
-            <span className="font-display font-black text-3xl tracking-tight" style={{ color: s.accent }}>{s.value}</span>
+          <div key={s.label} className="bg-[#121212] rounded-2xl p-6">
+            <span className="text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest mb-3 block">{s.label}</span>
+            <span className="font-hero font-black text-3xl tracking-tight" style={{ color: s.accent }}>{s.value}</span>
           </div>
         ))}
       </div>
 
-      <div className="bg-[#10130a] border border-[#1a2010] rounded-[24px] p-8 space-y-5">
+      <div className="bg-[#10130a] rounded-2xl p-8 space-y-5">
         <div>
-          <h3 className="font-display font-bold text-lg tracking-tight">TM Reuse Breakdown</h3>
+          <h3 className="font-grotesk font-bold text-lg tracking-tight">TM Reuse Breakdown</h3>
           <p className="text-[#8c8c8b] text-[12px] mt-0.5">Match-type tier distribution across all documents in this project</p>
         </div>
         {total === 0 ? (
@@ -284,7 +284,7 @@ function StatsTab({ stats }) {
                     <span className="text-[#555555] text-[11px] w-8 text-right">{pct}%</span>
                   </div>
                 </div>
-                <div className="h-2 rounded-full bg-[#1a1a1a] overflow-hidden">
+                <div className="h-2 rounded-full bg-[#1c1c1c] overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
                 </div>
               </div>
@@ -370,21 +370,21 @@ function ProjectWorkspacePage() {
   };
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex flex-col overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="h-screen bg-background text-on-surface font-grotesk flex flex-col overflow-hidden selection:bg-primary-container selection:text-background">
       {/* Top nav */}
-      <nav className="h-[72px] border-b border-[#262626] border-opacity-50 flex items-center justify-between px-8 bg-[#0a0a0a] shrink-0 z-20">
+      <nav className="h-[72px] border-b border-white/8 border-opacity-50 flex items-center justify-between px-8 bg-background shrink-0 z-20">
         <div className="flex items-center gap-4">
           <Link to="/dashboard" className="flex items-center gap-2 text-[#8c8c8b] hover:text-white transition-colors">
             <ArrowLeft size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Projects</span>
+            <span className="text-[11px] font-mono font-bold uppercase tracking-widest">Projects</span>
           </Link>
           <div className="w-px h-6 bg-[#262626]" />
-          <span className="font-display font-bold text-lg tracking-tight truncate max-w-[40vw]">
+          <span className="font-grotesk font-bold text-lg tracking-tight truncate max-w-[40vw]">
             {project?.name || (loading ? "Loading…" : "Project")}
           </span>
         </div>
         <div className="flex items-center gap-6 text-[#8c8c8b]">
-          <button onClick={load} title="Refresh" className={`hover:text-white transition-colors ${loading ? "animate-spin text-[#c5fe00]" : ""}`}>
+          <button onClick={load} title="Refresh" className={`hover:text-white transition-colors ${loading ? "animate-spin text-primary-container" : ""}`}>
             <RefreshCw size={16} />
           </button>
           <NavAvatar />
@@ -392,12 +392,12 @@ function ProjectWorkspacePage() {
       </nav>
 
       <div className="flex-1 overflow-y-auto layout-scrollbar">
-        <div className="p-8 lg:p-12 max-w-6xl mx-auto space-y-8">
+        <div className="animate-rise p-8 lg:p-12 max-w-6xl mx-auto space-y-8">
 
           {error && (
-            <div className="bg-[#1a0a0a] border border-[#4a1010] rounded-[16px] px-6 py-4 flex items-center justify-between">
-              <span className="text-[#ff6b6b] text-sm font-medium">{error}</span>
-              <button onClick={load} className="text-[#ff6b6b] hover:text-white text-[11px] font-bold uppercase tracking-widest border border-[#4a1010] px-3 py-1.5 rounded-full">Retry</button>
+            <div className="bg-[#1c0f0c] rounded-2xl px-6 py-4 flex items-center justify-between">
+              <span className="text-error text-sm font-medium">{error}</span>
+              <button onClick={load} className="text-error hover:text-white text-[11px] font-mono font-bold uppercase tracking-widest border border-error/25 px-3 py-1.5 rounded-full">Retry</button>
             </div>
           )}
 
@@ -407,29 +407,29 @@ function ProjectWorkspacePage() {
               <div className="flex items-start justify-between gap-6 flex-wrap">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h1 className="font-display font-bold text-3xl tracking-tight">{project.name}</h1>
-                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${statusStyle(project.status)}`}>
+                    <h1 className="font-hero font-black text-3xl tracking-tight">{project.name}</h1>
+                    <span className={`text-[9px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${statusStyle(project.status)}`}>
                       {project.status}
                     </span>
                   </div>
                   {project.description && <p className="text-[#8c8c8b] text-[14px] max-w-2xl leading-relaxed">{project.description}</p>}
                   <div className="flex flex-wrap items-center gap-2 mt-4">
-                    <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-[#262626] text-[#a0a09f] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
-                      <Globe size={11} className="text-[#c5fe00]" />
+                    <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#a0a09f] text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
+                      <Globe size={11} className="text-primary-container" />
                       {(project.source_language || "en").toUpperCase()} → {project.target_language ? languageLabel(project.target_language) : "—"}
                     </span>
                     {project.domain && (
-                      <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-[#262626] text-[#a0a09f] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
+                      <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#a0a09f] text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
                         <Tag size={11} className="text-[#00c5fe]" /> {project.domain}
                       </span>
                     )}
                     {project.deadline && (
-                      <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-[#262626] text-[#a0a09f] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
+                      <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#a0a09f] text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
                         <Calendar size={11} className="text-[#ffcc00]" /> {project.deadline}
                       </span>
                     )}
-                    <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-[#262626] text-[#a0a09f] text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
-                      <CheckCircle size={11} className="text-[#c5fe00]" /> {detail?.stats?.progress_percent ?? 0}% done
+                    <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#a0a09f] text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
+                      <CheckCircle size={11} className="text-primary-container" /> {detail?.stats?.progress_percent ?? 0}% done
                     </span>
                   </div>
                 </div>
@@ -437,26 +437,26 @@ function ProjectWorkspacePage() {
                   {isOwner && (
                     <button onClick={() => setConfirmDelete(true)}
                       title="Delete project"
-                      className="border border-[#3a1414] text-[#ff6b6b] hover:bg-[#1a0a0a] hover:border-[#4a1010] rounded-full px-5 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all">
+                      className="border border-error/25 text-error hover:bg-[#1a0a0a] hover:border-error/25 rounded-full px-5 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all">
                       <Trash2 size={14} /> Delete
                     </button>
                   )}
                   <button onClick={handleUpload}
-                    className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-6 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]">
+                    className="bg-primary-container hover:bg-primary text-background rounded-full px-6 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]">
                     <FileUp size={14} /> Upload Documents
                   </button>
                 </div>
               </div>
 
               {/* Tabs */}
-              <div className="flex items-center gap-8 border-b border-[#262626]">
+              <div className="flex items-center gap-8 border-b border-white/8">
                 {[
                   { key: "documents", label: "Documents", Icon: FileText },
                   { key: "glossary", label: "Glossary", Icon: Book },
                   { key: "stats", label: "Stats", Icon: BarChart3 },
                 ].map(({ key, label, Icon }) => (
                   <button key={key} onClick={() => setTab(key)}
-                    className={`flex items-center gap-2 pb-4 -mb-px border-b-2 text-[11px] font-bold uppercase tracking-widest transition-colors ${tab === key ? "text-[#c5fe00] border-[#c5fe00]" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}>
+                    className={`flex items-center gap-2 pb-4 -mb-px border-b-2 text-[11px] font-mono font-bold uppercase tracking-widest transition-colors ${tab === key ? "text-primary-container border-primary-container" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}>
                     <Icon size={14} /> {label}
                   </button>
                 ))}
@@ -483,13 +483,13 @@ function ProjectWorkspacePage() {
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6"
           onClick={() => !deleting && setConfirmDelete(false)}>
-          <div className="bg-[#131313] border border-[#262626] rounded-[24px] p-8 max-w-md w-full"
+          <div className="bg-surface-container-low rounded-2xl p-8 max-w-md w-full"
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#1a0a0a] border border-[#3a1414] flex items-center justify-center">
-                <Trash2 size={18} className="text-[#ff6b6b]" />
+              <div className="w-10 h-10 rounded-full bg-[#1a0a0a] border border-error/25 flex items-center justify-center">
+                <Trash2 size={18} className="text-error" />
               </div>
-              <h3 className="font-display font-bold text-xl tracking-tight">Delete project?</h3>
+              <h3 className="font-grotesk font-bold text-xl tracking-tight">Delete project?</h3>
             </div>
             <p className="text-[#8c8c8b] text-sm leading-relaxed mb-6">
               This permanently deletes <span className="text-white font-semibold">{project?.name}</span> and
@@ -498,11 +498,11 @@ function ProjectWorkspacePage() {
             </p>
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setConfirmDelete(false)} disabled={deleting}
-                className="text-[#8c8c8b] hover:text-white text-[11px] font-bold uppercase tracking-widest px-5 py-3 rounded-full disabled:opacity-50">
+                className="text-[#8c8c8b] hover:text-white text-[11px] font-mono font-bold uppercase tracking-widest px-5 py-3 rounded-full disabled:opacity-50">
                 Cancel
               </button>
               <button onClick={handleDeleteProject} disabled={deleting}
-                className="bg-[#ff6b6b] hover:bg-[#ff5252] text-[#0a0a0a] rounded-full px-6 py-3 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all disabled:opacity-60">
+                className="bg-error hover:bg-[#ff8a6e] text-background rounded-full px-6 py-3 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all disabled:opacity-60">
                 {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                 {deleting ? "Deleting…" : "Delete project"}
               </button>

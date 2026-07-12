@@ -17,7 +17,7 @@ export default function NavAvatar() {
     <Link
       to="/profile"
       title="Profile"
-      className="ml-2 rounded-full ring-2 ring-transparent hover:ring-[#c5fe00]/40 transition-all"
+      className="ml-2 rounded-full ring-2 ring-transparent hover:ring-primary-container/40 transition-all"
     >
       <Avatar name={displayName} email={user?.email} size={32} />
     </Link>

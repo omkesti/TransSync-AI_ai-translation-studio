@@ -66,8 +66,8 @@ function CreateProjectModal({ open, onClose, onCreated }) {
   };
 
   const inputCls =
-    "w-full bg-[#0e0e0e] border border-[#262626] focus:border-[#c5fe00] rounded-[14px] px-4 py-3 text-[14px] text-white placeholder-[#555555] outline-none transition-colors";
-  const labelCls = "text-[#8c8c8b] font-bold text-[10px] uppercase tracking-[0.18em] mb-2 block";
+    "w-full bg-[#1c1c1c] border border-transparent focus:border-primary-container/50 rounded-xl px-4 py-3 text-[14px] text-white placeholder-[#555555] outline-none transition-colors";
+  const labelCls = "text-[#8c8c8b] font-mono font-bold text-[10px] uppercase tracking-[0.18em] mb-2 block";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -75,13 +75,13 @@ function CreateProjectModal({ open, onClose, onCreated }) {
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Panel */}
-      <div className="relative w-full max-w-lg bg-[#131313] border border-[#262626] rounded-[28px] shadow-[0_30px_80px_rgba(0,0,0,0.6)] max-h-[92vh] overflow-y-auto layout-scrollbar">
-        <div className="flex items-center justify-between px-8 py-6 border-b border-[#262626] sticky top-0 bg-[#131313] z-10">
+      <div className="relative w-full max-w-lg bg-surface-container-low rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.6)] max-h-[92vh] overflow-y-auto layout-scrollbar">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-white/8 sticky top-0 bg-surface-container-low z-10">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#1a2010] border border-[#2a2e16] flex items-center justify-center">
-              <FolderPlus size={18} className="text-[#c5fe00]" />
+            <div className="w-9 h-9 rounded-full bg-[#1a2010] flex items-center justify-center">
+              <FolderPlus size={18} className="text-primary-container" />
             </div>
-            <h2 className="font-display font-bold text-xl tracking-tight">New Project</h2>
+            <h2 className="font-grotesk font-bold text-xl tracking-tight">New Project</h2>
           </div>
           <button onClick={handleClose} className="text-[#555555] hover:text-white transition-colors" disabled={submitting}>
             <X size={20} />
@@ -151,21 +151,21 @@ function CreateProjectModal({ open, onClose, onCreated }) {
           <button
             type="button"
             onClick={() => setInheritGlossary((v) => !v)}
-            className="w-full flex items-center justify-between bg-[#0e0e0e] border border-[#262626] rounded-[14px] px-4 py-3.5 hover:border-[#333333] transition-colors"
+            className="w-full flex items-center justify-between bg-[#1c1c1c] rounded-xl px-4 py-3.5 hover:bg-[#222222] transition-colors"
           >
             <div className="text-left">
               <span className="text-[13px] font-semibold text-white block">Inherit organization glossary</span>
               <span className="text-[#555555] text-[11px]">Verified org terms apply on top of project terms</span>
             </div>
-            <span className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors ${inheritGlossary ? "bg-[#c5fe00]" : "bg-[#262626]"}`}>
-              <span className={`w-5 h-5 rounded-full bg-[#0a0a0a] flex items-center justify-center transition-transform ${inheritGlossary ? "translate-x-5" : ""}`}>
-                {inheritGlossary && <Check size={12} className="text-[#c5fe00]" />}
+            <span className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors ${inheritGlossary ? "bg-primary-container" : "bg-[#262626]"}`}>
+              <span className={`w-5 h-5 rounded-full bg-background flex items-center justify-center transition-transform ${inheritGlossary ? "translate-x-5" : ""}`}>
+                {inheritGlossary && <Check size={12} className="text-primary-container" />}
               </span>
             </span>
           </button>
 
           {error && (
-            <div className="bg-[#2a1313] border border-[#4a2020] rounded-[12px] px-4 py-3 text-[#ff6b6b] text-[12px]">
+            <div className="bg-[#1c0f0c] rounded-xl px-4 py-3 text-error text-[12px]">
               {error}
             </div>
           )}
@@ -175,14 +175,14 @@ function CreateProjectModal({ open, onClose, onCreated }) {
               type="button"
               onClick={handleClose}
               disabled={submitting}
-              className="px-6 py-3 rounded-full border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#555555] font-bold text-[11px] uppercase tracking-widest transition-colors disabled:opacity-50"
+              className="px-6 py-3 rounded-full border border-white/8 text-[#8c8c8b] hover:text-white hover:border-[#555555] font-mono font-bold text-[11px] uppercase tracking-widest transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-7 py-3 rounded-full bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] font-black text-[11px] uppercase tracking-widest flex items-center gap-2 shadow-[0_0_20px_rgba(197,254,0,0.2)] transition-all disabled:opacity-60"
+              className="px-7 py-3 rounded-full bg-primary-container hover:bg-primary text-background font-black text-[11px] uppercase tracking-widest flex items-center gap-2 shadow-[0_0_20px_rgba(197,254,0,0.2)] transition-all disabled:opacity-60"
             >
               {submitting ? (<><Loader2 size={14} className="animate-spin" /> Creating…</>) : "Create Project"}
             </button>

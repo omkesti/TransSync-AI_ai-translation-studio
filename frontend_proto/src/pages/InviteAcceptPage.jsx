@@ -101,7 +101,7 @@ function InviteAcceptPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0e0e0e] text-on-surface font-sans selection:bg-primary-container selection:text-background flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-background text-on-surface font-grotesk selection:bg-primary-container selection:text-background flex flex-col relative overflow-hidden">
 
       {/* Background Ambient Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary-container/10 blur-[150px] rounded-full z-0 pointer-events-none"></div>
@@ -111,15 +111,15 @@ function InviteAcceptPage() {
         {/* Logo */}
         <div className="mb-12 text-center">
           <Link to="/" className="inline-block">
-            <span className="font-display font-bold text-4xl tracking-tight text-primary-container block leading-none">
-              TransSync <span className="text-on-surface">AI</span>
+            <span className="font-hero text-lg font-bold uppercase tracking-[0.35em] text-on-surface block leading-none">
+              TransSync <span className="text-primary-container">AI</span>
             </span>
           </Link>
-          <p className="text-[#a0a09f] text-[10px] uppercase tracking-[0.3em] mt-3">Join Your Team</p>
+          <p className="font-mono text-[#a0a09f] text-[10px] uppercase tracking-[0.3em] mt-3">Join Your Team</p>
         </div>
 
         {/* Card */}
-        <div className="bg-[#1a1a1a] p-10 rounded-[32px] w-full max-w-[460px] shadow-[0_40px_80px_rgba(0,0,0,0.6)]">
+        <div className="bg-surface-container-low/90 backdrop-blur-md p-10 rounded-[28px] w-full max-w-[460px] shadow-[0_60px_120px_-20px_rgba(0,0,0,0.7)]">
 
           {/* Loading */}
           {validating && (
@@ -139,7 +139,7 @@ function InviteAcceptPage() {
               <p className="text-[#8c8c8b] text-sm mb-6">{validationError}</p>
               <Link
                 to="/login"
-                className="text-primary-container text-sm font-bold uppercase tracking-wider hover:text-primary transition-colors"
+                className="text-primary-container text-sm font-mono font-bold uppercase tracking-wider hover:text-primary transition-colors"
               >
                 Go to Login →
               </Link>
@@ -149,29 +149,30 @@ function InviteAcceptPage() {
           {/* Invite Details + Sign-Up Form */}
           {!validating && invite && (
             <>
-              <h1 className="font-display text-[26px] font-bold text-white mb-2 tracking-tight">
-                You're invited!
+              <h1 className="text-[28px] mb-2 leading-tight tracking-tight">
+                <span className="font-hero font-black uppercase">You're</span>{' '}
+                <span className="font-serif italic text-primary-container">invited.</span>
               </h1>
-              <p className="text-[#8c8c8b] text-[15px] mb-6 font-sans">
+              <p className="text-[#8c8c8b] text-[15px] mb-6">
                 Join <span className="text-white font-semibold">{invite.org_name}</span> as{' '}
                 <span className="text-primary-container font-semibold capitalize">{invite.role}</span>
               </p>
 
               {/* Pre-filled email */}
-              <div className="mb-6 p-3 rounded-[12px] bg-[#222222] border border-[#333]">
-                <span className="text-[#8c8c8b] text-xs font-bold uppercase tracking-wider block mb-1">Email</span>
-                <span className="text-white text-sm font-sans">{invite.email}</span>
+              <div className="mb-6 p-3 rounded-xl bg-[#222222] border border-[#333]">
+                <span className="text-[#8c8c8b] text-xs font-mono font-bold uppercase tracking-wider block mb-1">Email</span>
+                <span className="text-white text-sm">{invite.email}</span>
               </div>
 
               {submitError && (
-                <div className="mb-6 p-3 rounded-[12px] bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-sans">
+                <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                   {submitError}
                 </div>
               )}
 
               <form onSubmit={handleAccept} className="space-y-5">
                 <div className="space-y-2">
-                  <label htmlFor="invite-password" className="text-[#8c8c8b] text-xs font-bold uppercase tracking-wider block">
+                  <label htmlFor="invite-password" className="text-[#8c8c8b] text-xs font-mono font-bold uppercase tracking-wider block">
                     Create Password
                   </label>
                   <input
@@ -182,12 +183,12 @@ function InviteAcceptPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full bg-[#222222] border border-transparent rounded-[12px] px-4 py-3.5 text-white focus:outline-none focus:border-primary-container/50 focus:bg-[#2a2a2a] transition-all placeholder:text-[#555555] font-sans tracking-[0.2em]"
+                    className="w-full bg-[#222222] border border-transparent rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-primary-container/50 focus:bg-[#2a2a2a] transition-all placeholder:text-[#555555] tracking-[0.2em]"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="invite-confirm" className="text-[#8c8c8b] text-xs font-bold uppercase tracking-wider block">
+                  <label htmlFor="invite-confirm" className="text-[#8c8c8b] text-xs font-mono font-bold uppercase tracking-wider block">
                     Confirm Password
                   </label>
                   <input
@@ -197,18 +198,18 @@ function InviteAcceptPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full bg-[#222222] border border-transparent rounded-[12px] px-4 py-3.5 text-white focus:outline-none focus:border-primary-container/50 focus:bg-[#2a2a2a] transition-all placeholder:text-[#555555] font-sans tracking-[0.2em]"
+                    className="w-full bg-[#222222] border border-transparent rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-primary-container/50 focus:bg-[#2a2a2a] transition-all placeholder:text-[#555555] tracking-[0.2em]"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-primary-container text-[#0a0a0a] font-bold text-base px-6 py-4 rounded-full mt-4 hover:bg-primary transition-colors shadow-[0_0_30px_rgba(197,254,0,0.2)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-primary-container text-background font-bold text-base px-6 py-4 rounded-full mt-4 hover:bg-primary transition-colors shadow-[0_0_30px_rgba(197,254,0,0.2)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-[#0a0a0a] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" />
                       Creating account…
                     </>
                   ) : (

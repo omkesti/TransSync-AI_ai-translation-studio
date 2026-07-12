@@ -31,18 +31,16 @@ import {
 // ── Match badge ───────────────────────────────────────────────────────────────
 
 const MATCH_COLORS = {
-  tm_exact:    { bg: "bg-[#1a2010] border-[#2a2e16] text-[#c5fe00]",  label: "TM Exact"    },
-  faiss_direct:{ bg: "bg-[#101820] border-[#162030] text-[#00c5fe]",  label: "FAISS"       },
-  llm_guided:  { bg: "bg-[#1a1020] border-[#2a1630] text-[#c500fe]",  label: "LLM Guided"  },
-  llm_cold:    { bg: "bg-[#1a1a1a] border-[#262626] text-[#8c8c8b]",  label: "LLM Cold"    },
+  tm_exact:    { bg: "bg-[#1a2010] text-primary-container", label: "TM Exact"   },
+  faiss_direct:{ bg: "bg-[#101820] text-[#00c5fe]",         label: "FAISS"      },
+  llm_guided:  { bg: "bg-[#1a1020] text-[#c500fe]",         label: "LLM Guided" },
+  llm_cold:    { bg: "bg-[#1c1c1c] text-[#8c8c8b]",         label: "LLM Cold"   },
 };
 
 function MatchBadge({ matchType }) {
   const cfg = MATCH_COLORS[matchType] || MATCH_COLORS.llm_cold;
   return (
-    <span className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2.5 py-1 border ${cfg.bg} ${cfg.label ? "" : ""} whitespace-nowrap`}
-      style={{ color: cfg.bg.includes("c5fe00") ? "#c5fe00" : cfg.bg.includes("00c5fe") ? "#00c5fe" : cfg.bg.includes("c500fe") ? "#c500fe" : "#8c8c8b" }}
-    >
+    <span className={`text-[9px] font-mono font-bold uppercase tracking-widest rounded-full px-2.5 py-1 ${cfg.bg} whitespace-nowrap`}>
       {cfg.label}
     </span>
   );
@@ -52,12 +50,12 @@ function MatchBadge({ matchType }) {
 
 function StatCard({ label, value, sub, accent }) {
   return (
-    <div className="bg-[#111111] border border-[#1a1a1a] rounded-[24px] p-6 relative overflow-hidden group hover:border-[#262626] transition-colors">
+    <div className="bg-[#121212] rounded-2xl p-6 relative overflow-hidden group hover:border-white/8 transition-colors">
       {accent && (
         <div className="absolute top-0 right-0 w-24 h-24 opacity-[0.06] blur-[30px] rounded-full pointer-events-none" style={{ backgroundColor: accent }} />
       )}
-      <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest mb-3 block">{label}</span>
-      <span className="font-display font-black text-3xl tracking-tight leading-none block mb-1" style={{ color: accent || "#ffffff" }}>
+      <span className="text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest mb-3 block">{label}</span>
+      <span className="font-hero font-black text-3xl tracking-tight leading-none block mb-1" style={{ color: accent || "#ffffff" }}>
         {value}
       </span>
       {sub && <span className="text-[#555555] text-[11px] font-medium">{sub}</span>}
@@ -201,19 +199,19 @@ function ExportPage() {
   // ── Empty state ────────────────────────────────────────────────────────────
   if (approvedDocs.length === 0) {
     return (
-      <div className="h-screen bg-[#0a0a0a] text-white font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+      <div className="h-screen bg-background text-on-surface font-grotesk flex overflow-hidden selection:bg-primary-container selection:text-background">
         <Sidebar active="export" />
-        <div className="flex-1 flex flex-col items-center justify-center bg-[#0e0e0e]">
-          <div className="w-20 h-20 rounded-full bg-[#1a1a1a] border border-[#262626] flex items-center justify-center mb-8">
+        <div className="flex-1 flex flex-col items-center justify-center bg-background">
+          <div className="w-20 h-20 rounded-full bg-[#1c1c1c] flex items-center justify-center mb-8">
             <FileDown size={32} className="text-[#555555]" />
           </div>
-          <h2 className="font-display font-bold text-3xl tracking-tight mb-3 text-center">No Approved Documents</h2>
+          <h2 className="font-grotesk font-bold text-3xl tracking-tight mb-3 text-center">No Approved Documents</h2>
           <p className="text-[#8c8c8b] text-[15px] mb-10 text-center max-w-sm leading-relaxed">
             Complete the review workflow and approve all translation batches before downloading.
           </p>
           <Link
             to="/upload"
-            className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
+            className="bg-primary-container hover:bg-primary text-background rounded-full px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
           >
             <FileUp size={14} /> Start a Translation
           </Link>
@@ -223,15 +221,15 @@ function ExportPage() {
   }
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-white font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="h-screen bg-background text-on-surface font-grotesk flex overflow-hidden selection:bg-primary-container selection:text-background">
       <Sidebar active="export" />
 
-      <div className="flex-1 flex flex-col relative w-full h-full overflow-hidden bg-[#0e0e0e]">
+      <div className="flex-1 flex flex-col relative w-full h-full overflow-hidden bg-background">
 
         {/* Top Nav */}
-        <nav className="h-[80px] w-full flex items-center justify-between px-8 border-b border-[#1a1a1a] bg-[#0a0a0a] shrink-0 z-40">
+        <nav className="h-[80px] w-full flex items-center justify-between px-8 border-b border-white/5 bg-background shrink-0 z-40">
           <div className="flex items-center gap-4">
-            <Link to="/" className="font-display font-bold text-xl tracking-tight text-[#c5fe00] leading-none">TransSync</Link>
+            <Link to="/" className="font-hero text-[13px] font-bold uppercase tracking-[0.3em] text-on-surface leading-none">TransSync <span className="text-primary-container">AI</span></Link>
             <div className="w-px h-6 bg-[#262626]" />
             <span className="text-[#8c8c8b] text-[13px] font-medium">
               {filename || "Document"} → <span className="text-white font-bold">{effectiveTargetLang?.toUpperCase() || "—"}</span>
@@ -247,24 +245,27 @@ function ExportPage() {
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto layout-scrollbar">
-          <div className="p-8 lg:p-12 max-w-[1400px] mx-auto">
+          <div className="animate-rise p-8 lg:p-12 max-w-[1400px] mx-auto">
 
             {/* Ambient glow */}
-            <div className="fixed top-0 left-[30%] w-[700px] h-[400px] bg-[#c5fe00] opacity-[0.03] blur-[160px] rounded-full pointer-events-none z-0" />
+            <div className="fixed top-0 left-[30%] w-[700px] h-[400px] bg-primary-container opacity-[0.03] blur-[160px] rounded-full pointer-events-none z-0" />
 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 relative z-10 gap-6">
               <div>
-                <h1 className="font-display font-black text-5xl tracking-tight mb-3 leading-none">
-                  export &amp; <br className="hidden md:block" />download
+                <h1 className="font-hero font-black uppercase text-4xl md:text-5xl tracking-tight mb-3 leading-[0.95]">
+                  Export &amp;{" "}
+                  <span className="font-serif italic font-medium normal-case text-primary-container">
+                    download.
+                  </span>
                 </h1>
-                <p className="text-[#8c8c8b] text-[15px] font-sans max-w-lg leading-relaxed">
+                <p className="text-[#8c8c8b] text-[15px] max-w-lg leading-relaxed">
                   Your translated document is ready. Download it as a formatted DOCX file, or start a new translation.
                 </p>
               </div>
               <button
                 onClick={handleNewTranslation}
-                className="border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-6 py-3 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors whitespace-nowrap"
+                className="border border-white/8 text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-6 py-3 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors whitespace-nowrap"
               >
                 <RefreshCw size={13} /> New Translation
               </button>
@@ -272,17 +273,17 @@ function ExportPage() {
 
             {/* ── Multi-doc Document Table ── */}
             {multiDoc && docsWithResults.length > 0 && (
-              <div className="bg-[#111111] border border-[#1a1a1a] rounded-[32px] overflow-hidden mb-8 relative z-10">
-                <div className="px-8 py-6 border-b border-[#1a1a1a] flex items-center justify-between">
+              <div className="bg-[#121212] rounded-3xl overflow-hidden mb-8 relative z-10">
+                <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
                   <div>
-                    <h3 className="font-display font-bold text-lg tracking-tight">Documents</h3>
+                    <h3 className="font-grotesk font-bold text-lg tracking-tight">Documents</h3>
                     <p className="text-[#555555] text-[11px] mt-0.5">{docsWithResults.length} document{docsWithResults.length !== 1 ? "s" : ""} ready</p>
                   </div>
                   <button
                     onClick={handleBatchDownload}
                     disabled={batchExportState === "exporting" || !allDocsApproved}
                     title={!allDocsApproved ? "All documents must be fully approved before batch download" : ""}
-                    className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-6 py-3 font-black flex items-center gap-2 text-[10px] uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
+                    className="bg-primary-container hover:bg-primary text-background rounded-full px-6 py-3 font-black flex items-center gap-2 text-[10px] uppercase tracking-widest shadow-[0_0_15px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
                   >
                     {batchExportState === "exporting" ? (
                       <><Loader2 size={12} className="animate-spin" /> Zipping…</>
@@ -293,7 +294,7 @@ function ExportPage() {
                     )}
                   </button>
                 </div>
-                <div className="divide-y divide-[#1a1a1a]">
+                <div className="divide-y divide-white/5">
                   {docsWithResults.map((doc, i) => {
                     const docTm = (doc.results || []).filter(r => ["tm_exact", "faiss_direct"].includes(r.match_type)).length;
                     const docLlm = (doc.results || []).filter(r => ["llm_guided", "llm_cold"].includes(r.match_type)).length;
@@ -307,7 +308,7 @@ function ExportPage() {
                         }`}
                       >
                         <div className="col-span-4 flex items-center gap-3 min-w-0">
-                          <FileText size={14} className="text-[#c5fe00] shrink-0" />
+                          <FileText size={14} className="text-primary-container shrink-0" />
                           <span className="text-[13px] font-medium truncate">{doc.filename}</span>
                         </div>
                         <div className="col-span-2 flex items-center">
@@ -324,7 +325,7 @@ function ExportPage() {
                             onClick={(e) => { e.stopPropagation(); handleSingleDownload(doc); }}
                             disabled={doc.status !== "approved"}
                             title={doc.status !== "approved" ? "Approve all batches for this document first" : "Download"}
-                            className="text-[#c5fe00] hover:text-[#b9ef00] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="text-primary-container hover:text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <Download size={16} />
                           </button>
@@ -370,16 +371,16 @@ function ExportPage() {
               <div className="lg:col-span-4 flex flex-col gap-6">
 
                 {/* Primary download card */}
-                <div className="bg-[#15170d] border border-[#2a2e16] rounded-[32px] p-8 relative overflow-hidden shadow-[0_20px_60px_rgba(197,254,0,0.04)]">
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-[#c5fe00] opacity-[0.06] blur-[60px] rounded-full pointer-events-none" />
+                <div className="bg-[#15170d] rounded-3xl p-8 relative overflow-hidden shadow-[0_20px_60px_rgba(197,254,0,0.04)]">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-primary-container opacity-[0.06] blur-[60px] rounded-full pointer-events-none" />
                   <div className="relative z-10">
 
                     {/* File icon */}
-                    <div className="w-14 h-14 rounded-[16px] bg-[#1a2010] border border-[#2a2e16] flex items-center justify-center mb-6">
-                      <FileText size={24} className="text-[#c5fe00]" />
+                    <div className="w-14 h-14 rounded-2xl bg-[#1a2010] flex items-center justify-center mb-6">
+                      <FileText size={24} className="text-primary-container" />
                     </div>
 
-                    <h3 className="font-display font-bold text-xl tracking-tight mb-2">Translated DOCX</h3>
+                    <h3 className="font-grotesk font-bold text-xl tracking-tight mb-2">Translated DOCX</h3>
                     <p className="text-[#555555] text-[12px] font-medium mb-1">
                       {filename ? `translated_${filename.replace(/\.[^/.]+$/, "")}_${effectiveTargetLang}.docx` : `translated_document_${effectiveTargetLang}.docx`}
                     </p>
@@ -389,7 +390,7 @@ function ExportPage() {
 
                     {/* Error */}
                     {exportState === "error" && (
-                      <div className="bg-[#2a1313] border border-[#4a2020] rounded-[12px] px-4 py-3 mb-4 text-[#ff6b6b] text-[12px]">
+                      <div className="bg-[#1c0f0c] rounded-xl px-4 py-3 mb-4 text-error text-[12px]">
                         {exportError}
                       </div>
                     )}
@@ -399,7 +400,7 @@ function ExportPage() {
                       onClick={handleDownload}
                       disabled={exportState === "exporting" || !activeDocApproved}
                       title={!activeDocApproved ? "Complete review and approve all batches before downloading" : ""}
-                      className="w-full bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full py-4 font-black flex items-center justify-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
+                      className="w-full bg-primary-container hover:bg-primary text-background rounded-full py-4 font-black flex items-center justify-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
                     >
                       {exportState === "exporting" ? (
                         <><Loader2 size={14} className="animate-spin" /> Generating…</>
@@ -425,8 +426,8 @@ function ExportPage() {
                 </div>
 
                 {/* Pipeline Breakdown */}
-                <div className="bg-[#111111] border border-[#1a1a1a] rounded-[32px] p-8">
-                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-widest mb-6">Pipeline Breakdown</h4>
+                <div className="bg-[#121212] rounded-3xl p-8">
+                  <h4 className="text-[#555555] font-mono font-bold text-[10px] uppercase tracking-widest mb-6">Pipeline Breakdown</h4>
                   <div className="space-y-4">
                     {[
                       { label: "TM Exact",     count: previewResults.filter(r => r.match_type === "tm_exact").length,    color: "#c5fe00" },
@@ -439,7 +440,7 @@ function ExportPage() {
                           <span className="text-[#8c8c8b]">{label}</span>
                           <span style={{ color }} className="font-bold">{count}</span>
                         </div>
-                        <div className="w-full h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+                        <div className="w-full h-1 bg-[#1c1c1c] rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-700"
                             style={{
@@ -455,12 +456,12 @@ function ExportPage() {
               </div>
 
               {/* Translation Preview — right */}
-              <div className="lg:col-span-8 bg-[#111111] border border-[#1a1a1a] rounded-[32px] overflow-hidden flex flex-col">
+              <div className="lg:col-span-8 bg-[#121212] rounded-3xl overflow-hidden flex flex-col">
 
                 {/* Preview header */}
-                <div className="px-8 py-6 border-b border-[#1a1a1a] flex items-center justify-between">
+                <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
                   <div>
-                    <h3 className="font-display font-bold text-lg tracking-tight">Translation Preview</h3>
+                    <h3 className="font-grotesk font-bold text-lg tracking-tight">Translation Preview</h3>
                     <p className="text-[#555555] text-[11px] mt-0.5">{previewResults.length} sentences total</p>
                   </div>
                   <div className="flex items-center gap-2 text-[#555555] text-[11px] font-bold">
@@ -470,14 +471,14 @@ function ExportPage() {
                 </div>
 
                 {/* Table header */}
-                <div className="grid grid-cols-10 gap-0 px-6 py-3 bg-[#0e0e0e] border-b border-[#1a1a1a]">
-                  <span className="col-span-4 text-[#555555] font-bold text-[9px] uppercase tracking-widest">#  Source</span>
-                  <span className="col-span-4 text-[#555555] font-bold text-[9px] uppercase tracking-widest">Translation</span>
-                  <span className="col-span-2 text-[#555555] font-bold text-[9px] uppercase tracking-widest text-right">Match</span>
+                <div className="grid grid-cols-10 gap-0 px-6 py-3 bg-background border-b border-white/5">
+                  <span className="col-span-4 text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest">#  Source</span>
+                  <span className="col-span-4 text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest">Translation</span>
+                  <span className="col-span-2 text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest text-right">Match</span>
                 </div>
 
                 {/* Table rows */}
-                <div className="flex-1 overflow-y-auto layout-scrollbar divide-y divide-[#1a1a1a]">
+                <div className="flex-1 overflow-y-auto layout-scrollbar divide-y divide-white/5">
                   {previewRows.map((row, i) => {
                     const globalIndex = (previewPage - 1) * PREVIEW_PER_PAGE + i + 1;
                     return (
@@ -499,7 +500,7 @@ function ExportPage() {
 
                 {/* Pagination */}
                 {totalPreviewPages > 1 && (
-                  <div className="px-8 py-5 border-t border-[#1a1a1a] flex items-center justify-between">
+                  <div className="px-8 py-5 border-t border-white/5 flex items-center justify-between">
                     <span className="text-[#555555] text-[11px] font-medium">
                       Page {previewPage} of {totalPreviewPages}
                     </span>
@@ -507,7 +508,7 @@ function ExportPage() {
                       <button
                         onClick={() => setPreviewPage(p => Math.max(1, p - 1))}
                         disabled={previewPage === 1}
-                        className="text-[#555555] hover:text-white disabled:opacity-30 font-bold text-[11px] uppercase tracking-widest transition-colors"
+                        className="text-[#555555] hover:text-white disabled:opacity-30 font-mono font-bold text-[11px] uppercase tracking-widest transition-colors"
                       >
                         ← Prev
                       </button>
@@ -518,7 +519,7 @@ function ExportPage() {
                             onClick={() => setPreviewPage(p)}
                             className={`w-7 h-7 rounded-full text-[11px] font-bold transition-colors ${
                               p === previewPage
-                                ? "bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16]"
+                                ? "bg-[#1a1c10] text-primary-container"
                                 : "text-[#555555] hover:text-white"
                             }`}
                           >
@@ -529,7 +530,7 @@ function ExportPage() {
                       <button
                         onClick={() => setPreviewPage(p => Math.min(totalPreviewPages, p + 1))}
                         disabled={previewPage === totalPreviewPages}
-                        className="text-[#555555] hover:text-white disabled:opacity-30 font-bold text-[11px] uppercase tracking-widest transition-colors"
+                        className="text-[#555555] hover:text-white disabled:opacity-30 font-mono font-bold text-[11px] uppercase tracking-widest transition-colors"
                       >
                         Next →
                       </button>
@@ -560,15 +561,15 @@ function Sidebar({ active }) {
   ];
 
   return (
-    <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
+    <aside className="w-[260px] border-r border-white/8 border-opacity-50 flex flex-col shrink-0 bg-background hidden md:flex z-50 overflow-y-auto layout-scrollbar">
       <div className="p-6 pb-2 flex-1 flex flex-col">
         <div className="flex items-center gap-3 mb-12">
-          <div className="w-10 h-10 rounded-full bg-[#c5fe00] text-[#0a0a0a] flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,254,0,0.2)]">
+          <div className="w-10 h-10 rounded-full bg-primary-container text-background flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,254,0,0.2)]">
             <Sparkles strokeWidth={2.5} size={22} />
           </div>
           <div className="flex flex-col">
-            <span className="font-display text-[#c5fe00] font-black text-sm tracking-tight leading-none mb-1">TransSync</span>
-            <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</span>
+            <span className="font-hero text-on-surface font-bold text-[12px] uppercase tracking-[0.25em] leading-none mb-1">TransSync</span>
+            <span className="text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest leading-none">AI Studio</span>
           </div>
         </div>
 
@@ -576,22 +577,22 @@ function Sidebar({ active }) {
           {navItems.map(({ to, Icon, label }) => (
             <React.Fragment key={to}>
               {to === "/export" && active === "export" ? (
-                <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
+                <div className="flex items-center gap-4 bg-[#1a1c10] text-primary-container px-4 py-3 rounded-xl shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
                   <Icon size={18} />
-                  <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-widest">{label}</span>
                 </div>
               ) : (
-                <Link to={to} className="flex items-center gap-4 text-[#8c8c8b] hover:text-white hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+                <Link to={to} className="flex items-center gap-4 text-[#8c8c8b] hover:text-white hover:bg-surface-container-low transition-colors px-4 py-3 rounded-xl">
                   <Icon size={18} />
-                  <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-widest">{label}</span>
                 </Link>
               )}
 
               {/* Project link sits directly under Dashboard, when inside a project. */}
               {to === "/dashboard" && currentProjectId && (
-                <Link to={`/projects/${currentProjectId}`} className="flex items-center gap-4 text-[#8c8c8b] hover:text-white hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]">
+                <Link to={`/projects/${currentProjectId}`} className="flex items-center gap-4 text-[#8c8c8b] hover:text-white hover:bg-surface-container-low transition-colors px-4 py-3 rounded-xl">
                   <FolderOpen size={18} />
-                  <span className="text-[11px] font-bold uppercase tracking-widest">Project</span>
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-widest">Project</span>
                 </Link>
               )}
             </React.Fragment>

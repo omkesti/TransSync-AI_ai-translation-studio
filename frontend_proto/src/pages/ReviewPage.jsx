@@ -52,14 +52,14 @@ const matchLabel = (matchType) => {
 const matchBadgeCls = (matchType) => {
   switch (matchType) {
     case "tm_exact":
-      return "bg-[#1a2010] text-[#c5fe00] border-[#2a2e16]"; // Green
+      return "bg-[#1a2010] text-primary-container border-primary-container/20"; // Green
     case "faiss_direct":
       return "bg-[#201c00] text-[#ffcc00] border-[#3a3000]"; // Yellow
     case "llm_guided":
-      return "bg-[#2a130a] text-[#ff8800] border-[#4a2310]"; // Orange
+      return "bg-[#2a130a] text-[#ff8800] border-[#ff8800]/25"; // Orange
     case "llm_cold":
     default:
-      return "bg-[#2a0a0a] text-[#ff4d4d] border-[#4a1010]"; // Red
+      return "bg-[#2a0a0a] text-error border-error/25"; // Red
   }
 };
 
@@ -98,17 +98,17 @@ function firstPendingSection(groups, offsets) {
 function Sidebar() {
   const { currentProjectId } = useAppContext();
   return (
-    <aside className="w-[260px] border-r border-[#262626] border-opacity-50 flex flex-col shrink-0 bg-[#0a0a0a] hidden md:flex z-50 overflow-y-auto layout-scrollbar">
+    <aside className="w-[260px] border-r border-white/8 border-opacity-50 flex flex-col shrink-0 bg-background hidden md:flex z-50 overflow-y-auto layout-scrollbar">
       <div className="p-6 pb-2 flex-1 flex flex-col">
         <div className="flex items-center gap-3 mb-12">
-          <div className="w-10 h-10 rounded-full bg-[#c5fe00] text-[#0a0a0a] flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,254,0,0.2)]">
+          <div className="w-10 h-10 rounded-full bg-primary-container text-background flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,254,0,0.2)]">
             <Sparkles strokeWidth={2.5} size={22} />
           </div>
           <div className="flex flex-col">
-            <span className="font-display text-[#c5fe00] font-black text-sm tracking-tight leading-none mb-1">
+            <span className="font-hero text-on-surface font-bold text-[12px] uppercase tracking-[0.25em] leading-none mb-1">
               TransSync
             </span>
-            <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest leading-none">
+            <span className="text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest leading-none">
               AI Studio
             </span>
           </div>
@@ -117,63 +117,63 @@ function Sidebar() {
         <nav className="space-y-1">
           <Link
             to="/dashboard"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low transition-colors px-4 py-3 rounded-xl"
           >
             <LayoutDashboard size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-widest">
               Dashboard
             </span>
           </Link>
           {currentProjectId && (
             <Link
               to={`/projects/${currentProjectId}`}
-              className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+              className="flex items-center gap-4 text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low transition-colors px-4 py-3 rounded-xl"
             >
               <FolderOpen size={18} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-widest">
                 Project
               </span>
             </Link>
           )}
           <Link
             to="/upload"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low transition-colors px-4 py-3 rounded-xl"
           >
             <FileUp size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-widest">
               Upload
             </span>
           </Link>
           <Link
             to="/validation"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low transition-colors px-4 py-3 rounded-xl"
           >
             <CheckCircle2 size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-widest">
               Validation
             </span>
           </Link>
-          <div className="flex items-center gap-4 bg-[#1a1c10] text-[#c5fe00] border border-[#2a2e16] px-4 py-3 rounded-[12px] shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
+          <div className="flex items-center gap-4 bg-[#1a1c10] text-primary-container px-4 py-3 rounded-xl shadow-[inset_0_0_10px_rgba(197,254,0,0.05)]">
             <MessageSquare size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-widest">
               Review
             </span>
           </div>
           <Link
             to="/glossary"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low transition-colors px-4 py-3 rounded-xl"
           >
             <Book size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-widest">
               Glossary
             </span>
           </Link>
           <Link
             to="/export"
-            className="flex items-center gap-4 text-[#8c8c8b] hover:text-[#ffffff] hover:bg-[#131313] transition-colors px-4 py-3 rounded-[12px]"
+            className="flex items-center gap-4 text-[#8c8c8b] hover:text-on-surface hover:bg-surface-container-low transition-colors px-4 py-3 rounded-xl"
           >
             <Download size={18} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-widest">
               Export
             </span>
           </Link>
@@ -201,11 +201,11 @@ function ReviewSection({
 }) {
   if (!items || items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] text-center bg-[#111111] border border-[#262626] rounded-[24px]">
-        <div className="w-16 h-16 rounded-full bg-[#1a1a1a] border border-[#262626] flex items-center justify-center mb-6">
+      <div className="flex flex-col items-center justify-center min-h-[300px] text-center bg-[#121212] rounded-2xl">
+        <div className="w-16 h-16 rounded-full bg-[#1c1c1c] flex items-center justify-center mb-6">
           <Languages size={28} className="text-[#555555]" />
         </div>
-        <h2 className="font-display font-bold text-xl tracking-tight mb-2 text-[#8c8c8b]">
+        <h2 className="font-grotesk font-bold text-xl tracking-tight mb-2 text-[#8c8c8b]">
           No {matchLabel(matchType)} Matches
         </h2>
         <p className="text-[#555555] text-[13px] max-w-sm">
@@ -221,7 +221,7 @@ function ReviewSection({
 
   if (isCompleted) {
     return (
-      <div className="bg-[#111111] border border-[#262626] rounded-[24px] p-6 text-center mb-6">
+      <div className="bg-[#121212] rounded-2xl p-6 text-center mb-6">
         <CheckCircle size={24} className="mx-auto mb-2 text-[#555555]" />
         <p className="text-[11px] uppercase tracking-widest font-bold text-[#8c8c8b]">
           All {matchLabel(matchType)} reviewed
@@ -238,31 +238,31 @@ function ReviewSection({
   ).length;
 
   return (
-    <div className="bg-[#111111] border border-[#262626] rounded-[24px] overflow-hidden mb-6">
-      <div className="px-8 py-5 border-b border-[#262626] flex items-center justify-between">
+    <div className="bg-[#121212] rounded-2xl overflow-hidden mb-6">
+      <div className="px-8 py-5 border-b border-white/8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span
-            className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-3 py-1.5 shadow-[inset_0_0_10px_rgba(197,254,0,0.05)] ${matchBadgeCls(matchType)}`}
+            className={`text-[9px] font-mono font-bold uppercase tracking-widest rounded-full px-3 py-1.5 shadow-[inset_0_0_10px_rgba(197,254,0,0.05)] ${matchBadgeCls(matchType)}`}
           >
             {matchLabel(matchType)}
           </span>
-          <span className="text-[#8c8c8b] text-[10px] font-bold uppercase tracking-[0.2em]">
+          <span className="text-[#8c8c8b] text-[10px] font-mono font-bold uppercase tracking-[0.2em]">
             Batch {currentBatchNum} / {totalBatches}
           </span>
         </div>
         <div className="flex items-center gap-4">
           {skippedInBatch > 0 && (
-            <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+            <span className="text-[#555555] text-[10px] font-mono font-bold uppercase tracking-widest">
               {skippedInBatch} already in TM
             </span>
           )}
-          <span className="text-[#555555] text-[10px] font-bold uppercase tracking-[0.2em]">
+          <span className="text-[#555555] text-[10px] font-mono font-bold uppercase tracking-[0.2em]">
             {batch.length} sentences
           </span>
         </div>
       </div>
 
-      <div className="divide-y divide-[#262626]">
+      <div className="divide-y divide-white/8">
         {batch.map((item, index) => {
           const conf =
             item.score !== undefined && item.score !== null
@@ -274,32 +274,32 @@ function ReviewSection({
               key={`${item.source}-${index}`}
               className="grid grid-cols-1 md:grid-cols-2"
             >
-              <div className="p-6 border-r border-[#262626]">
+              <div className="p-6 border-r border-white/8">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                  <span className="text-[#555555] text-[10px] font-mono font-bold uppercase tracking-widest">
                     Source — {sourceLang?.toUpperCase() || "EN"}
                   </span>
                 </div>
-                <p className="text-[#a0a09f] text-[15px] leading-[1.6] font-sans">
+                <p className="text-[#a0a09f] text-[15px] leading-[1.6]">
                   {item.source}
                 </p>
               </div>
 
               <div className="p-6">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-[#555555] text-[10px] font-bold uppercase tracking-widest">
+                  <span className="text-[#555555] text-[10px] font-mono font-bold uppercase tracking-widest">
                     Target — {targetLang ? languageLabel(targetLang) : "TBD"}
                   </span>
 
                   {conf !== null && item.match_type !== "llm_cold" && (
                     <span
-                      className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2 py-1 ${matchBadgeCls(matchType)} bg-opacity-20`}
+                      className={`text-[9px] font-mono font-bold uppercase tracking-widest rounded-full px-2 py-1 ${matchBadgeCls(matchType)} bg-opacity-20`}
                     >
                       {conf}% Confidence
                     </span>
                   )}
                 </div>
-                <p className="text-[#ffffff] text-[15px] leading-[1.6] font-sans">
+                <p className="text-on-surface text-[15px] leading-[1.6]">
                   {item.translation}
                 </p>
 
@@ -307,7 +307,7 @@ function ReviewSection({
                 {item.back_translation_failed && (
                   <div
                     title="The back-translation diverged from the original source meaning. Please review this sentence carefully."
-                    className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#4a2310] bg-[#2a130a] px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-[#ff8800]"
+                    className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#ff8800]/25 bg-[#2a130a] px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-[#ff8800]"
                   >
                     <AlertTriangle size={11} />
                     Possibly inaccurate — back-translation diverged
@@ -326,16 +326,16 @@ function ReviewSection({
       </div>
 
       {/* Section Footer Actions */}
-      <div className="p-6 bg-[#0a0a0a] border-t border-[#262626] flex justify-end gap-4">
+      <div className="p-6 bg-background border-t border-white/8 flex justify-end gap-4">
         <button
-          className="text-[#a0a09f] hover:text-[#ff4d4d] transition-colors font-bold text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed px-6 py-3 border border-[#262626] rounded-full"
+          className="text-[#a0a09f] hover:text-error transition-colors font-mono font-bold text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed px-6 py-3 border border-white/8 rounded-full"
           onClick={() => onDiscard(batch, matchType)}
           disabled={isApproving}
         >
           Discard Batch
         </button>
         <button
-          className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-6 py-3 font-bold flex items-center gap-2 text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
+          className="bg-primary-container hover:bg-primary transition-colors text-background rounded-full px-6 py-3 font-bold flex items-center gap-2 text-[11px] uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
           onClick={() => onApprove(batch, matchType)}
           disabled={isApproving}
         >
@@ -389,10 +389,10 @@ function TargetLanguageSelector() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2.5 bg-[#111111] hover:bg-[#1a1a1a] border border-[#262626] hover:border-[#333333] rounded-full px-4 py-2 transition-colors"
+        className="flex items-center gap-2.5 bg-[#1c1c1c] hover:bg-[#222222] border border-transparent rounded-full px-4 py-2 transition-colors"
       >
-        <Globe size={13} className="text-[#c5fe00] shrink-0" />
-        <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest">
+        <Globe size={13} className="text-primary-container shrink-0" />
+        <span className="text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest">
           Target:
         </span>
         <span className={`text-[13px] font-bold ${currentLabel ? "text-white" : "text-[#555555]"}`}>
@@ -402,9 +402,9 @@ function TargetLanguageSelector() {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-[220px] bg-[#111111] border border-[#262626] rounded-[16px] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] z-50">
-          <div className="px-4 py-3 border-b border-[#1a1a1a]">
-            <span className="text-[#555555] font-bold text-[9px] uppercase tracking-widest">Target Language</span>
+        <div className="absolute top-full left-0 mt-2 w-[220px] bg-[#121212] rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] z-50">
+          <div className="px-4 py-3 border-b border-white/5">
+            <span className="text-[#555555] font-mono font-bold text-[9px] uppercase tracking-widest">Target Language</span>
           </div>
           <div className="py-1">
             {TARGET_LANGUAGES.map((lang) => (
@@ -413,12 +413,12 @@ function TargetLanguageSelector() {
                 onClick={() => handleSelect(lang.code)}
                 className={`w-full text-left px-4 py-2.5 flex items-center justify-between transition-colors text-[13px] ${
                   currentLang === lang.code
-                    ? "bg-[#1a1c10] text-[#c5fe00]"
-                    : "text-[#a0a09f] hover:bg-[#1a1a1a] hover:text-white"
+                    ? "bg-[#1a1c10] text-primary-container"
+                    : "text-[#a0a09f] hover:bg-[#1c1c1c] hover:text-white"
                 }`}
               >
                 <span>{lang.label}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#555555]">{lang.code}</span>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#555555]">{lang.code}</span>
               </button>
             ))}
           </div>
@@ -722,15 +722,15 @@ function ReviewPage() {
   }, [allReviewed, docId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-[#ffffff] font-sans flex overflow-hidden selection:bg-[#c5fe00] selection:text-[#0a0a0a]">
+    <div className="h-screen bg-background text-on-surface font-grotesk flex overflow-hidden selection:bg-primary-container selection:text-background">
       <Sidebar />
 
-      <div className="flex flex-col flex-1 relative w-full h-full overflow-hidden bg-[#0e0e0e]">
+      <div className="flex flex-col flex-1 relative w-full h-full overflow-hidden bg-background">
         {/* Top Header */}
-        <header className="h-[80px] w-full border-b border-[#262626] bg-[#0a0a0a] flex items-center justify-between px-8 shrink-0 z-40">
+        <header className="h-[80px] w-full border-b border-white/8 bg-background flex items-center justify-between px-8 shrink-0 z-40">
           <div className="flex items-center gap-4">
             <Link to="/" className="inline-block">
-              <span className="font-display font-bold text-xl tracking-tight text-[#c5fe00] leading-none">
+              <span className="font-hero text-[13px] font-bold uppercase tracking-[0.3em] text-on-surface leading-none">
                 TransSync
               </span>
             </Link>
@@ -741,9 +741,9 @@ function ReviewPage() {
 
           {/* Live Sync Badge */}
           {translationState === "done" && (
-            <div className="hidden lg:flex items-center gap-3 bg-[#1a1a1a] border border-[#262626] px-4 py-2 rounded-full absolute left-1/2 -translate-x-1/2">
-              <div className="w-2.5 h-2.5 bg-[#c5fe00] rounded-full animate-pulse"></div>
-              <span className="text-[#a0a09f] font-bold text-[9px] uppercase tracking-widest leading-none">
+            <div className="hidden lg:flex items-center gap-3 bg-[#1c1c1c] px-4 py-2 rounded-full absolute left-1/2 -translate-x-1/2">
+              <div className="w-2.5 h-2.5 bg-primary-container rounded-full animate-pulse"></div>
+              <span className="text-[#a0a09f] font-mono font-bold text-[9px] uppercase tracking-widest leading-none">
                 Live Sync
                 <br />
                 Active
@@ -752,13 +752,13 @@ function ReviewPage() {
           )}
 
           <div className="flex items-center gap-6">
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
+            <button className="text-[#8c8c8b] hover:text-on-surface transition-colors">
               <Bell size={18} />
             </button>
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
+            <button className="text-[#8c8c8b] hover:text-on-surface transition-colors">
               <HelpCircle size={18} />
             </button>
-            <button className="text-[#8c8c8b] hover:text-[#ffffff] transition-colors">
+            <button className="text-[#8c8c8b] hover:text-on-surface transition-colors">
               <Settings size={18} />
             </button>
             <NavAvatar />
@@ -767,8 +767,8 @@ function ReviewPage() {
 
         {/* Content Area */}
         <div className="flex-1 flex overflow-hidden w-full pb-[88px]">
-          <main className="flex-1 overflow-y-auto layout-scrollbar bg-[#0a0a0a]">
-            <div className="p-8 max-w-5xl mx-auto space-y-6">
+          <main className="flex-1 overflow-y-auto layout-scrollbar bg-background">
+            <div className="animate-rise p-8 max-w-5xl mx-auto space-y-6">
               {/* ── Multi-doc tabs — only validated/translated/approved docs ── */}
               {showDocTabs && (
                 <div className="flex flex-wrap gap-2 mb-2">
@@ -781,16 +781,16 @@ function ReviewPage() {
                           setActiveDocIndex(i);
                           setErrorMessage("");
                         }}
-                        className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-colors ${
+                        className={`px-4 py-2 rounded-full text-[11px] font-mono font-bold uppercase tracking-widest transition-colors ${
                           i === activeDocIndex
-                            ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16]"
+                            ? "bg-[#1a1c10] text-primary-container border-primary-container/20"
                             : doc.status === "approved"
-                              ? "bg-[#111111] text-[#8c8c8b] border-[#2a2e16]"
+                              ? "bg-[#121212] text-[#8c8c8b] border-primary-container/20"
                               : doc.status === "translated"
-                                ? "bg-[#111111] text-[#a0a09f] border-[#262626]"
+                                ? "bg-[#121212] text-[#a0a09f] border-white/8"
                                 : doc.status === "translating"
-                                  ? "bg-[#1a1c10] text-[#c5fe00] border-[#2a2e16] opacity-60 animate-pulse"
-                                  : "bg-[#111111] text-[#555555] border-[#262626] hover:text-[#8c8c8b]"
+                                  ? "bg-[#1a1c10] text-primary-container border-primary-container/20 opacity-60 animate-pulse"
+                                  : "bg-[#121212] text-[#555555] border-white/8 hover:text-[#8c8c8b]"
                         }`}
                       >
                         {doc.filename.length > 20
@@ -806,11 +806,11 @@ function ReviewPage() {
 
               {/* Error Banner */}
               {isError && errorMessage && (
-                <div className="bg-[#2a1313] border border-[#ff4d4d] rounded-[24px] p-6 flex items-center justify-between">
-                  <span className="text-[#ff4d4d] text-sm">{errorMessage}</span>
+                <div className="bg-[#1c0f0c] rounded-2xl p-6 flex items-center justify-between">
+                  <span className="text-error text-sm">{errorMessage}</span>
                   <button
                     onClick={() => setTranslationState("idle")}
-                    className="text-[#ff4d4d] hover:text-white text-[11px] font-bold uppercase tracking-widest border border-[#4a1010] px-3 py-1.5 rounded-full transition-colors ml-4 shrink-0"
+                    className="text-error hover:text-white text-[11px] font-mono font-bold uppercase tracking-widest border border-error/25 px-3 py-1.5 rounded-full transition-colors ml-4 shrink-0"
                   >
                     Retry
                   </button>
@@ -820,10 +820,10 @@ function ReviewPage() {
               {/* ── IDLE STATE ── */}
               {translationState === "idle" && !isError && (
                 <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-                  <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
-                    <Languages size={32} className="text-[#c5fe00]" />
+                  <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-primary-container/20 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
+                    <Languages size={32} className="text-primary-container" />
                   </div>
-                  <h2 className="font-display font-bold text-3xl tracking-tight mb-3">
+                  <h2 className="font-hero font-black uppercase text-3xl tracking-tight mb-3">
                     Ready to Translate
                   </h2>
                   <p className="text-[#8c8c8b] text-[15px] mb-2 max-w-md leading-relaxed">
@@ -842,9 +842,9 @@ function ReviewPage() {
                         {reviewableDocs.filter((d) => d.status === "validated").length > 1 && (
                           <button
                             onClick={() => handleStartTranslation(true)}
-                            className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
+                            className="bg-primary-container hover:bg-primary text-background rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
                           >
-                            <Zap size={16} strokeWidth={3} className="fill-[#0a0a0a]" />
+                            <Zap size={16} strokeWidth={3} className="fill-background" />
                             {`Translate All ${reviewableDocs.filter((d) => d.status === "validated").length} Docs`}
                           </button>
                         )}
@@ -852,23 +852,23 @@ function ReviewPage() {
                           onClick={() => handleStartTranslation(false)}
                           className={
                             reviewableDocs.filter((d) => d.status === "validated").length > 1
-                              ? "border border-[#555555] hover:border-[#c5fe00] hover:text-[#c5fe00] text-[#ffffff] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest transition-colors"
-                              : "bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
+                              ? "border border-[#555555] hover:border-primary-container hover:text-primary-container text-on-surface rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest transition-colors"
+                              : "bg-primary-container hover:bg-primary text-background rounded-full px-10 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(197,254,0,0.25)] hover:scale-[1.02] transform transition-all"
                           }
                         >
-                          <Zap size={16} strokeWidth={3} className={reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "" : "fill-[#0a0a0a]"} />
+                          <Zap size={16} strokeWidth={3} className={reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "" : "fill-background"} />
                           {reviewableDocs.filter((d) => d.status === "validated").length > 1 ? "Translate Current Doc" : "Start Translation"}
                         </button>
                       </div>
                     ) : (
                       /* No target language picked yet — point to the header selector. */
-                      <div className="flex flex-col items-center gap-3 bg-[#15170d] border border-[#2a2e16] rounded-[20px] px-8 py-6">
-                        <Globe size={22} className="text-[#c5fe00]" />
-                        <p className="text-[#ffffff] text-sm font-bold">
+                      <div className="flex flex-col items-center gap-3 bg-[#15170d] rounded-2xl px-8 py-6">
+                        <Globe size={22} className="text-primary-container" />
+                        <p className="text-on-surface text-sm font-bold">
                           Select a target language to begin
                         </p>
                         <p className="text-[#8c8c8b] text-[12px] max-w-xs leading-relaxed">
-                          Use the <span className="text-[#c5fe00] font-bold">Target</span> selector
+                          Use the <span className="text-primary-container font-bold">Target</span> selector
                           in the header above to choose a language. The Start Translation button
                           appears once it's set.
                         </p>
@@ -877,7 +877,7 @@ function ReviewPage() {
                   ) : (
                     <Link
                       to="/validation"
-                      className="border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-8 py-4 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                      className="border border-white/8 text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-8 py-4 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
                     >
                       <ArrowRight size={14} /> Go to Validation
                     </Link>
@@ -888,13 +888,13 @@ function ReviewPage() {
               {/* ── RUNNING STATE ── */}
               {translationState === "running" && (
                 <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-                  <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-[#2a2e16] flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
+                  <div className="w-20 h-20 rounded-full bg-[#1a1c10] border border-primary-container/20 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(197,254,0,0.08)]">
                     <Loader2
                       size={32}
-                      className="text-[#c5fe00] animate-spin"
+                      className="text-primary-container animate-spin"
                     />
                   </div>
-                  <h2 className="font-display font-bold text-3xl tracking-tight mb-3">
+                  <h2 className="font-hero font-black uppercase text-3xl tracking-tight mb-3">
                     Translating…
                   </h2>
                   <p className="text-[#8c8c8b] text-[15px] max-w-md leading-relaxed">
@@ -906,7 +906,7 @@ function ReviewPage() {
                     {[0, 1, 2].map((i) => (
                       <div
                         key={i}
-                        className="w-2 h-2 bg-[#c5fe00] rounded-full animate-bounce"
+                        className="w-2 h-2 bg-primary-container rounded-full animate-bounce"
                         style={{ animationDelay: `${i * 150}ms` }}
                       />
                     ))}
@@ -917,10 +917,10 @@ function ReviewPage() {
               {/* ── DONE STATE — ALL REVIEWED ── */}
               {translationState === "done" && !isRunning && allReviewed && (
                 <div className="flex flex-col items-center justify-center min-h-[300px] text-center">
-                  <div className="w-16 h-16 rounded-full bg-[#1a2010] border border-[#2a2e16] flex items-center justify-center mb-6">
-                    <CheckCircle size={28} className="text-[#c5fe00]" />
+                  <div className="w-16 h-16 rounded-full bg-[#1a2010] flex items-center justify-center mb-6">
+                    <CheckCircle size={28} className="text-primary-container" />
                   </div>
-                  <h2 className="font-display font-bold text-2xl tracking-tight mb-2">
+                  <h2 className="font-grotesk font-bold text-2xl tracking-tight mb-2">
                     All Sections Reviewed
                   </h2>
                   <p className="text-[#8c8c8b] text-[14px] mb-8">
@@ -931,13 +931,13 @@ function ReviewPage() {
                   <div className="flex items-center gap-4">
                     <Link
                       to="/export"
-                      className="bg-[#c5fe00] hover:bg-[#b9ef00] text-[#0a0a0a] rounded-full px-8 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
+                      className="bg-primary-container hover:bg-primary text-background rounded-full px-8 py-3.5 font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02]"
                     >
                       <ArrowRight size={14} /> Download Translated Document
                     </Link>
                     <Link
                       to="/dashboard"
-                      className="border border-[#262626] text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-6 py-3.5 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
+                      className="border border-white/8 text-[#8c8c8b] hover:text-white hover:border-[#555555] rounded-full px-6 py-3.5 font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-colors"
                     >
                       Back to Dashboard
                     </Link>
@@ -964,17 +964,17 @@ function ReviewPage() {
           </main>
 
           {/* Right Context Panel */}
-          <aside className="w-[360px] border-l border-[#262626] bg-[#0e0e0e] shrink-0 flex flex-col overflow-y-auto layout-scrollbar">
-            <div className="flex items-center gap-6 border-b border-[#262626] px-8 pt-8">
+          <aside className="w-[360px] border-l border-white/8 bg-background shrink-0 flex flex-col overflow-y-auto layout-scrollbar">
+            <div className="flex items-center gap-6 border-b border-white/8 px-8 pt-8">
               <button
                 onClick={() => setSidebarTab("match_types")}
-                className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "match_types" ? "text-[#c5fe00] border-[#c5fe00]" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
+                className={`text-[10px] font-mono font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "match_types" ? "text-primary-container border-primary-container" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
               >
                 Match Types
               </button>
               <button
                 onClick={() => setSidebarTab("context")}
-                className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "context" ? "text-[#c5fe00] border-[#c5fe00]" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
+                className={`text-[10px] font-mono font-bold uppercase tracking-widest pb-4 border-b-2 transition-colors ${sidebarTab === "context" ? "text-primary-container border-primary-container" : "text-[#555555] border-transparent hover:text-[#8c8c8b]"}`}
               >
                 Context
               </button>
@@ -983,20 +983,20 @@ function ReviewPage() {
             <div className="p-8 space-y-10">
               {sidebarTab === "context" && (
                 <div>
-                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
+                  <h4 className="text-[#555555] font-mono font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
                     Draft Settings
                   </h4>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-[13px]">
                       <span className="text-[#8c8c8b]">Tone of Voice</span>
-                      <span className="text-[#c5fe00] font-bold">
+                      <span className="text-primary-container font-bold">
                         Sophisticated
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-[13px]">
                       <span className="text-[#8c8c8b]">Formality</span>
                       <div className="w-[100px] h-1.5 rounded-full bg-[#262626] overflow-hidden">
-                        <div className="w-[85%] h-full bg-[#c5fe00] rounded-full"></div>
+                        <div className="w-[85%] h-full bg-primary-container rounded-full"></div>
                       </div>
                     </div>
                   </div>
@@ -1005,7 +1005,7 @@ function ReviewPage() {
 
               {sidebarTab === "match_types" && (
                 <div>
-                  <h4 className="text-[#555555] font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
+                  <h4 className="text-[#555555] font-mono font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
                     Match Types
                   </h4>
                   <div className="space-y-3">
@@ -1035,20 +1035,20 @@ function ReviewPage() {
                         <button
                           key={type}
                           onClick={() => setActiveSection(type)}
-                          className={`w-full text-left bg-[#111111] border rounded-[16px] p-4 transition-colors ${
+                          className={`w-full text-left bg-[#121212] border rounded-2xl p-4 transition-colors ${
                             isActive
-                              ? "border-[#c5fe00]"
-                              : "border-[#1a1a1a] hover:border-[#333333]"
+                              ? "border-primary-container"
+                              : "border-white/5 hover:border-white/12"
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <span
-                              className={`text-[9px] font-bold uppercase tracking-widest rounded-full px-2 py-1 inline-block ${matchBadgeCls(type)}`}
+                              className={`text-[9px] font-mono font-bold uppercase tracking-widest rounded-full px-2 py-1 inline-block ${matchBadgeCls(type)}`}
                             >
                               {matchLabel(type)}
                             </span>
                             <span
-                              className={`text-[10px] font-bold ${isActive ? "text-[#ffffff]" : "text-[#555555]"}`}
+                              className={`text-[10px] font-bold ${isActive ? "text-on-surface" : "text-[#555555]"}`}
                             >
                               {count} pending
                             </span>
@@ -1068,17 +1068,17 @@ function ReviewPage() {
 
         {/* Footer Action Bar — only shown when reviewing */}
         {translationState === "done" && !isRunning && (
-          <div className="absolute w-full bottom-0 h-[88px] border-t border-[#262626] bg-[#0a0a0a]/90 backdrop-blur-md flex items-center justify-between px-8 z-50">
+          <div className="absolute w-full bottom-0 h-[88px] border-t border-white/8 bg-background/90 backdrop-blur-md flex items-center justify-between px-8 z-50">
             {/* Progress */}
             <div className="flex items-center gap-12">
               <div className="flex flex-col gap-2 w-[240px]">
-                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555]">
+                <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#555555]">
                   <span>Overall Progress</span>
-                  <span className="text-[#ffffff]">{progressPercent}%</span>
+                  <span className="text-on-surface">{progressPercent}%</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-[#262626] overflow-hidden">
                   <div
-                    className="h-full bg-[#c5fe00] rounded-full transition-all duration-500"
+                    className="h-full bg-primary-container rounded-full transition-all duration-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -1087,7 +1087,7 @@ function ReviewPage() {
 
             <div className="flex items-center gap-8 text-[#a0a09f] text-[11px] font-bold tracking-[0.1em] uppercase">
               <div className="flex items-center gap-2">
-                <CheckCircle size={14} className="text-[#c5fe00]" />{" "}
+                <CheckCircle size={14} className="text-primary-container" />{" "}
                 {reviewedCount} Reviewed
               </div>
               <div className="flex items-center gap-2">
@@ -1107,9 +1107,9 @@ function ReviewPage() {
 
         {/* Footer — idle/running states: show start button */}
         {(isIdle || isRunning) && !isError && (
-          <div className="absolute w-full bottom-0 h-[88px] border-t border-[#262626] bg-[#0a0a0a]/90 backdrop-blur-md flex items-center justify-between px-8 z-50">
+          <div className="absolute w-full bottom-0 h-[88px] border-t border-white/8 bg-background/90 backdrop-blur-md flex items-center justify-between px-8 z-50">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#1a200a] text-[#c5fe00] border border-[#2a2e16] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-[#1a200a] text-primary-container flex items-center justify-center">
                 <Sparkles size={14} />
               </div>
               <p className="text-[#8c8c8b] text-[12px] font-medium">
@@ -1125,7 +1125,7 @@ function ReviewPage() {
               <button
                 onClick={() => handleStartTranslation()}
                 disabled={isRunning || !sentences?.length}
-                className="bg-[#c5fe00] hover:bg-[#b9ef00] transition-colors text-[#0a0a0a] rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-primary-container hover:bg-primary transition-colors text-background rounded-full px-8 py-4 font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(197,254,0,0.2)] hover:scale-[1.02] transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isRunning ? (
                   <>
@@ -1133,13 +1133,13 @@ function ReviewPage() {
                   </>
                 ) : (
                   <>
-                    <Zap size={14} strokeWidth={3} className="fill-[#0a0a0a]" />{" "}
+                    <Zap size={14} strokeWidth={3} className="fill-background" />{" "}
                     Start Translation
                   </>
                 )}
               </button>
             ) : (
-              <span className="flex items-center gap-2 text-[#c5fe00] text-[11px] font-bold uppercase tracking-widest border border-[#2a2e16] bg-[#15170d] rounded-full px-5 py-3">
+              <span className="flex items-center gap-2 text-primary-container text-[11px] font-mono font-bold uppercase tracking-widest border border-primary-container/20 bg-[#15170d] rounded-full px-5 py-3">
                 <Globe size={14} /> Target language required
               </span>
             )}
